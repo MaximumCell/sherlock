@@ -3,44 +3,51 @@ from core import db, correlate
 from core.collectors import spiderfoot_wrapper, user_scanner_wrapper, xposedornot_wrapper
 
 
-def _safe_breach(email, case_id):
+def _safe_breach(email, case_id, store):
     try:
         return xposedornot_wrapper.check(email, case_id)
     except Exception as e:
-        db.log(case_id, "collector_run", "xposedornot", {"error": str(e)})
+        store.log(case_id, "collector_run", "xposedornot", {"error": str(e)})
         return []
 
 
-def _collectors():
+def _collectors(case_id, store):
     return {
-        "username": lambda v, cid: user_scanner_wrapper.scan(v, False, cid),
-        "email": lambda v, cid: user_scanner_wrapper.scan(v, True, cid) + _safe_breach(v, cid),
-        "domain": spiderfoot_wrapper.scan,
+        "username": lambda v: user_scanner_wrapper.scan(v, False, case_id),
+        "email": lambda v: user_scanner_wrapper.scan(v, True, case_id) + _safe_breach(v, case_id, store),
+        "domain": lambda v: spiderfoot_wrapper.scan(v, case_id),
     }
 
 
-def run_case(identifiers: list[dict], store=None):
+def run_case(identifiers: list[dict], store=None, case_id: str | None = None):
+    """Run the pipeline. If case_id is None, create a new case. Otherwise re-use the existing one."""
     store = store or db
-    case_id = store.create_case(identifiers)
+    if case_id is None:
+        case_id = store.create_case(identifiers)
     store.update_case_status(case_id, "running")
-    for ident in identifiers:
-        itype, ivalue = ident["type"], ident["value"]
-        fn = _collectors().get(itype)
-        if not fn:
-            store.log(case_id, "collector_run", "none", {"error": f"unknown type {itype}"})
-            continue
-        try:
-            findings = fn(ivalue, case_id)
-            store.upsert_findings(findings, case_id)
-            store.log(case_id, "collector_run", "collector", {"type": itype, "value": ivalue, "findings": len(findings)})
-        except Exception as e:
-            store.log(case_id, "collector_run", itype, {"value": ivalue, "error": str(e)})
-    findings = store.list_findings(case_id)
-    corrs = correlate.correlate(case_id, findings)
-    store.insert_correlations(corrs, case_id)
-    store.log(case_id, "correlation", "engine", {"count": len(corrs)})
-    store.update_case_status(case_id, "done")
-    return case_id, findings, corrs
+    try:
+        for ident in identifiers:
+            itype, ivalue = ident["type"], ident["value"]
+            fn = _collectors(case_id, store).get(itype)
+            if not fn:
+                store.log(case_id, "collector_run", "none", {"error": f"unknown type {itype}"})
+                continue
+            try:
+                findings = fn(ivalue)
+                store.upsert_findings(findings, case_id)
+                store.log(case_id, "collector_run", "collector", {"type": itype, "value": ivalue, "findings": len(findings)})
+            except Exception as e:
+                store.log(case_id, "collector_run", itype, {"value": ivalue, "error": str(e)})
+        findings = store.list_findings(case_id)
+        corrs = correlate.correlate(case_id, findings)
+        store.insert_correlations(corrs, case_id)
+        store.log(case_id, "correlation", "engine", {"count": len(corrs)})
+        store.update_case_status(case_id, "done")
+        return case_id, findings, corrs
+    except Exception as e:
+        store.log(case_id, "pipeline", "engine", {"error": str(e)})
+        store.update_case_status(case_id, "error")
+        raise
 
 
 if __name__ == "__main__":

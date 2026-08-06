@@ -6,7 +6,7 @@ Rules (plan Section 6 Phase 3):
   shared_email_platform  email and username both resolve on same platform
   breach_overlap      same identifier in same breach via two collectors
 
-Every correlation: {case_id, correlation_id, type, entities_involved,
+Every correlation: {case_id, id, type, entities_involved,
 confidence, evidence, priority, reviewed}. priority = confidence * platform_reach.
 """
 import difflib
@@ -27,7 +27,7 @@ BREACH_OVERLAP_CONF = 0.9
 def _new_corr(case_id, ctype, entities, confidence, evidence):
     return {
         "case_id": case_id,
-        "correlation_id": str(uuid.uuid4()),
+        "id": str(uuid.uuid4()),
         "type": ctype,
         "entities_involved": entities,
         "confidence": round(confidence, 2),

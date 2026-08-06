@@ -1,0 +1,16 @@
+[project]
+name = "sherlocks"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "user-scanner>=1.4.3",
+    "python-dotenv>=1.0",
+    "httpx>=0.28",
+    "supabase>=2.0",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false

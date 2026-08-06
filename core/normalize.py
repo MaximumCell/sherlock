@@ -52,12 +52,12 @@ def from_hudson_rock(hit, case_id, identifier_type, identifier_value):
     }
 
 
-def from_hibp(breach, case_id, identifier_value):
+def from_breach(breach, case_id, identifier_value, source_tool="xposedornot"):
     return {
         "case_id": case_id,
         "identifier_type": "email",
         "identifier_value": identifier_value,
-        "source_tool": "hibp",
+        "source_tool": source_tool,
         "platform": "breach",
         "status": "found",
         "extra_metadata": {
@@ -105,5 +105,5 @@ if __name__ == "__main__":
     assert from_user_scanner(r, "c1", "username", "x")["collected_at"]
     r.status.value = 3
     assert from_user_scanner(r, "c1", "username", "x") is None
-    assert from_hibp({"Name": "Adobe", "DataClasses": ["emails"]}, "c1", "a@b.c")["status"] == "found"
+    assert from_breach({"Name": "Adobe", "DataClasses": ["emails"]}, "c1", "a@b.c")["status"] == "found"
     print("normalize OK")

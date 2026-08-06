@@ -1,20 +1,20 @@
 """Run a full case: collect -> upsert -> correlate -> insert. One failing tool never aborts."""
 from core import db, correlate
-from core.collectors import hibp_wrapper, spiderfoot_wrapper, user_scanner_wrapper
+from core.collectors import spiderfoot_wrapper, user_scanner_wrapper, xposedornot_wrapper
 
 
-def _safe_hibp(email, case_id):
+def _safe_breach(email, case_id):
     try:
-        return hibp_wrapper.check(email, case_id)
+        return xposedornot_wrapper.check(email, case_id)
     except Exception as e:
-        db.log(case_id, "collector_run", "hibp", {"error": str(e)})
+        db.log(case_id, "collector_run", "xposedornot", {"error": str(e)})
         return []
 
 
 def _collectors():
     return {
         "username": lambda v, cid: user_scanner_wrapper.scan(v, False, cid),
-        "email": lambda v, cid: user_scanner_wrapper.scan(v, True, cid) + _safe_hibp(v, cid),
+        "email": lambda v, cid: user_scanner_wrapper.scan(v, True, cid) + _safe_breach(v, cid),
         "domain": spiderfoot_wrapper.scan,
     }
 

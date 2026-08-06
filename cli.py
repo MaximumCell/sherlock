@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 
 from core import config
-from core.collectors import hibp_wrapper, spiderfoot_wrapper, user_scanner_wrapper
+from core.collectors import spiderfoot_wrapper, user_scanner_wrapper, xposedornot_wrapper
 
 
 def _dump(identifier_type, identifier_value, findings, tag):
@@ -35,9 +35,9 @@ def main():
     p.add_argument("domain")
     p.add_argument("--tag", default="sf")
 
-    p = sub.add_parser("hibp")
+    p = sub.add_parser("breach")
     p.add_argument("email")
-    p.add_argument("--tag", default="hibp")
+    p.add_argument("--tag", default="xon")
 
     a = ap.parse_args()
 
@@ -51,8 +51,8 @@ def main():
         elif a.cmd == "scan-domain":
             f = spiderfoot_wrapper.scan(a.domain, a.case_id)
             _dump("domain", a.domain, f, a.tag)
-        elif a.cmd == "hibp":
-            f = hibp_wrapper.check(a.email, a.case_id)
+        elif a.cmd == "breach":
+            f = xposedornot_wrapper.check(a.email, a.case_id)
             _dump("email", a.email, f, a.tag)
     except Exception as e:
         print(f"error: {e}", file=sys.stderr)

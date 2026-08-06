@@ -32,7 +32,8 @@ Three layers, kept strictly separate so the LLM never invents facts:
 │  1. COLLECTORS (deterministic, no AI)                │
 │     - user-scanner (username/email sweep + Hudson    │
 │       Rock breach exposure)                          │
-│     - HaveIBeenPwned API (breach exposure)            │
+│     - XposedOrNot (free breach-exposure check,       │
+│       breach names only, no API key)                 │
 │     - SpiderFoot (domain/IP/DNS recon + its own       │
 │       correlation rule engine)                        │
 │     - osint-mcp-server (Shodan/VirusTotal/WHOIS/etc,  │
@@ -52,7 +53,7 @@ Three layers, kept strictly separate so the LLM never invents facts:
 └─────────────────────────────────────────────────────┘
                      ↓ structured case file (JSON)
 ┌─────────────────────────────────────────────────────┐
-│  3. AGENT LAYER (LLM — Gemma 4B via google-genai)    │
+│  3. AGENT LAYER (LLM — Gemma 4 26B via google-genai │
 │     - Reads the structured case file only              │
 │     - Decides which collector to run next (tool use)   │
 │     - Narrates findings, explains confidence, writes    │
@@ -84,13 +85,13 @@ FastAPI backend (api/)  →  core/ pipeline  →  Supabase
 |---|---|---|
 | Language | Python 3.11+ | All chosen tools are Python-native |
 | Collector: username/email | [`user-scanner`](https://github.com/kaifcodec/user-scanner) | Library mode (`engine.check()`), 285+ platforms, built-in Hudson Rock breach check |
-| Collector: breach exposure | HaveIBeenPwned API | Free web UI; ~$3.50/mo for API key if programmatic access needed |
+| Collector: breach exposure | [XposedOrNot](https://github.com/XposedOrNot/XposedOrNot-API) | Free, **no API key**: `GET /v1/check-email/{email}` returns breach names only (fits the exposure-confirmation bar, never records). Rate: 2 req/s, 25/hr, 100/day per IP, `Retry-After` on 429. ⚠️ sits behind a Cloudflare challenge — if programmatic access is blocked from your network, breach exposure falls back to Hudson Rock only |
 | Collector: domain/IP/DNS | [SpiderFoot](https://github.com/smicallef/spiderfoot) | 200+ modules, its own YAML correlation rule engine, SQLite backend |
 | Collector: infra (optional, later) | [osint-mcp-server](https://github.com/badchars/osint-mcp-server) | MCP-native, 37 tools across Shodan/VirusTotal/Censys/WHOIS |
 | Case storage | **Supabase** (hosted Postgres) | Free tier (500MB DB, 5GB bandwidth/mo), survives redeploys unlike SQLite, JSONB columns map cleanly to `extra_metadata`/`evidence`, built-in auth/RLS if you add multi-user later. Note: free projects pause after ~1 week idle, first request after a pause is slow. Data encrypted at rest by host. |
 | Correlation graph | Plain Python dict/JSON for v1 → NetworkX if needed → Neo4j only if you outgrow both | Avoid Neo4j until you actually hit a query NetworkX can't express |
 | Agent orchestration | Simple custom loop (tool-call → execute → feed result back) | Your tool list is custom; a framework (LangChain etc.) adds abstraction you don't need yet |
-| LLM | **Gemma 4B via `google-genai`** | Default model `MODEL_NAME` env (default `gemma-3-4b-it`). ⚠️ Gemma 4B is an open-weight model, not served by the Gemini API — it runs via Ollama or a hosted Gemma endpoint, and 4B models are weak at multi-tool function calling. `agent/llm.py` is the single file to swap if tool-calling quality blocks Phase 5. No local/Ollama abstraction is built in advance — swap = rewrite one file. |
+| LLM | **Gemma 4 26B A4B via `google-genai`** | Default model `MODEL_NAME` env (default `gemma-4-26b-a4b-it`). Hosted on the Gemini API (uses the same `GOOGLE_API_KEY`), supports native function calling — no local/Ollama abstraction needed. `agent/llm.py` remains the single file to swap if model quality or tool-calling ever blocks the pipeline. |
 | API layer | FastAPI | Python-native, auto OpenAPI docs, trivial static/CORS setup |
 | Frontend | Next.js (App Router) | User chose it; route handlers only (no server actions) for v1 |
 | Report output | Markdown → optionally PDF/docx export | Markdown is fastest to generate and diff during development; rendered in the frontend |
@@ -106,7 +107,7 @@ All collector output gets normalized into this common shape before anything else
   "case_id": "string",
   "identifier_type": "username | email | domain",
   "identifier_value": "string",
-  "source_tool": "user-scanner | hibp | spiderfoot | ...",
+  "source_tool": "user-scanner | xposedornot | spiderfoot | ...",
   "platform": "string",
   "status": "found | not_found | error",
   "extra_metadata": { "...": "tool-specific fields" },
@@ -139,8 +140,8 @@ cite it as an accepted finding in a final report.
 ## 4. Secrets & Configuration
 
 - `core/config.py` loads all config from environment variables via `dotenv`.
-- `.env` (gitignored) holds: `MODEL_NAME`, `GOOGLE_API_KEY` (Gemma endpoint), `SUPABASE_URL`,
-  `SUPABASE_SERVICE_KEY`, `HIBP_API_KEY`, `SPIDERFOOT_URL`.
+- `.env` (gitignored) holds: `MODEL_NAME`, `GOOGLE_API_KEY` (Gemini/Gemma API), `SUPABASE_URL`,
+  `SUPABASE_SERVICE_KEY`, `SPIDERFOOT_URL`.
 - `.env.example` is committed with placeholders.
 - Never commit `.env` or any real key. Supabase service key is server-side only — the
   frontend never receives it.
@@ -217,7 +218,8 @@ the codebase talks to this wrapper only, so a DB swap is one file.
 - [ ] Set up Python venv, pin deps in `requirements.txt` + `requirements.lock`
 - [ ] Write a thin wrapper script that calls `user-scanner`'s library mode for a
       username and an email, dumps normalized JSON to disk
-- [ ] Get an HIBP API key and write a small wrapper function for breach lookups
+- [ ] Get a free XposedOrNot breach check working (no key needed) and write a
+      small wrapper function for breach lookups
 - [ ] Install SpiderFoot locally (`apt install spiderfoot` on Kali/Ubuntu, or Docker),
       confirm you can run a scan against a domain via its API/CLI and get JSON out
 - [ ] **Milestone:** you can run 3 independent scripts against a test identifier and get
@@ -261,8 +263,8 @@ the codebase talks to this wrapper only, so a DB swap is one file.
 ### Phase 5 — Agent layer
 - [ ] Define agent tools as Python functions the LLM can call: `run_username_scan`,
       `run_email_scan`, `run_domain_scan`, `get_case_findings`, `get_reviewed_correlations`
-- [ ] `agent/llm.py`: Gemma 4B via `google-genai`, `MODEL_NAME` the only knob. Verify
-      tool-calling quality early — if 4B function-calling is unreliable, swap this one file
+- [ ] `agent/llm.py`: Gemma 4 26B via `google-genai`, `MODEL_NAME` the only knob. Hosted
+      on the Gemini API, natively supports function calling (Gemma 4 26B A4B)
 - [ ] Write the system prompt for the agent (see Section 7 below) — keep it strict about
       only narrating reviewed correlations, never inventing new ones
 - [ ] Build the orchestration loop: user message → agent picks tool(s) → execute →
@@ -317,7 +319,7 @@ Rules you must follow:
 
 **Rate limiting / anti-ban (per collector)**
 - `user-scanner`: ~10 requests/min across platforms + jitter; per-platform retry caps
-- HIBP: respect `Retry-After`; use batch API where available
+- XposedOrNot: respect `Retry-After` (free tier: 2 req/s, 25/hr, 100/day per IP)
 - SpiderFoot: `SF_SCAN_TIMEOUT` + throttle between scans
 - All limits live in `core/config.py`; backoff is exponential with a max cap
 
@@ -348,11 +350,11 @@ osint-agent/
 │   ├── correlate.py             (deterministic rules + priority)
 │   └── collectors/
 │       ├── user_scanner_wrapper.py
-│       ├── hibp_wrapper.py
+│       ├── xposedornot_wrapper.py
 │       └── spiderfoot_wrapper.py
 ├── agent/
 │   ├── tools.py                 (tool functions exposed to the LLM)
-│   ├── llm.py                   (Gemma 4B via google-genai — swap point)
+│   ├── llm.py                   (Gemma 4 26B via google-genai — swap point)
 │   ├── system_prompt.md
 │   └── orchestrator.py          (the agent loop)
 ├── api/

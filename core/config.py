@@ -5,10 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MODEL_NAME = os.getenv("MODEL_NAME", "gemma-3-4b-it")
+MODEL_NAME = os.getenv("MODEL_NAME", "gemma-4-26b-a4b-it")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
-HIBP_API_KEY = os.getenv("HIBP_API_KEY", "")
 SPIDERFOOT_URL = os.getenv("SPIDERFOOT_URL", "http://localhost:5001")
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "out"

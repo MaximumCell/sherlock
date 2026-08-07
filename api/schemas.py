@@ -29,6 +29,7 @@ class FindingOut(BaseModel):
     status: str
     extra_metadata: dict
     collected_at: str
+    curated: bool = False
 
 
 class CorrelationOut(BaseModel):

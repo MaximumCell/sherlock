@@ -10,4 +10,19 @@ tests/last_run.log
 frontend/.env*.local
 frontend/node_modules/
 frontend/.next/
+frontend/.next.old/
+# One-off debug scripts from development — never production code
+check_error.py
+check_cases.py.deprecated
+cli.py
+diag.py
+inspect_extra.py
+octo_count.py
+octo_inspect.py
+octo_test.py
+re_correlate.py
+result_inspect.py
+test_curate.py
+verify_*.py
+commit_msg.txt
 

@@ -1,0 +1,13 @@
+-- Migration: add curation flag to findings
+-- Apply once via Supabase SQL editor
+--
+-- Background: an OSINT scan returns hundreds of low-value matches (sites where
+-- the username happens to exist as part of a URL slug, generic platforms, etc).
+-- The investigator needs a way to mark the interesting ones for follow-up
+-- (enrichment, pivots) without having to leave the case open in a tab.
+
+alter table raw_findings
+  add column if not exists curated boolean not null default false;
+
+create index if not exists idx_findings_curated
+  on raw_findings (case_id, curated);

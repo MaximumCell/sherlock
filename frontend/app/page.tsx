@@ -5,6 +5,11 @@ import CaseCard from "./case-card";
 import { Icon } from "./_components/icon";
 import { Search, BarChart3, Layers } from "lucide-react";
 
+// This page reads live data from the FastAPI backend, so it must be rendered
+// per request. Without this, `next build` tries to prerender it during the
+// static-generation pass and fails (no backend reachable at build time).
+export const dynamic = "force-dynamic";
+
 export default async function HomePage({
   searchParams,
 }: {

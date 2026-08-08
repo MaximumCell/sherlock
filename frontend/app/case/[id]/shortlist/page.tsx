@@ -5,6 +5,9 @@ import { Icon } from "../../../_components/icon";
 import { StatusBadge } from "../../../_components/status-badge";
 import { FindingDetails } from "../../../_components/finding-details";
 
+// Live data from the FastAPI backend — never prerender.
+export const dynamic = "force-dynamic";
+
 /** Shortlist overview page — every curated + every enriched finding
  *  in one place, with the tools to investigate each one in depth.
  *

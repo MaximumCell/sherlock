@@ -3,6 +3,9 @@ import { getCase, listCorrelations } from "@/lib/api";
 import ReviewQueue from "./review-queue";
 import { Icon } from "../../_components/icon";
 
+// Live data from the FastAPI backend — never prerender.
+export const dynamic = "force-dynamic";
+
 export default async function ReviewPage({
   params,
 }: {

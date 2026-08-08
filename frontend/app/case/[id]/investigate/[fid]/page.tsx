@@ -6,6 +6,9 @@ import { StatusBadge } from "../../../../_components/status-badge";
 import { FindingDetails } from "../../../../_components/finding-details";
 import { InvestigateActions } from "./investigate-actions";
 
+// Live data from the FastAPI backend — never prerender.
+export const dynamic = "force-dynamic";
+
 /** Deep-dive page for a single finding.
  *
  * User flow:

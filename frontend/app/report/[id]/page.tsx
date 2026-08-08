@@ -3,6 +3,9 @@ import { getReport } from "@/lib/api";
 import MarkdownView from "./markdown-view";
 import { Icon } from "../../_components/icon";
 
+// Live data from the FastAPI backend — never prerender.
+export const dynamic = "force-dynamic";
+
 export default async function ReportPage({
   params,
 }: {

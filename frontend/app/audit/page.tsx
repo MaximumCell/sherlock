@@ -1,6 +1,9 @@
 import { listAudit } from "@/lib/api";
 import { Icon } from "../_components/icon";
 
+// Live data from the FastAPI backend — never prerender.
+export const dynamic = "force-dynamic";
+
 const ACTION_VARIANT: Record<string, "found" | "error" | "warn" | "info" | "muted"> = {
   collector_run: "info",
   correlation: "info",

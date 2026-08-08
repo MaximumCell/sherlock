@@ -5,6 +5,9 @@ import { Icon } from "../../_components/icon";
 import { StatusBadge } from "../../_components/status-badge";
 import { InvestigationPanel } from "./investigation-panel";
 
+// Live data from the FastAPI backend — never prerender.
+export const dynamic = "force-dynamic";
+
 const TYPE_ICONS: Record<string, "at" | "mail" | "link"> = {
   username: "at",
   email: "mail",

@@ -11,6 +11,8 @@ interface IconProps {
   className?: string;
   strokeWidth?: number;
   style?: React.CSSProperties;
+  /** Optional fill override (e.g. "currentColor" for solid filled icons). */
+  fill?: string;
 }
 
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -220,14 +222,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
   ),
 };
 
-export function Icon({ name, size = 16, className, strokeWidth = 1.6, style }: IconProps) {
+export function Icon({ name, size = 16, className, strokeWidth = 1.6, style, fill }: IconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={fill ?? "none"}
       stroke="currentColor"
       strokeWidth={strokeWidth}
       strokeLinecap="round"

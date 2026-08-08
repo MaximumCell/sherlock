@@ -44,7 +44,7 @@ type HasFlag =
   | "private"
   | "pivots";
 
-const HAS_FLAGS: { id: HasFlag; label: string; icon: "image" | "user" | "info" | "mail" | "link" | "pin" | "check" | "tag" }[] = [
+const HAS_FLAGS: { id: HasFlag; label: string; icon: "image" | "user" | "info" | "mail" | "link" | "pin" | "check" | "tag" | "branch" }[] = [
   { id: "avatar", label: "Avatar", icon: "image" },
   { id: "display_name", label: "Display name", icon: "user" },
   { id: "bio", label: "Bio", icon: "info" },

@@ -1,4 +1,11 @@
-"""FastAPI app: cases, correlations, audit. CORS limited to localhost for the Next.js frontend."""
+"""FastAPI app: cases, correlations, audit.
+
+CORS: localhost by default. Set FRONTEND_ORIGINS to a comma-separated list
+of extra origins (e.g. your deployed Vercel/Netlify URL) to widen the
+allow-list in production.
+"""
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,13 +17,19 @@ app = FastAPI(
     description="OSINT investigation pipeline — collectors -> correlation -> review -> report.",
 )
 
-# CORS: Next.js dev server on localhost. Single-user, no auth.
+# CORS: localhost + any extra origins from FRONTEND_ORIGINS env var.
+# Single-user, no auth. Methods/headers left wide open on purpose.
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+_extra = os.getenv("FRONTEND_ORIGINS", "").strip()
+if _extra:
+    ALLOWED_ORIGINS.extend(o.strip() for o in _extra.split(",") if o.strip())
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

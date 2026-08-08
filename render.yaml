@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: sherlock-api
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: .
+    buildCommand: |
+      pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: |
+      uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      # Optional — only set if you have a Firecrawl account
+      - key: SCRAPING_API_KEY
+        sync: false
+        value: ""
+      - key: SCRAPING_API_URL
+        value: https://api.firecrawl.dev
+      - key: MODEL_NAME
+        value: gemma-4-26b-a4b-it
+      # Set to your deployed Next.js origin, e.g. https://sherlock.vercel.app
+      # Multiple origins: comma-separated. The CORS middleware parses it.
+      - key: FRONTEND_ORIGINS
+        value: ""

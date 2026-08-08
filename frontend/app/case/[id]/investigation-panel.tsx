@@ -1383,7 +1383,7 @@ interface AggregatedPivots {
   emails: { value: string; platforms: string[]; findingIds: string[] }[];
   urls: { value: string; platforms: string[]; findingIds: string[] }[];
   handles: { platform: string; handle: string; findingIds: string[] }[];
-  sharedPlatforms: { platform: string; count: number; findings: Finding[] }[];
+  sharedPlatforms: [platform: string, findings: Finding[]][];
 }
 
 function aggregatePivots(found: Finding[]): AggregatedPivots {

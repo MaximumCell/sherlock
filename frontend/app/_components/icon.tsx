@@ -1,44 +1,16 @@
-/** Inline SVG icon set. No emoji per design system. Phosphor-style line icons, 1.5 stroke. */
+/** Inline SVG icon set. No emoji per design system. Phosphor-style line icons, 1.5 stroke.
+ *  IconName is typed as a string union of KNOWN icons for editor autocomplete,
+ *  but the component accepts any string at runtime and renders nothing for
+ *  unknown names (used as graceful degradation when a name hasn't been drawn yet). */
 
-export type IconName =
-  | "search"
-  | "play"
-  | "trash"
-  | "check"
-  | "x"
-  | "circle-dot"
-  | "warning"
-  | "info"
-  | "spinner"
-  | "report"
-  | "approve"
-  | "reject"
-  | "list"
-  | "external"
-  | "chevron-down"
-  | "chevron-up"
-  | "link"
-  | "mail"
-  | "pin"
-  | "at"
-  | "branch"
-  | "sliders"
-  | "arrow-up"
-  | "arrow-down"
-  | "check-square"
-  | "square"
-  | "layers"
-  | "image"
-  | "globe"
-  | "user"
-  | "tag"
-  | "map";
+export type IconName = string;
 
 interface IconProps {
   name: IconName;
   size?: number;
   className?: string;
   strokeWidth?: number;
+  style?: React.CSSProperties;
 }
 
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -248,7 +220,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   ),
 };
 
-export function Icon({ name, size = 16, className, strokeWidth = 1.6 }: IconProps) {
+export function Icon({ name, size = 16, className, strokeWidth = 1.6, style }: IconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -261,7 +233,9 @@ export function Icon({ name, size = 16, className, strokeWidth = 1.6 }: IconProp
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
-      style={{ flexShrink: 0, display: "inline-block", verticalAlign: "middle" }}
+      // Caller-supplied style takes precedence; we keep the layout defaults
+      // (flexShrink, display, verticalAlign) unless the caller overrides them.
+      style={{ flexShrink: 0, display: "inline-block", verticalAlign: "middle", ...style }}
       aria-hidden="true"
     >
       {PATHS[name]}

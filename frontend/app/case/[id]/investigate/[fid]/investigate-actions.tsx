@@ -286,6 +286,7 @@ export function InvestigateActions({
             icon={curated ? "star-filled" : "star"}
             label={curated ? "Remove from shortlist" : "Add to shortlist"}
             onClick={toggleCurated}
+            busy={false}
             title="Mark this finding for follow-up — see it in the Curated quick filter"
             variant={curated ? "active" : "default"}
           />

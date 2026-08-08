@@ -296,8 +296,8 @@ function ShortlistCard({
 }) {
   const meta = (finding.extra_metadata || {}) as Record<string, unknown>;
   const extra = (meta.extra as Record<string, unknown>) || {};
-  const avatar =
-    (meta.media as Record<string, unknown>)?.avatar ??
+  const avatar: string | null =
+    (meta.media as Record<string, unknown>)?.avatar as string ??
     (extra.og_image as string) ??
     null;
   const displayName =
@@ -461,9 +461,9 @@ function ShortlistCard({
           <Icon name="search" size={10} style={{ marginRight: 4, verticalAlign: "-1px" }} />
           Investigate →
         </Link>
-        {finding.extra_metadata?.url && (
+        {typeof finding.extra_metadata?.url === "string" && (
           <a
-            href={finding.extra_metadata.url as string}
+            href={finding.extra_metadata.url}
             target="_blank"
             rel="noopener noreferrer"
             className="ghost"

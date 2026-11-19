@@ -1,0 +1,31 @@
+{
+ "sha": "63fdb511c27afcebce797e3db580b3534ddfa639",
+ "html_url": "https://github.com/torvalds/linux/commit/63fdb511c27afcebce797e3db580b3534ddfa639",
+ "commit": {
+  "author": {
+   "name": "Linus Torvalds",
+   "email": "torvalds@linux-foundation.org",
+   "date": "2026-11-17T19:51:40Z"
+  },
+  "committer": {
+   "name": "Linus Torvalds",
+   "email": "torvalds@linux-foundation.org",
+   "date": "2026-11-17T19:51:40Z"
+  },
+  "message": "(trimmed)"
+ },
+ "author": {
+  "login": "torvalds",
+  "id": 1024025,
+  "html_url": "https://github.com/torvalds",
+  "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+  "type": "User"
+ },
+ "committer": {
+  "login": "torvalds",
+  "id": 1024025,
+  "html_url": "https://github.com/torvalds",
+  "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+  "type": "User"
+ }
+}

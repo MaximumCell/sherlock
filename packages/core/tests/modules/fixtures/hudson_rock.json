@@ -1,0 +1,42 @@
+{
+ "message": "This email address is associated with a computer that was infected by an info-stealer, all the credentials saved on this computer are at risk of being accessed by cybercriminals.",
+ "stealers": [
+  {
+   "total_corporate_services": 2,
+   "total_user_services": 90,
+   "date_compromised": "2024-08-24T15:29:20.000Z",
+   "stealer_family": "Lumma",
+   "computer_name": "EXAMPLE-PC",
+   "operating_system": "Windows 11 Home (10.0.22631) x64",
+   "malware_path": "C:\\Windows\\example.exe",
+   "antiviruses": ["Windows Defender"],
+   "ip": "203.0.***.**",
+   "top_passwords": ["E********1", "x******2"],
+   "top_logins": ["e**********@example.com", "e******e"]
+  },
+  {
+   "total_corporate_services": 0,
+   "total_user_services": 12,
+   "date_compromised": "2025-01-02T00:00:00.000Z",
+   "computer_name": "DESKTOP-EXAMPLE (User)",
+   "operating_system": "Windows 10 build 19045",
+   "malware_path": "Not Found",
+   "antiviruses": [],
+   "ip": "198.51.**.***",
+   "top_passwords": ["p******d"],
+   "top_logins": ["u**r"]
+  },
+  {
+   "total_corporate_services": 1,
+   "total_user_services": 40,
+   "date_compromised": "2025-01-02T00:00:00.000Z",
+   "computer_name": "LAPTOP-EXAMPLE (User)",
+   "operating_system": "Windows 11 Pro 25H2 (Build 26200)",
+   "malware_path": "Not Found",
+   "antiviruses": ["Windows Defender"],
+   "ip": "192.0.*.**",
+   "top_passwords": ["q*****y"],
+   "top_logins": ["u***2"]
+  }
+ ]
+}

@@ -1,0 +1,25 @@
+{
+ "items": [
+  {
+   "creation_date": 1792606165,
+   "post_type": "answer",
+   "post_id": 80011660,
+   "link": "https://stackoverflow.com/a/80011660"
+  },
+  {
+   "creation_date": 1785442371,
+   "post_type": "answer",
+   "post_id": 79989305,
+   "link": "https://stackoverflow.com/a/79989305"
+  },
+  {
+   "creation_date": 1784823192,
+   "post_type": "answer",
+   "post_id": 79984279,
+   "link": "https://stackoverflow.com/a/79984279"
+  }
+ ],
+ "has_more": true,
+ "quota_max": 300,
+ "quota_remaining": 299
+}

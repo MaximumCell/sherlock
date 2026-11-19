@@ -1,0 +1,20 @@
+[project]
+name = "sherlock-worker"
+version = "2.0.0"
+description = "Sherlock queue worker: runs collector modules for one queue"
+requires-python = ">=3.11"
+dependencies = [
+    "sherlock-core[identity,infra,media,phone]",
+    "fastapi>=0.115",
+    "uvicorn>=0.32",
+]
+
+[tool.uv.sources]
+sherlock-core = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["worker"]

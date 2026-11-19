@@ -1,0 +1,241 @@
+{
+ "example.com": {
+  "A": {
+   "Status": 0,
+   "TC": false,
+   "RD": true,
+   "RA": true,
+   "AD": true,
+   "CD": false,
+   "Question": [
+    {
+     "name": "example.com.",
+     "type": 1
+    }
+   ],
+   "Answer": [
+    {
+     "name": "example.com.",
+     "type": 1,
+     "TTL": 300,
+     "data": "104.20.23.154"
+    },
+    {
+     "name": "example.com.",
+     "type": 1,
+     "TTL": 300,
+     "data": "172.66.147.243"
+    }
+   ],
+   "Comment": "Response from 162.159.44.228."
+  },
+  "AAAA": {
+   "Status": 0,
+   "TC": false,
+   "RD": true,
+   "RA": true,
+   "AD": true,
+   "CD": false,
+   "Question": [
+    {
+     "name": "example.com.",
+     "type": 28
+    }
+   ],
+   "Answer": [
+    {
+     "name": "example.com.",
+     "type": 28,
+     "TTL": 300,
+     "data": "2606:4700:10::ac42:93f3"
+    },
+    {
+     "name": "example.com.",
+     "type": 28,
+     "TTL": 300,
+     "data": "2606:4700:10::6814:179a"
+    }
+   ],
+   "Comment": "Response from 108.162.195.228."
+  },
+  "MX": {
+   "Status": 0,
+   "TC": false,
+   "RD": true,
+   "RA": true,
+   "AD": true,
+   "CD": false,
+   "Question": [
+    {
+     "name": "example.com.",
+     "type": 15
+    }
+   ],
+   "Answer": [
+    {
+     "name": "example.com.",
+     "type": 15,
+     "TTL": 166,
+     "data": "0 ."
+    }
+   ]
+  },
+  "NS": {
+   "Status": 0,
+   "TC": false,
+   "RD": true,
+   "RA": true,
+   "AD": true,
+   "CD": false,
+   "Question": [
+    {
+     "name": "example.com.",
+     "type": 2
+    }
+   ],
+   "Answer": [
+    {
+     "name": "example.com.",
+     "type": 2,
+     "TTL": 21600,
+     "data": "elliott.ns.cloudflare.com."
+    },
+    {
+     "name": "example.com.",
+     "type": 2,
+     "TTL": 21600,
+     "data": "hera.ns.cloudflare.com."
+    }
+   ],
+   "Comment": "Response from 108.162.192.162."
+  },
+  "CNAME": {
+   "Status": 0,
+   "TC": false,
+   "RD": true,
+   "RA": true,
+   "AD": true,
+   "CD": false,
+   "Question": [
+    {
+     "name": "example.com.",
+     "type": 5
+    }
+   ],
+   "Authority": [
+    {
+     "name": "example.com.",
+     "type": 6,
+     "TTL": 1688,
+     "data": "elliott.ns.cloudflare.com. dns.cloudflare.com. 2420077714 10000 2400 604800 1800"
+    }
+   ]
+  },
+  "TXT": {
+   "Status": 0,
+   "TC": false,
+   "RD": true,
+   "RA": true,
+   "AD": true,
+   "CD": false,
+   "Question": [
+    {
+     "name": "example.com.",
+     "type": 16
+    }
+   ],
+   "Answer": [
+    {
+     "name": "example.com.",
+     "type": 16,
+     "TTL": 300,
+     "data": "v=spf1 -all"
+    },
+    {
+     "name": "example.com.",
+     "type": 16,
+     "TTL": 300,
+     "data": "_k2n1y4vw3qtb4skdx9e7dxt97qrmmq9"
+    }
+   ],
+   "Comment": "Response from 172.64.32.162."
+  }
+ },
+ "_dmarc.example.com": {
+  "TXT": {
+   "Status": 0,
+   "TC": false,
+   "RD": true,
+   "RA": true,
+   "AD": true,
+   "CD": false,
+   "Question": [
+    {
+     "name": "_dmarc.example.com.",
+     "type": 16
+    }
+   ],
+   "Answer": [
+    {
+     "name": "_dmarc.example.com.",
+     "type": 16,
+     "TTL": 300,
+     "data": "v=DMARC1;p=reject;sp=reject;adkim=s;aspf=s"
+    }
+   ],
+   "Comment": "Response from 162.159.44.228."
+  }
+ },
+ "nxdomain": {
+  "Status": 0,
+  "TC": false,
+  "RD": true,
+  "RA": true,
+  "AD": true,
+  "CD": false,
+  "Question": [
+   {
+    "name": "nx-zzq-918273.example.com.",
+    "type": 1
+   }
+  ],
+  "Authority": [
+   {
+    "name": "example.com.",
+    "type": 6,
+    "TTL": 1800,
+    "data": "elliott.ns.cloudflare.com. dns.cloudflare.com. 2420077714 10000 2400 604800 1800"
+   }
+  ],
+  "Comment": "Response from 172.64.35.228."
+ },
+ "cname_chain": {
+  "Status": 0,
+  "TC": false,
+  "RD": true,
+  "RA": true,
+  "AD": false,
+  "CD": false,
+  "Question": [
+   {
+    "name": "www.python.org.",
+    "type": 1
+   }
+  ],
+  "Answer": [
+   {
+    "name": "www.python.org.",
+    "type": 5,
+    "TTL": 18235,
+    "data": "dualstack.python.map.fastly.net."
+   },
+   {
+    "name": "dualstack.python.map.fastly.net.",
+    "type": 1,
+    "TTL": 60,
+    "data": "167.82.48.223"
+   }
+  ],
+  "Comment": "Response from 2a04:4e47:1::32."
+ }
+}

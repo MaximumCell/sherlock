@@ -1,0 +1,157 @@
+{
+ "meta": {
+  "count": 3,
+  "page": 1,
+  "per_page": 5,
+  "cost_usd": 0.001
+ },
+ "results": [
+  {
+   "id": "https://openalex.org/A5025908133",
+   "orcid": "https://orcid.org/0000-0003-1279-3709",
+   "display_name": "Tim Berners‐Lee",
+   "display_name_alternatives": [
+    "Berners-Lee Tim",
+    "Berners-Lee, T.",
+    "Berners-Lee, Tim",
+    "Berners-Lee, Tim 1955-",
+    "Berners-Lee, Tim, 1955-",
+    "Berners-Lee,Tim"
+   ],
+   "works_count": 205,
+   "cited_by_count": 47472,
+   "summary_stats": {
+    "h_index": 54
+   },
+   "affiliations": [
+    {
+     "institution": {
+      "id": "https://openalex.org/I204250578",
+      "display_name": "University of California, Irvine",
+      "country_code": "US"
+     },
+     "years": [
+      1996
+     ]
+    },
+    {
+     "institution": {
+      "id": "https://openalex.org/I40120149",
+      "display_name": "University of Oxford",
+      "country_code": "GB"
+     },
+     "years": [
+      2025,
+      2020
+     ]
+    },
+    {
+     "institution": {
+      "id": "https://openalex.org/I4210087207",
+      "display_name": "World Wide Web Consortium",
+      "country_code": "US"
+     },
+     "years": [
+      2017,
+      2010,
+      2008,
+      2006
+     ]
+    },
+    {
+     "institution": {
+      "id": "https://openalex.org/I4210093566",
+      "display_name": "National Institute for Subatomic Physics",
+      "country_code": "NL"
+     },
+     "years": [
+      1994
+     ]
+    }
+   ],
+   "last_known_institutions": [
+    {
+     "id": "https://openalex.org/I40120149",
+     "display_name": "University of Oxford",
+     "country_code": "GB"
+    }
+   ],
+   "topics": [
+    {
+     "id": "https://openalex.org/T10215",
+     "display_name": "Semantic Web and Ontologies"
+    },
+    {
+     "id": "https://openalex.org/T12601",
+     "display_name": "Web Applications and Data Management"
+    },
+    {
+     "id": "https://openalex.org/T14330",
+     "display_name": "Library Science and Information Systems"
+    },
+    {
+     "id": "https://openalex.org/T12797",
+     "display_name": "History of Computing Technologies"
+    }
+   ]
+  },
+  {
+   "id": "https://openalex.org/A5028902256",
+   "orcid": null,
+   "display_name": "D. Tim Berners-Lee",
+   "display_name_alternatives": [
+    "D. Tim Berners-Lee"
+   ],
+   "works_count": 1,
+   "cited_by_count": 0,
+   "summary_stats": {
+    "h_index": 0
+   },
+   "affiliations": [],
+   "last_known_institutions": [],
+   "topics": [
+    {
+     "id": "https://openalex.org/T10258",
+     "display_name": "Philosophy and Theoretical Science"
+    },
+    {
+     "id": "https://openalex.org/T13308",
+     "display_name": "Cybernetics and Technology in Society"
+    },
+    {
+     "id": "https://openalex.org/T13904",
+     "display_name": "Artificial Intelligence Applications"
+    }
+   ]
+  },
+  {
+   "id": "https://openalex.org/A5084676968",
+   "orcid": null,
+   "display_name": "C. Tim Berners-Lee",
+   "display_name_alternatives": [
+    "C. Tim Berners-Lee"
+   ],
+   "works_count": 1,
+   "cited_by_count": 0,
+   "summary_stats": {
+    "h_index": 0
+   },
+   "affiliations": [],
+   "last_known_institutions": [],
+   "topics": [
+    {
+     "id": "https://openalex.org/T10258",
+     "display_name": "Philosophy and Theoretical Science"
+    },
+    {
+     "id": "https://openalex.org/T13308",
+     "display_name": "Cybernetics and Technology in Society"
+    },
+    {
+     "id": "https://openalex.org/T13904",
+     "display_name": "Artificial Intelligence Applications"
+    }
+   ]
+  }
+ ]
+}

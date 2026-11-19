@@ -1,0 +1,387 @@
+{
+ "entities": {
+  "Q80": {
+   "id": "Q80",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Tim Berners-Lee"
+    }
+   },
+   "descriptions": {
+    "en": {
+     "language": "en",
+     "value": "English computer scientist (born 1955)"
+    }
+   },
+   "aliases": {
+    "en": [
+     {
+      "language": "en",
+      "value": "Sir Timothy John Berners-Lee"
+     },
+     {
+      "language": "en",
+      "value": "Timothy John Berners-Lee"
+     },
+     {
+      "language": "en",
+      "value": "TimBL"
+     }
+    ]
+   },
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 5,
+         "id": "Q5"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     }
+    ],
+    "P106": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P106",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 82594,
+         "id": "Q82594"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P106",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 169470,
+         "id": "Q169470"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P106",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 5482740,
+         "id": "Q5482740"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P106",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1622272,
+         "id": "Q1622272"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P106",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 6859454,
+         "id": "Q6859454"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P106",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 81096,
+         "id": "Q81096"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     }
+    ],
+    "P108": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P108",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 37033,
+         "id": "Q37033"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P108",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 7432436,
+         "id": "Q7432436"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P108",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 49108,
+         "id": "Q49108"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P108",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 7204713,
+         "id": "Q7204713"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal",
+      "qualifiers": {
+       "P582": []
+      }
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P108",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 42944,
+         "id": "Q42944"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal",
+      "qualifiers": {
+       "P582": []
+      }
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P108",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 42944,
+         "id": "Q42944"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal",
+      "qualifiers": {
+       "P582": []
+      }
+     }
+    ],
+    "P69": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P69",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 73094,
+         "id": "Q73094"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal",
+      "qualifiers": {
+       "P582": []
+      }
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P69",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 5369138,
+         "id": "Q5369138"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal",
+      "qualifiers": {
+       "P582": []
+      }
+     }
+    ],
+    "P496": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P496",
+       "datavalue": {
+        "value": "0000-0003-1279-3709",
+        "type": "string"
+       }
+      },
+      "rank": "normal"
+     }
+    ],
+    "P2002": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P2002",
+       "datavalue": {
+        "value": "timberners_lee",
+        "type": "string"
+       }
+      },
+      "rank": "normal"
+     }
+    ],
+    "P2037": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P2037",
+       "datavalue": {
+        "value": "timbl",
+        "type": "string"
+       }
+      },
+      "rank": "normal"
+     }
+    ],
+    "P4033": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P4033",
+       "datavalue": {
+        "value": "timbl@w3c.social",
+        "type": "string"
+       }
+      },
+      "rank": "normal"
+     }
+    ]
+   },
+   "sitelinks": {
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Tim Berners-Lee",
+     "badges": []
+    }
+   }
+  },
+  "Q120373140": {
+   "id": "Q120373140",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Tim Berners-Lee"
+    }
+   },
+   "descriptions": {
+    "en": {
+     "language": "en",
+     "value": "2015 edition of a biography by Claudia Martin"
+    }
+   },
+   "aliases": {
+    "en": [
+     {
+      "language": "en",
+      "value": "Tim Berners-Lee: Creator of the web"
+     }
+    ]
+   },
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 3331189,
+         "id": "Q3331189"
+        },
+        "type": "wikibase-entityid"
+       }
+      },
+      "rank": "normal"
+     }
+    ]
+   },
+   "sitelinks": {}
+  }
+ }
+}

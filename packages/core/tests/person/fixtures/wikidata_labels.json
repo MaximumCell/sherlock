@@ -1,0 +1,135 @@
+{
+ "entities": {
+  "Q82594": {
+   "type": "item",
+   "id": "Q82594",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "computer scientist"
+    }
+   }
+  },
+  "Q169470": {
+   "type": "item",
+   "id": "Q169470",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "physicist"
+    }
+   }
+  },
+  "Q5482740": {
+   "type": "item",
+   "id": "Q5482740",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "programmer"
+    }
+   }
+  },
+  "Q1622272": {
+   "type": "item",
+   "id": "Q1622272",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "university teacher"
+    }
+   }
+  },
+  "Q6859454": {
+   "type": "item",
+   "id": "Q6859454",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "web developer"
+    }
+   }
+  },
+  "Q81096": {
+   "type": "item",
+   "id": "Q81096",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "engineer"
+    }
+   }
+  },
+  "Q37033": {
+   "type": "item",
+   "id": "Q37033",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "World Wide Web Consortium"
+    }
+   }
+  },
+  "Q7432436": {
+   "type": "item",
+   "id": "Q7432436",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "School of Electronics and Computer Science, University of Southampton"
+    }
+   }
+  },
+  "Q49108": {
+   "type": "item",
+   "id": "Q49108",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Massachusetts Institute of Technology"
+    }
+   }
+  },
+  "Q7204713": {
+   "type": "item",
+   "id": "Q7204713",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Plessey"
+    }
+   }
+  },
+  "Q42944": {
+   "type": "item",
+   "id": "Q42944",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "CERN"
+    }
+   }
+  },
+  "Q73094": {
+   "type": "item",
+   "id": "Q73094",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "The Queen's College"
+    }
+   }
+  },
+  "Q5369138": {
+   "type": "item",
+   "id": "Q5369138",
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Emanuel School"
+    }
+   }
+  }
+ },
+ "success": 1
+}

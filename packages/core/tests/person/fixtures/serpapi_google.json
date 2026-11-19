@@ -1,0 +1,37 @@
+{
+ "search_metadata": {
+  "status": "Success"
+ },
+ "search_parameters": {
+  "engine": "google",
+  "q": "test",
+  "google_domain": "google.com",
+  "device": "desktop"
+ },
+ "organic_results": [
+  {
+   "position": 1,
+   "title": "Speedtest by Ookla - The Global Broadband Speed Test",
+   "link": "https://www.speedtest.net/",
+   "displayed_link": "https://www.speedtest.net",
+   "snippet": "Speedtest is better with the app. Download the Speedtest app for more metrics, video testing, mobile coverage maps, and more. Get it on Google Play",
+   "source": "Speedtest by Ookla"
+  },
+  {
+   "position": 2,
+   "title": "Fast.com: Internet Speed Test",
+   "link": "https://fast.com/",
+   "displayed_link": "https://fast.com",
+   "snippet": "How fast is your download speed? In seconds, FAST.com's simple Internet speed test will estimate your ISP speed.",
+   "source": "Fast.com"
+  },
+  {
+   "position": 3,
+   "title": "Test",
+   "link": "https://en.wikipedia.org/wiki/Test",
+   "displayed_link": "https://en.wikipedia.org › wiki › Test",
+   "snippet": "Test(s), testing, or TEST most often refers to: Test (assessment), an educational assessment intended to measure the respondents' knowledge or other abilities",
+   "source": "Wikipedia"
+  }
+ ]
+}

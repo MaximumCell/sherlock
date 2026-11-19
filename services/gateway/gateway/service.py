@@ -68,9 +68,10 @@ def consume_llm_quota(store: Store, principal: Principal) -> None:
         raise HTTPException(429, "Daily assistant limit reached for this session. Try again tomorrow.")
 
 
-def plan_or_400(case_id: str, target_type: str, value: str, modules: list[str] | None = None) -> list[Row]:
+def plan_or_400(case_id: str, target_type: str, value: str, modules: list[str] | None = None,
+                params: Row | None = None) -> list[Row]:
     try:
-        return plan_scan(case_id, target_type, value, modules)
+        return plan_scan(case_id, target_type, value, modules, params=params)
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
 
@@ -91,13 +92,27 @@ def enqueue_planned(store: Store, principal: Principal, case_id: str, planned: l
         "batch_id": first["batch_id"], "type": first["target_type"], "value": first["target_value"],
         "modules": [j["module"] for j in planned], "user": principal.user_id,
     })
+    if first["target_type"] == "name":   # searches for a person are audited on their own, with who asked
+        store.log(case_id, "name_search", actor, {
+            "batch_id": first["batch_id"], "value": first["target_value"], "hints": first.get("params") or {},
+            "user": principal.user_id,
+        })
     return jobs
 
 
+def name_params(target_type: str, hints: Any) -> Row | None:
+    """Job params for a scan's hints (`schemas.NameHints`). Hints only make sense for a name search."""
+    if hints is None:
+        return None
+    if target_type != "name":
+        raise HTTPException(400, "hints are only accepted for name searches (type \"name\")")
+    return hints.params()
+
+
 def start_scan(store: Store, principal: Principal, case_id: str, target_type: str, value: str,
-               modules: list[str] | None = None, *, actor: str = "user") -> list[Row]:
+               modules: list[str] | None = None, *, actor: str = "user", params: Row | None = None) -> list[Row]:
     """Validate, authorise, rate-limit and enqueue one scan batch. Raises HTTPException."""
     check_target_allowed(principal, target_type)
-    planned = plan_or_400(case_id, target_type, value, modules)
+    planned = plan_or_400(case_id, target_type, value, modules, params=params)
     consume_scan_quota(store, principal, target_type)
     return enqueue_planned(store, principal, case_id, planned, actor=actor)

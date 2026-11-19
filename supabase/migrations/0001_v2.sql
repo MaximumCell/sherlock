@@ -12,7 +12,6 @@
 --   * RLS          : every visitor only reads their own cases (plus demo cases)
 --   * Realtime     : live updates for jobs, findings, correlations
 
-create extension if not exists pgcrypto;
 
 -- ---------------------------------------------------------------- cases
 alter table cases add column if not exists title       text;
@@ -31,7 +30,11 @@ alter table raw_findings add column if not exists job_id      uuid;
 alter table raw_findings add column if not exists curated     boolean not null default false;
 
 update raw_findings
-   set finding_key = encode(digest(source_tool || '|' || platform || '|' || identifier_value, 'sha256'), 'hex')
+   -- must equal sherlock_core.models.finding_key() so a rescan updates these rows
+   set finding_key = encode(sha256(convert_to(
+         source_tool || '|' || platform || '|' || lower(btrim(identifier_value)) || '|' ||
+         coalesce(extra_metadata ->> 'breach_name', extra_metadata ->> 'date_compromised', ''),
+       'UTF8')), 'hex')
  where finding_key is null;
 update raw_findings
    set curated = true

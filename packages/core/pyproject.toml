@@ -16,6 +16,9 @@ identity = ["user-scanner>=1.4.3", "dnspython>=2.7"]
 infra = ["dnspython>=2.7"]
 media = ["pillow>=11", "imagehash>=4.3"]
 phone = ["phonenumbers>=8.13"]
+# keyless web-search fallback of the name-search module `person_web` (see sherlock_core/search/keyless.py).
+# The gateway installs it too, so module availability is judged the same way when a scan is planned.
+search = ["ddgs>=9.16"]
 
 [build-system]
 requires = ["hatchling"]

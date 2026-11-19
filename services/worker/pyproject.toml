@@ -4,7 +4,7 @@ version = "2.0.0"
 description = "Sherlock queue worker: runs collector modules for one queue"
 requires-python = ">=3.11"
 dependencies = [
-    "sherlock-core[identity,infra,media,phone]",
+    "sherlock-core[identity,infra,media,phone,search]",
     "fastapi>=0.115",
     "uvicorn>=0.32",
 ]

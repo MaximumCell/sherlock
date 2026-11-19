@@ -9,7 +9,8 @@ import { bandFor } from "../mappers";
 const share = (n: number, saturation: number) =>
   n <= 0 ? 0 : Math.min(1, Math.log1p(n) / Math.log1p(saturation));
 const round1 = (n: number) => Math.round(n * 10) / 10;
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const plural = (n: number, word: string) =>
+  `${n} ${n === 1 ? word : /(ch|sh|s|x)$/.test(word) ? `${word}es` : word.endsWith("y") ? `${word.slice(0, -1)}ies` : `${word}s`}`;
 
 function factor(
   key: string,
@@ -51,7 +52,7 @@ export function scoreFixtureCase(findings: Finding[], correlations: Correlation[
     30,
     breaches.length === 0 ? 0 : 30 * (0.45 * share(breaches.length, 20) + 0.15 + 0.3 * share(sensitive.length, 4)),
     breaches.length
-      ? `${plural(breaches.length, "breach")} list this subject; ${sensitive.length} exposed passwords, phone numbers or addresses.`
+      ? `Listed in ${plural(breaches.length, "breach")}; ${sensitive.length} exposed passwords, phone numbers or addresses.`
       : "No breach listings found for the scanned identifiers.",
     breaches,
     breaches.length
@@ -86,7 +87,7 @@ export function scoreFixtureCase(findings: Finding[], correlations: Correlation[
     15,
     15 * share(approved.length, 10),
     approved.length
-      ? `${plural(approved.length, "approved correlation")} tie these accounts to one person.`
+      ? `${plural(approved.length, "approved correlation")} tying accounts to one person.`
       : "No approved correlations yet. Approve links in Review to count them.",
     linkEvidence,
     approved.length
@@ -162,7 +163,7 @@ export function scoreFixtureCase(findings: Finding[], correlations: Correlation[
     "Image location metadata",
     5,
     5 * Math.min(1, Math.sqrt(gps.length / 2)),
-    gps.length ? `${plural(gps.length, "image")} carry GPS coordinates.` : "No image carries GPS coordinates.",
+    gps.length ? `${plural(gps.length, "image")} with GPS coordinates.` : "No image carries GPS coordinates.",
     gps,
     gps.length ? ["Strip location metadata before publishing photos."] : [],
   );

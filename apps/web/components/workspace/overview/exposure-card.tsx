@@ -85,9 +85,9 @@ export function ExposureCard({ caseId }: { caseId: string }) {
             </p>
           </div>
           {scored.length ? (
-            <ul className="divide-y divide-border">
+            <ul className="grid grid-cols-1 content-start gap-x-8 gap-y-4 lg:grid-cols-2">
               {scored.map((factor) => (
-                <ExposureFactorRow key={factor.key} factor={factor} findings={byId} barClass={meta.bar} />
+                <ExposureFactorRow key={factor.key} factor={factor} findings={byId} />
               ))}
             </ul>
           ) : (

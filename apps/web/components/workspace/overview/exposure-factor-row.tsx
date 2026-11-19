@@ -13,16 +13,16 @@ const EVIDENCE_SHOWN = 6;
 export function ExposureFactorRow({
   factor,
   findings,
-  barClass,
 }: {
   factor: ExposureFactor;
   findings: ReadonlyMap<string, Finding>;
-  barClass: string;
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const { set } = useUrlState();
   const share = factor.max_points > 0 ? Math.min(1, factor.points / factor.max_points) : 0;
+  // colour by how close the factor is to its cap, not by the overall band
+  const barClass = share >= 0.66 ? "bg-danger" : share >= 0.33 ? "bg-warning" : "bg-accent";
   const evidence = factor.evidence_finding_ids
     .map((id) => findings.get(id))
     .filter((f): f is Finding => f !== undefined);
@@ -30,7 +30,7 @@ export function ExposureFactorRow({
   const points = Number.isInteger(factor.points) ? factor.points : factor.points.toFixed(1);
 
   return (
-    <li className="py-3 first:pt-0 last:pb-0">
+    <li className="min-w-0">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-sm font-medium">{factor.label}</span>
         <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">

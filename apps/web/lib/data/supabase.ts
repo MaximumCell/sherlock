@@ -37,6 +37,18 @@ import type {
   SessionInfo,
 } from "./types";
 
+/**
+ * Supabase hands back the SAME channel object for a repeated name, and a channel
+ * cannot take new listeners once subscribed. Removing a channel is asynchronous, so
+ * a quick unsubscribe/resubscribe (React strict mode, navigating back to a page)
+ * would hit the old one. Every subscription therefore gets its own channel name.
+ */
+let channelSeq = 0;
+function uniqueChannel(base: string): string {
+  channelSeq += 1;
+  return `${base}:${channelSeq}:${Math.random().toString(36).slice(2, 8)}`;
+}
+
 const PAGE = 1000; // PostgREST default max rows per request
 
 function toSession(user: User | null | undefined): SessionInfo | null {
@@ -241,7 +253,7 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
     },
 
     subscribeCase(caseId, onEvent) {
-      const channel = client.channel(`case:${caseId}`);
+      const channel = client.channel(uniqueChannel(`case:${caseId}`));
       const listen = (table: RealtimeTable, filter: string) => {
         channel.on("postgres_changes", { event: "*", schema: "public", table, filter }, (payload) => {
           const event = toChangeEvent(table, payload);
@@ -260,7 +272,7 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
     },
 
     subscribeCaseList(onChange) {
-      const channel = client.channel("case-list");
+      const channel = client.channel(uniqueChannel("case-list"));
       for (const table of ["cases", "jobs", "correlations"] as const) {
         channel.on("postgres_changes", { event: "*", schema: "public", table }, () => onChange());
       }

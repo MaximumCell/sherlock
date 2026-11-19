@@ -1,0 +1,73 @@
+{
+  "status": {
+    "code": 0,
+    "name": "OK"
+  },
+  "them": [
+    {
+      "basics": {
+        "username": "chris",
+        "ctime": 1391653108,
+        "username_cased": "chris"
+      },
+      "profile": {
+        "mtime": null,
+        "full_name": "Chris Coyne",
+        "location": "Maine",
+        "bio": "Previously worked on 🔐 Keybase, 😻OkCupid, 📘SparkNotes, and some random other junk. I love making things."
+      },
+      "pictures": {
+        "primary": {
+          "url": "https://s3.amazonaws.com/keybase_processed_uploads/4c7cff041ee54c71fd25595898133505_360_360.jpg",
+          "source": null
+        }
+      },
+      "proofs_summary": {
+        "all": [
+          {
+            "proof_type": "twitter",
+            "nametag": "malgorithms",
+            "state": 1,
+            "service_url": "https://twitter.com/malgorithms",
+            "presentation_group": "twitter"
+          },
+          {
+            "proof_type": "github",
+            "nametag": "malgorithms",
+            "state": 1,
+            "service_url": "https://github.com/malgorithms",
+            "presentation_group": "github"
+          },
+          {
+            "proof_type": "reddit",
+            "nametag": "malgorithms",
+            "state": 1,
+            "service_url": "https://reddit.com/user/malgorithms",
+            "presentation_group": "reddit"
+          },
+          {
+            "proof_type": "hackernews",
+            "nametag": "malgorithms",
+            "state": 1,
+            "service_url": "https://news.ycombinator.com/user?id=malgorithms",
+            "presentation_group": "hackernews"
+          },
+          {
+            "proof_type": "dns",
+            "nametag": "chriscoyne.com",
+            "state": 1,
+            "service_url": "http://chriscoyne.com",
+            "presentation_group": "web:chriscoyne.com"
+          },
+          {
+            "proof_type": "generic_web_site",
+            "nametag": "chriscoyne.com",
+            "state": 1,
+            "service_url": "https://chriscoyne.com",
+            "presentation_group": "web:chriscoyne.com"
+          }
+        ]
+      }
+    }
+  ]
+}

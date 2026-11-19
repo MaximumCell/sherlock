@@ -1,11 +1,19 @@
 /**
  * Builds the entity graph model from case data. Pure and framework-free so it
- * can be unit-tested; `components/workspace/graph` maps it onto React Flow.
+ * can be unit-tested; `components/case/map` maps it onto React Flow.
  */
 import { findingCategory, findingTitle, safeImageUrl } from "../findings";
 import type { Case, Correlation, CorrelationStatus, Entity, Finding } from "../types";
 
-export const GRAPH_KINDS = ["seed", "account", "email", "infra", "breach", "handle", "cluster"] as const;
+export const GRAPH_KINDS = [
+  "seed",
+  "account",
+  "email",
+  "infra",
+  "breach",
+  "handle",
+  "cluster",
+] as const;
 export type GraphNodeKind = (typeof GRAPH_KINDS)[number];
 
 export interface GraphNode {
@@ -93,7 +101,16 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
     if (!nodes.has(node.id)) nodes.set(node.id, node);
   };
   const plain = (id: string, kind: GraphNodeKind, label: string, sublabel: string | null) =>
-    addNode({ id, kind, label, sublabel, findingId: null, memberIds: [], avatarUrl: null, curated: false });
+    addNode({
+      id,
+      kind,
+      label,
+      sublabel,
+      findingId: null,
+      memberIds: [],
+      avatarUrl: null,
+      curated: false,
+    });
 
   // 1. seed targets
   for (const idf of input.case.identifiers) {
@@ -197,7 +214,8 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
   for (const e of input.entities) {
     if (e.is_seed || e.kind === "url" || e.kind === "image") continue;
     const id = identifierNodeId(e.kind, e.value);
-    if (!nodes.has(id)) plain(id, kindForType(e.kind), e.value, e.scanned ? e.kind : `${e.kind} · not scanned`);
+    if (!nodes.has(id))
+      plain(id, kindForType(e.kind), e.value, e.scanned ? e.kind : `${e.kind} · not scanned`);
     const source = e.source_finding_id ? findingNodeId(e.source_finding_id) : null;
     if (source && nodes.has(source)) {
       edges.push({
@@ -237,7 +255,9 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
 
   // 6. kind filter
   const kinds = options.kinds;
-  const visible = [...nodes.values()].filter((n) => n.kind === "seed" || !kinds || kinds.has(n.kind));
+  const visible = [...nodes.values()].filter(
+    (n) => n.kind === "seed" || !kinds || kinds.has(n.kind),
+  );
   const visibleIds = new Set(visible.map((n) => n.id));
   return {
     nodes: visible,

@@ -31,7 +31,8 @@ export function buildSummarySentence(input: SummaryInput): string {
     if (scanning) {
       return `We are asking ${count(scanning.total, "data source")} about ${subject}. Results appear here as each one finishes.`;
     }
-    if (sources === 0) return `Nothing has been searched for ${subject} yet. Start a scan to see what is public.`;
+    if (sources === 0)
+      return `Nothing has been searched for ${subject} yet. Start a scan to see what is public.`;
     return `We checked ${count(sources, "site")} for ${subject} and found nothing public.`;
   }
 

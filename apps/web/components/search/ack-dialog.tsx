@@ -55,7 +55,10 @@ export function AckDialog({
             <Label htmlFor="authorised" className="text-sm font-normal leading-snug">
               I am authorised to investigate this target, or it is my own data. I will only use
               public information and follow the{" "}
-              <Link href="/about#responsible-use" className="text-accent underline underline-offset-2">
+              <Link
+                href="/about#responsible-use"
+                className="text-accent underline underline-offset-2"
+              >
                 responsible-use policy
               </Link>
               .

@@ -18,7 +18,12 @@ import {
   useJobs,
   useWakeStuckJobs,
 } from "@/lib/query/hooks";
-import { SCAN_ANCHOR, sectionFromUrl, visibleSections, type CaseSection as SectionId } from "@/lib/sections";
+import {
+  SCAN_ANCHOR,
+  sectionFromUrl,
+  visibleSections,
+  type CaseSection as SectionId,
+} from "@/lib/sections";
 import { useNearViewport } from "@/lib/use-near-viewport";
 import { useScrollSpy } from "@/lib/use-scroll-spy";
 import { useUrlState } from "@/lib/use-url-state";
@@ -56,7 +61,13 @@ export function CaseSkeleton() {
   );
 }
 
-function MapSection(props: { c: Case; findings: Finding[]; correlations: Correlation[]; entities: Entity[]; ready: boolean }) {
+function MapSection(props: {
+  c: Case;
+  findings: Finding[];
+  correlations: Correlation[];
+  entities: Entity[];
+  ready: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const near = useNearViewport(ref);
   return (
@@ -66,7 +77,11 @@ function MapSection(props: { c: Case; findings: Finding[]; correlations: Correla
       description="Each box is something we found; lines show how they connect. Solid green lines are links you confirmed, dashed amber ones still need your decision. Click anything for its details."
     >
       <div ref={ref}>
-        {near && props.ready ? <MapView {...props} /> : <Skeleton className="h-[65dvh] w-full rounded-2xl" />}
+        {near && props.ready ? (
+          <MapView {...props} />
+        ) : (
+          <Skeleton className="h-[65dvh] w-full rounded-2xl" />
+        )}
       </div>
     </CaseSection>
   );
@@ -99,11 +114,17 @@ export function CasePage({ caseId }: { caseId: string }) {
   const correlationList = useMemo(() => correlations.data ?? [], [correlations.data]);
   const entityList = useMemo(() => entities.data ?? [], [entities.data]);
   const hasPeople =
-    (c?.identifiers.some((i) => i.type === "name") ?? false) || jobList.some((j) => j.target_type === "name");
+    (c?.identifiers.some((i) => i.type === "name") ?? false) ||
+    jobList.some((j) => j.target_type === "name");
   const sections = visibleSections(hasPeople);
   const active = useScrollSpy(sections);
   const pending = correlationList.filter((x) => x.status === "pending").length;
-  const steps = deriveSteps({ jobs: jobList, pendingLinks: pending, totalLinks: correlationList.length });
+  const steps = deriveSteps({
+    jobs: jobList,
+    pendingLinks: pending,
+    totalLinks: correlationList.length,
+    results: findingList.filter((f) => f.status === "found").length,
+  });
   const progress = sourceProgress(jobList);
   const ready = !findings.isPending && !correlations.isPending && !jobs.isPending;
   const counts: Partial<Record<SectionId, number>> = {
@@ -120,12 +141,25 @@ export function CasePage({ caseId }: { caseId: string }) {
     const target = hash === SCAN_ANCHOR ? SCAN_ANCHOR : sectionFromUrl(params, hash, hasPeople);
     if (!target || (target === "summary" && hash !== "summary")) return;
     const id = target;
-    requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
+    const land = () => document.getElementById(id)?.scrollIntoView({ block: "start" });
+    requestAnimationFrame(land);
+    // the score and other late data can push the section down; settle once more
+    const settle = window.setTimeout(() => {
+      const top = document.getElementById(id)?.getBoundingClientRect().top ?? 0;
+      if (Math.abs(top - 144) > 24) land();
+    }, 700);
+    return () => window.clearTimeout(settle);
   }, [ready, c, params, hasPeople]);
 
   if (caseQuery.isPending) return <CaseSkeleton />;
   if (caseQuery.isError) {
-    return <ErrorState title="Could not load this investigation" error={caseQuery.error} onRetry={() => void caseQuery.refetch()} />;
+    return (
+      <ErrorState
+        title="Could not load this investigation"
+        error={caseQuery.error}
+        onRetry={() => void caseQuery.refetch()}
+      />
+    );
   }
   if (!c) {
     return (
@@ -155,7 +189,10 @@ export function CasePage({ caseId }: { caseId: string }) {
         className="sticky top-14 z-30 -mx-4 mt-6 border-b border-border/80 bg-background/85 px-4 py-2.5 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:-mx-6 sm:px-6"
       >
         <div className="flex items-center gap-4">
-          <p className="hidden w-44 shrink-0 truncate text-sm font-semibold lg:block" title={caseDisplayTitle(c)}>
+          <p
+            className="hidden w-44 shrink-0 truncate text-sm font-semibold lg:block"
+            title={caseDisplayTitle(c)}
+          >
             {caseDisplayTitle(c)}
           </p>
           <div className="min-w-0 flex-1">
@@ -163,21 +200,37 @@ export function CasePage({ caseId }: { caseId: string }) {
           </div>
         </div>
         <div className="mt-2.5 lg:hidden">
-          <SectionNav sections={sections} active={active} counts={counts} orientation="horizontal" />
+          <SectionNav
+            sections={sections}
+            active={active}
+            counts={counts}
+            orientation="horizontal"
+          />
         </div>
       </div>
 
       <div className="mt-8 lg:grid lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10">
         <aside className="hidden lg:block" data-print="hide">
           <div className="sticky top-40">
-            <SectionNav sections={sections} active={active} counts={counts} orientation="vertical" />
+            <SectionNav
+              sections={sections}
+              active={active}
+              counts={counts}
+              orientation="vertical"
+            />
           </div>
         </aside>
         <div className="min-w-0 space-y-12">
           <div data-print-unless-report>
             <ScanPanel caseId={caseId} jobs={jobList} loading={jobs.isPending} />
           </div>
-          <SummarySection c={c} findings={findingList} correlations={correlationList} jobs={jobList} loading={!ready} />
+          <SummarySection
+            c={c}
+            findings={findingList}
+            correlations={correlationList}
+            jobs={jobList}
+            loading={!ready}
+          />
           <FoundSection
             caseId={caseId}
             findings={findingList}
@@ -198,8 +251,20 @@ export function CasePage({ caseId }: { caseId: string }) {
             scanning={progress.scanning}
           />
           {hasPeople ? <PeopleSection caseId={caseId} /> : null}
-          <MapSection c={c} findings={findingList} correlations={correlationList} entities={entityList} ready={ready && !entities.isPending} />
-          <NextStepsSection c={c} entities={entityList} findings={findingList} jobs={jobList} loading={entities.isPending} />
+          <MapSection
+            c={c}
+            findings={findingList}
+            correlations={correlationList}
+            entities={entityList}
+            ready={ready && !entities.isPending}
+          />
+          <NextStepsSection
+            c={c}
+            entities={entityList}
+            findings={findingList}
+            jobs={jobList}
+            loading={entities.isPending}
+          />
           <HistorySection c={c} jobs={jobList} findings={findingList} loading={!ready} />
           <LazyReport caseId={caseId} />
         </div>

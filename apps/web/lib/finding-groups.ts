@@ -119,7 +119,8 @@ export function groupFindings(
     if (!bucket || bucket.items.length === 0) return [];
     const items = [...bucket.items].sort(
       (a, b) =>
-        highlightScore(b, linked) - highlightScore(a, linked) || a.platform.localeCompare(b.platform),
+        highlightScore(b, linked) - highlightScore(a, linked) ||
+        a.platform.localeCompare(b.platform),
     );
     return [{ id, ...FINDING_GROUP_META[id], items, misses: bucket.misses }];
   });

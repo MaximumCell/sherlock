@@ -49,7 +49,9 @@ export function ReportSection({ caseId, visible }: { caseId: string; visible: bo
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Could not copy", { description: "Clipboard access was blocked by the browser." });
+      toast.error("Could not copy", {
+        description: "Clipboard access was blocked by the browser.",
+      });
     }
   };
 
@@ -60,7 +62,12 @@ export function ReportSection({ caseId, visible }: { caseId: string; visible: bo
       description="Written from your current results and the links you confirmed. Copy it or print it."
       actions={
         <div className="flex flex-wrap gap-2" data-print="hide">
-          <Button variant="outline" size="sm" onClick={() => void report.refetch()} disabled={report.isFetching}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void report.refetch()}
+            disabled={report.isFetching}
+          >
             <RefreshCw className={report.isFetching ? "animate-spin" : undefined} aria-hidden />
             Regenerate
           </Button>
@@ -76,7 +83,9 @@ export function ReportSection({ caseId, visible }: { caseId: string; visible: bo
       }
     >
       {!visible && report.isPending ? (
-        <p className="text-sm text-muted-foreground">The report is written when you reach this section.</p>
+        <p className="text-sm text-muted-foreground">
+          The report is written when you reach this section.
+        </p>
       ) : report.isPending ? (
         <div className="space-y-3" aria-busy="true" aria-label="Generating report">
           <Skeleton className="h-8 w-80 max-w-full" />

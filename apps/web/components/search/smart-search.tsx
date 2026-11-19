@@ -70,7 +70,8 @@ export function SmartSearch({
     () => (type ? sourcesFor(catalogue.data?.modules ?? [], type) : []),
     [catalogue.data, type],
   );
-  const needsSignIn = type !== null && TARGET_TYPE_META[type].requiresSignIn && (session.data?.anonymous ?? true);
+  const needsSignIn =
+    type !== null && TARGET_TYPE_META[type].requiresSignIn && (session.data?.anonymous ?? true);
 
   const setValue = (next: string) => {
     if (onValueChange) onValueChange(next);
@@ -80,13 +81,16 @@ export function SmartSearch({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!value.trim()) return setError("Type a username, email, website, IP, phone, wallet, image link or name.");
-    if (!type) return setError("We could not tell what this is. Choose a type with the chip below the box.");
+    if (!value.trim())
+      return setError("Type a username, email, website, IP, phone, wallet, image link or name.");
+    if (!type)
+      return setError("We could not tell what this is. Choose a type with the chip below the box.");
     const result = validateTarget(type, value);
     if (!result.ok) return setError(result.error);
     if (needsSignIn) return setError("Searching a person's name needs a signed-in account.");
     const included = sources.filter((m) => m.available && !options.excluded.includes(m.name));
-    if (sources.length > 0 && included.length === 0) return setError("Pick at least one data source in More options.");
+    if (sources.length > 0 && included.length === 0)
+      return setError("Pick at least one data source in More options.");
     const narrowed = included.length < sources.filter((m) => m.available).length;
     const input: SmartSearchSubmit = {
       type,
@@ -107,14 +111,23 @@ export function SmartSearch({
   const errorId = `${id}-error`;
 
   return (
-    <form onSubmit={submit} noValidate className="w-full space-y-3" role="search" aria-label="Start a search">
+    <form
+      onSubmit={submit}
+      noValidate
+      className="w-full space-y-3"
+      role="search"
+      aria-label="Start a search"
+    >
       <div
         className={cn(
           "flex items-center gap-2 border border-input bg-card shadow-lift transition-shadow focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15",
           hero ? "rounded-2xl p-2 pl-4" : "rounded-xl p-1.5 pl-3",
         )}
       >
-        <Search className={cn("shrink-0 text-muted-foreground", hero ? "h-5 w-5" : "h-4 w-4")} aria-hidden />
+        <Search
+          className={cn("shrink-0 text-muted-foreground", hero ? "h-5 w-5" : "h-4 w-4")}
+          aria-hidden
+        />
         <input
           id={`${id}-input`}
           aria-label="What do you want to look into?"
@@ -125,14 +138,21 @@ export function SmartSearch({
           spellCheck={false}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={hero ? "A username, email, website, IP, phone, wallet or name" : "Username, email, website…"}
+          placeholder="Username, email, website, IP, name…"
           className={cn(
             "min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground/80 focus-visible:ring-0 focus-visible:ring-offset-0",
             hero ? "h-11 text-lg" : "h-9 text-base",
           )}
         />
-        <Button type="submit" size={hero ? "lg" : "default"} disabled={pending} className={hero ? "rounded-xl" : "rounded-lg"}>
-          <span className={cn(hero ? "" : "sr-only sm:not-sr-only")}>{pending ? "Starting…" : submitLabel}</span>
+        <Button
+          type="submit"
+          size={hero ? "lg" : "default"}
+          disabled={pending}
+          className={hero ? "rounded-xl" : "rounded-lg"}
+        >
+          <span className={cn(hero ? "" : "sr-only sm:not-sr-only")}>
+            {pending ? "Starting…" : submitLabel}
+          </span>
           <ArrowRight aria-hidden />
         </Button>
       </div>
@@ -155,7 +175,10 @@ export function SmartSearch({
           className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           More options
-          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", more && "rotate-180")} aria-hidden />
+          <ChevronDown
+            className={cn("h-3.5 w-3.5 transition-transform", more && "rotate-180")}
+            aria-hidden
+          />
         </button>
       </div>
 

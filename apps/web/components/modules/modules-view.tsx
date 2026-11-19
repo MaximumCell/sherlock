@@ -36,7 +36,10 @@ function SourceCard({ module: m, advanced }: { module: ModuleInfo; advanced: boo
           {advanced && m.requires_env.length ? (
             <span className="mt-1 block">
               {m.requires_env.map((key) => (
-                <code key={key} className="mr-1 rounded bg-warning/10 px-1 py-0.5 font-mono text-xs">
+                <code
+                  key={key}
+                  className="mr-1 rounded bg-warning/10 px-1 py-0.5 font-mono text-xs"
+                >
                   {key}
                 </code>
               ))}
@@ -90,7 +93,11 @@ export function ModulesView() {
           ))}
         </div>
       ) : catalogue.isError ? (
-        <ErrorState title="Could not load the data sources" error={catalogue.error} onRetry={() => void catalogue.refetch()} />
+        <ErrorState
+          title="Could not load the data sources"
+          error={catalogue.error}
+          onRetry={() => void catalogue.refetch()}
+        />
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
@@ -114,10 +121,21 @@ export function ModulesView() {
           {SOURCE_GROUPS.map((g) => {
             const list = modules.filter((m) => g.types.some((t) => m.inputs.includes(t)));
             return (
-              <section key={g.id} id={`sources-${g.id}`} aria-labelledby={`sources-${g.id}-title`} className="scroll-mt-24 space-y-3">
+              <section
+                key={g.id}
+                id={`sources-${g.id}`}
+                aria-labelledby={`sources-${g.id}-title`}
+                className="scroll-mt-24 space-y-3"
+              >
                 <div>
-                  <h2 id={`sources-${g.id}-title`} className="flex items-center gap-2 text-xl font-semibold">
-                    <TargetIcon type={g.types[0] ?? "username"} className="h-5 w-5 text-muted-foreground" />
+                  <h2
+                    id={`sources-${g.id}-title`}
+                    className="flex items-center gap-2 text-xl font-semibold"
+                  >
+                    <TargetIcon
+                      type={g.types[0] ?? "username"}
+                      className="h-5 w-5 text-muted-foreground"
+                    />
                     {g.title}
                     <span className="text-sm font-normal text-muted-foreground">{list.length}</span>
                   </h2>

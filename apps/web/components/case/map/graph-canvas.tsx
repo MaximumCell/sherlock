@@ -75,7 +75,7 @@ export function GraphCanvas({
       nodeOrigin={[0.5, 0.5]}
       onNodeClick={(_event, node) => onNodeClick(node.data.node)}
       fitView
-      fitViewOptions={{ padding: 0.08, minZoom: 0.5, maxZoom: 1.1 }}
+      fitViewOptions={{ padding: 0.06, minZoom: 0.3, maxZoom: 1.1 }}
       minZoom={0.08}
       maxZoom={2}
       nodesConnectable={false}

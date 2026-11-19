@@ -98,7 +98,10 @@ export function CommandPalette() {
           <CommandList className="max-h-[min(60dvh,420px)]">
             <CommandEmpty>Nothing matches. Try another word.</CommandEmpty>
             <CommandGroup heading="Actions">
-              <CommandItem value="new search investigation scan" onSelect={() => run(() => openNew())}>
+              <CommandItem
+                value="new search investigation scan"
+                onSelect={() => run(() => openNew())}
+              >
                 <Plus aria-hidden />
                 New search
                 <CommandShortcut>N</CommandShortcut>
@@ -113,7 +116,10 @@ export function CommandPalette() {
                   Search {DETECTION_LABEL[type]}
                 </CommandItem>
               ))}
-              <CommandItem value="take the tour help walkthrough" onSelect={() => run(() => router.push(TOUR_HREF))}>
+              <CommandItem
+                value="take the tour help walkthrough"
+                onSelect={() => run(() => router.push(TOUR_HREF))}
+              >
                 <Compass aria-hidden />
                 Take the tour
               </CommandItem>

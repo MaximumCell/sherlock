@@ -35,24 +35,30 @@ export function StartView() {
 
   return (
     <div className="space-y-14 pb-8">
-      <section className="mx-auto max-w-2xl space-y-6 pt-6 text-center sm:pt-14">
+      <section className="mx-auto max-w-3xl space-y-6 pt-6 text-center sm:pt-14">
         <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">What do you want to look into?</h1>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">
+            What do you want to look into?
+          </h1>
           <p className="mx-auto max-w-lg text-base text-muted-foreground sm:text-lg">
             Search what is public about a username, email, website, IP, phone, wallet, image or
             name. You decide what is real.
           </p>
         </div>
-        <SmartSearch
-          key={boxKey}
-          value={value}
-          onValueChange={setValue}
-          autoFocus
-          pending={start.pending}
-          onSubmit={start.submit}
-        />
+        <div className="mx-auto max-w-2xl">
+          <SmartSearch
+            key={boxKey}
+            value={value}
+            onValueChange={setValue}
+            autoFocus
+            pending={start.pending}
+            onSubmit={start.submit}
+          />
+        </div>
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Try an example. All of them are fictional.</p>
+          <p className="text-xs text-muted-foreground">
+            Try an example. All of them are fictional.
+          </p>
           <ul className="flex flex-wrap justify-center gap-1.5" aria-label="Examples">
             {EXAMPLES.map((ex) => (
               <li key={ex.type}>
@@ -79,7 +85,10 @@ export function StartView() {
           <HowItWorks onDismiss={() => setIntroDismissed(true)} />
           <p className="text-center text-sm text-muted-foreground">
             Want to see a finished investigation first?{" "}
-            <Link href="/demo" className="inline-flex items-center gap-1 font-medium text-accent hover:underline">
+            <Link
+              href="/demo"
+              className="inline-flex items-center gap-1 font-medium text-accent hover:underline"
+            >
               <PlayCircle className="h-4 w-4" aria-hidden />
               Try the demo
             </Link>

@@ -28,11 +28,26 @@ const DOES_NOT = [
 ];
 
 const STEPS: [title: string, body: string][] = [
-  ["Reading", "Your browser signs in to Supabase (anonymously by default) and reads investigations, results, links and scan progress directly, protected by row-level security. Changes arrive live."],
-  ["Asking", "Starting a search or answering a link question is a request to the gateway, a small FastAPI service. It checks who you are, applies rate limits and queues the work."],
-  ["Queueing", "Work waits in a Postgres table. Workers pick jobs up one at a time, report progress while they run, and retry when something goes wrong."],
-  ["Data sources", "Each data source is a small plugin that says what it can search. A worker runs it, stores the results, then looks for links again."],
-  ["Your decisions stick", "Every link has a stable key, so searching again never loses a yes or no you already gave."],
+  [
+    "Reading",
+    "Your browser signs in to Supabase (anonymously by default) and reads investigations, results, links and scan progress directly, protected by row-level security. Changes arrive live.",
+  ],
+  [
+    "Asking",
+    "Starting a search or answering a link question is a request to the gateway, a small FastAPI service. It checks who you are, applies rate limits and queues the work.",
+  ],
+  [
+    "Queueing",
+    "Work waits in a Postgres table. Workers pick jobs up one at a time, report progress while they run, and retry when something goes wrong.",
+  ],
+  [
+    "Data sources",
+    "Each data source is a small plugin that says what it can search. A worker runs it, stores the results, then looks for links again.",
+  ],
+  [
+    "Your decisions stick",
+    "Every link has a stable key, so searching again never loses a yes or no you already gave.",
+  ],
 ];
 
 function Rule({ ok, children }: { ok: boolean; children: string }) {
@@ -77,7 +92,11 @@ export default function AboutPage() {
 
       <HowItWorks headingLevel="h2" />
 
-      <section id="responsible-use" aria-labelledby="responsible-use-title" className="scroll-mt-20 space-y-5">
+      <section
+        id="responsible-use"
+        aria-labelledby="responsible-use-title"
+        className="scroll-mt-20 space-y-5"
+      >
         <div className="space-y-2">
           <h2 id="responsible-use-title" className="text-2xl font-semibold tracking-tight">
             Responsible use
@@ -112,7 +131,11 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section id="architecture" aria-labelledby="architecture-title" className="scroll-mt-20 space-y-5">
+      <section
+        id="architecture"
+        aria-labelledby="architecture-title"
+        className="scroll-mt-20 space-y-5"
+      >
         <div className="space-y-2">
           <h2 id="architecture-title" className="text-2xl font-semibold tracking-tight">
             Under the hood

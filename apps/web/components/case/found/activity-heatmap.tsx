@@ -60,7 +60,9 @@ export function ActivityHeatmap({ matrix }: { matrix: number[][] }) {
       </svg>
       <figcaption className="text-xs text-muted-foreground">
         {total} public events. Darker cells mean more activity
-        {peak ? `; peak on ${DAYS[peak.day]} around ${String(peak.hour).padStart(2, "0")}:00 UTC.` : "."}
+        {peak
+          ? `; peak on ${DAYS[peak.day]} around ${String(peak.hour).padStart(2, "0")}:00 UTC.`
+          : "."}
       </figcaption>
     </figure>
   );
@@ -81,7 +83,10 @@ function Strip({ values, labels, label }: { values: number[]; labels: string[]; 
             key={i}
             title={`${labels[i]}: ${v}`}
             className={v === 0 ? "flex-1 rounded-sm bg-muted" : "flex-1 rounded-sm bg-accent"}
-            style={{ height: `${Math.max(6, (v / max) * 100)}%`, opacity: v === 0 ? 1 : 0.35 + 0.65 * (v / max) }}
+            style={{
+              height: `${Math.max(6, (v / max) * 100)}%`,
+              opacity: v === 0 ? 1 : 0.35 + 0.65 * (v / max),
+            }}
           />
         ))}
       </div>
@@ -95,13 +100,29 @@ function Strip({ values, labels, label }: { values: number[]; labels: string[]; 
 }
 
 /** Hour-of-day and weekday histograms, for sources that do not give a full 7 x 24 matrix. */
-export function ActivityStrips({ hours, weekdays }: { hours: number[] | null; weekdays: number[] | null }) {
+export function ActivityStrips({
+  hours,
+  weekdays,
+}: {
+  hours: number[] | null;
+  weekdays: number[] | null;
+}) {
   return (
     <div className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-[3fr_1fr]">
       {hours ? (
-        <Strip values={hours} labels={hours.map((_, h) => `${String(h).padStart(2, "0")}:00 UTC`)} label="Activity by hour" />
+        <Strip
+          values={hours}
+          labels={hours.map((_, h) => `${String(h).padStart(2, "0")}:00 UTC`)}
+          label="Activity by hour"
+        />
       ) : null}
-      {weekdays ? <Strip values={weekdays} labels={DAYS.map((d) => d.slice(0, 1) + d.slice(1, 2))} label="Activity by weekday" /> : null}
+      {weekdays ? (
+        <Strip
+          values={weekdays}
+          labels={DAYS.map((d) => d.slice(0, 1) + d.slice(1, 2))}
+          label="Activity by weekday"
+        />
+      ) : null}
     </div>
   );
 }

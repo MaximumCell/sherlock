@@ -19,13 +19,16 @@ export function TargetList({ c, jobs, entities }: { c: Case; jobs: Job[]; entiti
       {c.identifiers.map((idf) => {
         const mine = jobs.filter((j) => same(j.target_value, idf.value));
         const running = mine.some((j) => j.status === "queued" || j.status === "running");
-        const scanned = mine.length > 0 || entities.some((e) => e.scanned && same(e.value, idf.value));
+        const scanned =
+          mine.length > 0 || entities.some((e) => e.scanned && same(e.value, idf.value));
         const pending = scan.isPending && scan.variables?.value === idf.value;
         const status = running
           ? "Searching now"
-          : scanned
+          : mine.length > 0
             ? `Searched with ${mine.length} data source${mine.length === 1 ? "" : "s"}`
-            : "Not searched yet";
+            : scanned
+              ? "Searched"
+              : "Not searched yet";
         return (
           <li key={`${idf.type}:${idf.value}`} className="flex items-center gap-3 px-4 py-3">
             <TargetIcon type={idf.type} className="h-4 w-4 shrink-0 text-muted-foreground" />

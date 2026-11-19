@@ -14,12 +14,12 @@ export function ScoreHint() {
   return (
     <InfoHint label="What is the exposure score?" title="Exposure score">
       <p>
-        A 0 to 100 estimate of how much a stranger can piece together about this target from
-        what was found. Higher means more is public.
+        A 0 to 100 estimate of how much a stranger can piece together about this target from what
+        was found. Higher means more is public.
       </p>
       <p>
-        It only counts results that were found and links you confirmed, so it changes as you
-        answer the link questions. It is not a security audit.
+        It only counts results that were found and links you confirmed, so it changes as you answer
+        the link questions. It is not a security audit.
       </p>
     </InfoHint>
   );

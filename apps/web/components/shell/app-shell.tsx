@@ -17,7 +17,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <TopBar />
       <Banners />
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1320px] flex-1 px-4 py-8 outline-none sm:px-6">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-[1320px] flex-1 px-4 py-8 outline-none sm:px-6"
+      >
         {children}
       </main>
       <footer data-print="hide" className="border-t border-border">

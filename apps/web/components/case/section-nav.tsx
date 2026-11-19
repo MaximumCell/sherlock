@@ -66,7 +66,9 @@ export function SectionNav({
       <ul
         ref={listRef}
         className={cn(
-          vertical ? "space-y-0.5" : "scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 sm:-mx-6 sm:px-6",
+          vertical
+            ? "space-y-0.5"
+            : "scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 sm:-mx-6 sm:px-6",
         )}
       >
         {sections.map((id) => {

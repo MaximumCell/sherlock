@@ -16,7 +16,11 @@ import { LinkList } from "./link-list";
 import { LinkQuestion } from "./link-question";
 import { useLinkKeys } from "./use-link-keys";
 
-const UNDO: Record<CorrelationStatus, ReviewDecision> = { pending: "reset", approved: "approve", rejected: "reject" };
+const UNDO: Record<CorrelationStatus, ReviewDecision> = {
+  pending: "reset",
+  approved: "approve",
+  rejected: "reject",
+};
 
 function LinksHint() {
   return (
@@ -25,7 +29,10 @@ function LinksHint() {
         After each search, a set of rules looks for results that seem to belong to the same person:
         the same handle, email, profile picture or website.
       </p>
-      <p>Each one is only a suggestion. Your yes or no decides what goes into the score and the report.</p>
+      <p>
+        Each one is only a suggestion. Your yes or no decides what goes into the score and the
+        report.
+      </p>
     </InfoHint>
   );
 }
@@ -76,7 +83,8 @@ export function LinksSection({
     if (last.previous === "pending") setDecided((d) => Math.max(0, d - 1));
     review.mutate({ id: last.id, decision: UNDO[last.previous] });
   };
-  const move = (delta: number) => setIndex((i) => (queue.length ? (i + delta + queue.length) % queue.length : 0));
+  const move = (delta: number) =>
+    setIndex((i) => (queue.length ? (i + delta + queue.length) % queue.length : 0));
 
   useLinkKeys({
     enabled: active && !listMode && !dialogOpen && current !== undefined,
@@ -88,7 +96,12 @@ export function LinksSection({
   });
 
   const toggle = (
-    <Button variant="outline" size="sm" aria-pressed={listMode} onClick={() => setListMode((v) => !v)}>
+    <Button
+      variant="outline"
+      size="sm"
+      aria-pressed={listMode}
+      onClick={() => setListMode((v) => !v)}
+    >
       {listMode ? <MessageCircleQuestion aria-hidden /> : <List aria-hidden />}
       {listMode ? "One at a time" : `See all links (${counts.all})`}
     </Button>

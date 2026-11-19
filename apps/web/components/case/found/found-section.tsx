@@ -15,7 +15,18 @@ import { ResultCard } from "./result-card";
 import { CLEAR_RESULT_FILTERS, ResultsExplorer } from "./results-explorer";
 
 const HIGHLIGHTS = 6;
-const FILTER_KEYS = ["results", "q", "group", "module", "platform", "category", "curated", "misses", "show", "page"];
+const FILTER_KEYS = [
+  "results",
+  "q",
+  "group",
+  "module",
+  "platform",
+  "category",
+  "curated",
+  "misses",
+  "show",
+  "page",
+];
 
 function GroupBlock({
   group,
@@ -35,7 +46,9 @@ function GroupBlock({
         <div className="min-w-0">
           <h3 id={`group-${group.id}`} className="text-lg font-semibold">
             {group.title}
-            <span className="ml-2 text-sm font-normal tabular-nums text-muted-foreground">{group.items.length}</span>
+            <span className="ml-2 text-sm font-normal tabular-nums text-muted-foreground">
+              {group.items.length}
+            </span>
           </h3>
           <p className="text-sm text-muted-foreground">{group.description}</p>
         </div>
@@ -48,7 +61,12 @@ function GroupBlock({
       </div>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {shown.map((f) => (
-          <ResultCard key={f.id} finding={f} onOpen={() => onOpen(f.id)} onPin={(p) => onPin(f.id, p)} />
+          <ResultCard
+            key={f.id}
+            finding={f}
+            onOpen={() => onOpen(f.id)}
+            onPin={(p) => onPin(f.id, p)}
+          />
         ))}
       </ul>
     </section>
@@ -82,7 +100,9 @@ export function FoundSection({
 
   const openExplorer = (patch: Record<string, string | null> = {}) => {
     set({ ...CLEAR_RESULT_FILTERS, results: "1", ...patch });
-    requestAnimationFrame(() => document.getElementById("all-results")?.scrollIntoView({ block: "start" }));
+    requestAnimationFrame(() =>
+      document.getElementById("all-results")?.scrollIntoView({ block: "start" }),
+    );
   };
 
   return (
@@ -125,7 +145,10 @@ export function FoundSection({
           ))}
         </div>
       ) : findings.length === 0 ? (
-        <EmptyState icon={SearchCheck} title={scanning ? "Results are on their way" : "No results yet"}>
+        <EmptyState
+          icon={SearchCheck}
+          title={scanning ? "Results are on their way" : "No results yet"}
+        >
           {scanning
             ? "Each data source adds its results here as soon as it finishes. Watch Scan progress above."
             : "Results appear here after a search. Use Add another target in the menu above to start one."}
@@ -144,7 +167,12 @@ export function FoundSection({
                 <GroupBlock
                   key={g.id}
                   group={g}
-                  onShowAll={() => openExplorer({ group: g.id, show: g.misses && g.items.length <= HIGHLIGHTS ? "all" : null })}
+                  onShowAll={() =>
+                    openExplorer({
+                      group: g.id,
+                      show: g.misses && g.items.length <= HIGHLIGHTS ? "all" : null,
+                    })
+                  }
                   onOpen={(id) => set({ finding: id })}
                   onPin={(id, p) => curate.mutate({ findingId: id, curated: p })}
                 />

@@ -75,7 +75,10 @@ export function CaseMenu({
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-danger focus:text-danger" onSelect={() => setConfirm("delete")}>
+          <DropdownMenuItem
+            className="text-danger focus:text-danger"
+            onSelect={() => setConfirm("delete")}
+          >
             <Trash2 aria-hidden />
             Delete
           </DropdownMenuItem>
@@ -97,8 +100,8 @@ export function CaseMenu({
         title="Delete this investigation?"
         description={
           <>
-            <span className="font-medium text-foreground">{caseDisplayTitle(c)}</span> and all of its
-            results, links and scan history are removed permanently. This cannot be undone.
+            <span className="font-medium text-foreground">{caseDisplayTitle(c)}</span> and all of
+            its results, links and scan history are removed permanently. This cannot be undone.
           </>
         }
         confirmLabel="Delete for good"

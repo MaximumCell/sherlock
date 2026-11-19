@@ -37,7 +37,11 @@ const DETAIL_KEYS: Record<string, string> = {
   rule: "reason",
 };
 
-const DECISION_WORDS: Record<string, string> = { approve: "yes, same", reject: "no", reset: "undone" };
+const DECISION_WORDS: Record<string, string> = {
+  approve: "yes, same",
+  reject: "no",
+  reset: "undone",
+};
 
 function detailText(detail: AuditEntry["detail"]): string | null {
   const parts = Object.entries(detail)
@@ -50,12 +54,14 @@ function detailText(detail: AuditEntry["detail"]): string | null {
 }
 
 /** Audit actors are either the investigator or a data-source id. */
-const actorIsSource = (actor: string) => actor !== "investigator" && actor !== "system" && !actor.includes("@");
+const actorIsSource = (actor: string) =>
+  actor !== "investigator" && actor !== "system" && !actor.includes("@");
 
 /** Plain title and detail line for one activity-log entry. */
 export function describeAudit(a: AuditEntry): { title: string; detail: string | null; by: string } {
   return {
-    by: a.actor === "investigator" ? "You" : actorIsSource(a.actor) ? sourceTitle(a.actor) : a.actor,
+    by:
+      a.actor === "investigator" ? "You" : actorIsSource(a.actor) ? sourceTitle(a.actor) : a.actor,
     title: (AUDIT_TITLES[a.action] ?? a.action.replace(/_/g, " ")).replace(
       "{source}",
       actorIsSource(a.actor) ? sourceTitle(a.actor) : "a data source",
@@ -169,7 +175,9 @@ export function buildTimeline(input: TimelineInput): TimelineEvent[] {
     .sort((a, b) => Date.parse(b.at) - Date.parse(a.at) || a.id.localeCompare(b.id));
 }
 
-export function groupByDay(events: readonly TimelineEvent[]): [day: string, items: TimelineEvent[]][] {
+export function groupByDay(
+  events: readonly TimelineEvent[],
+): [day: string, items: TimelineEvent[]][] {
   const groups = new Map<string, TimelineEvent[]>();
   for (const e of events) {
     const day = e.at.slice(0, 10);

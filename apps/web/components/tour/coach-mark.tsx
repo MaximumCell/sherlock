@@ -119,7 +119,12 @@ export function CoachMark({
     const visibleBottom = Math.min(box.top + box.height, vh);
     const below = visibleBottom + PAD + GAP;
     const above = box.top - PAD - GAP - cardHeight;
-    top = below + cardHeight <= vh - 16 ? below : above >= 72 ? above : Math.max(72, vh - cardHeight - 16);
+    top =
+      below + cardHeight <= vh - 16
+        ? below
+        : above >= 72
+          ? above
+          : Math.max(72, vh - cardHeight - 16);
     left = Math.min(Math.max(16, box.left), vw - width - 16);
   }
   const last = index === total - 1;
@@ -154,7 +159,13 @@ export function CoachMark({
           <p className="text-xs font-medium text-accent">
             Step {index + 1} of {total}
           </p>
-          <Button variant="ghost" size="icon-sm" className="-mr-2 -mt-2" onClick={onClose} aria-label="Close the tour">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="-mr-2 -mt-2"
+            onClick={onClose}
+            aria-label="Close the tour"
+          >
             <X aria-hidden />
           </Button>
         </div>
@@ -165,7 +176,11 @@ export function CoachMark({
           {step.body}
         </p>
         <div className="flex items-center justify-between gap-2 pt-1">
-          <button type="button" onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
             Skip tour
           </button>
           <div className="flex gap-2">

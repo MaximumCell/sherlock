@@ -44,7 +44,9 @@ export function keyFacts(view: FindingView): string[] {
   return [
     view.followers !== null ? `${compactNumber(view.followers)} followers` : "",
     view.createdAt ? `Since ${formatDate(view.createdAt)}` : "",
-    view.emails.length ? `${view.emails.length} email${view.emails.length === 1 ? "" : "s"} shown` : "",
+    view.emails.length
+      ? `${view.emails.length} email${view.emails.length === 1 ? "" : "s"} shown`
+      : "",
   ].filter(Boolean);
 }
 
@@ -87,7 +89,9 @@ export function ResultCard({
           onClick={() => onPin(!finding.curated)}
           className={cn(
             "relative z-10 rounded-md p-1.5 transition-colors hover:bg-muted",
-            finding.curated ? "text-accent" : "text-muted-foreground opacity-60 group-hover:opacity-100 focus-visible:opacity-100",
+            finding.curated
+              ? "text-accent"
+              : "text-muted-foreground opacity-60 group-hover:opacity-100 focus-visible:opacity-100",
           )}
         >
           <Pin className={cn("h-4 w-4", finding.curated && "fill-current")} aria-hidden />

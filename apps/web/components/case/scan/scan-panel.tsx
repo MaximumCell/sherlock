@@ -15,11 +15,13 @@ import { cn } from "@/lib/utils";
 import { SCAN_ANCHOR } from "@/lib/sections";
 import { SourceRow } from "./source-row";
 
-const isTargetType = (t: string): t is TargetType => (TARGET_TYPES as readonly string[]).includes(t);
+const isTargetType = (t: string): t is TargetType =>
+  (TARGET_TYPES as readonly string[]).includes(t);
 
 /** Active first, then problems, then the most recent finished. */
 function order(jobs: readonly Job[]): Job[] {
-  const rank = (j: Job) => (j.status === "running" ? 0 : j.status === "queued" ? 1 : j.status === "failed" ? 2 : 3);
+  const rank = (j: Job) =>
+    j.status === "running" ? 0 : j.status === "queued" ? 1 : j.status === "failed" ? 2 : 3;
   return [...jobs].sort(
     (a, b) =>
       rank(a) - rank(b) ||
@@ -31,7 +33,15 @@ function order(jobs: readonly Job[]): Job[] {
  * Live checklist of data sources (replaces the floating jobs panel). Open while a scan runs;
  * once everything is done it folds into one line that can be reopened.
  */
-export function ScanPanel({ caseId, jobs, loading }: { caseId: string; jobs: Job[]; loading: boolean }) {
+export function ScanPanel({
+  caseId,
+  jobs,
+  loading,
+}: {
+  caseId: string;
+  jobs: Job[];
+  loading: boolean;
+}) {
   const [advanced] = useAdvanced();
   const catalogue = useModules();
   const cancel = useCancelJob(caseId);
@@ -40,11 +50,17 @@ export function ScanPanel({ caseId, jobs, loading }: { caseId: string; jobs: Job
   const p = sourceProgress(jobs);
   const open = openChoice ?? p.scanning;
   const groups = useMemo(
-    () => QUEUES.map((q) => ({ queue: q, jobs: order(jobs.filter((j) => j.queue === q)) })).filter((g) => g.jobs.length),
+    () =>
+      QUEUES.map((q) => ({ queue: q, jobs: order(jobs.filter((j) => j.queue === q)) })).filter(
+        (g) => g.jobs.length,
+      ),
     [jobs],
   );
   const allFailed = jobs.filter((j) => j.status === "failed").length;
-  const found = jobs.reduce((sum, j) => sum + (typeof j.result?.found === "number" ? j.result.found : 0), 0);
+  const found = jobs.reduce(
+    (sum, j) => sum + (typeof j.result?.found === "number" ? j.result.found : 0),
+    0,
+  );
   const active = jobs.filter(isActiveJob);
   const percent = p.total ? Math.round((p.done / p.total) * 100) : 0;
 
@@ -78,34 +94,41 @@ export function ScanPanel({ caseId, jobs, loading }: { caseId: string; jobs: Job
             {headline}
           </p>
         </div>
-        {active.length > 0 ? (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={cancel.isPending}
-            onClick={() => active.forEach((j) => cancel.mutate(j.id))}
-          >
-            Stop scan
-          </Button>
-        ) : null}
-        {jobs.length > 0 ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-expanded={open}
-            aria-controls="scan-sources"
-            onClick={() => setOpenChoice(!open)}
-          >
-            {open ? "Hide sources" : "Show sources"}
-            <ChevronDown className={cn("transition-transform", open && "rotate-180")} aria-hidden />
-          </Button>
-        ) : null}
+        <div className="flex w-full items-center gap-2 pl-8 sm:w-auto sm:pl-0">
+          {active.length > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={cancel.isPending}
+              onClick={() => active.forEach((j) => cancel.mutate(j.id))}
+            >
+              Stop scan
+            </Button>
+          ) : null}
+          {jobs.length > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded={open}
+              aria-controls="scan-sources"
+              onClick={() => setOpenChoice(!open)}
+            >
+              {open ? "Hide sources" : "Show sources"}
+              <ChevronDown
+                className={cn("transition-transform", open && "rotate-180")}
+                aria-hidden
+              />
+            </Button>
+          ) : null}
+        </div>
       </div>
-      {p.scanning ? <ProgressBar value={percent} label="Overall scan progress" className="h-1 rounded-none" /> : null}
+      {p.scanning ? (
+        <ProgressBar value={percent} label="Overall scan progress" className="h-1 rounded-none" />
+      ) : null}
       {open && jobs.length > 0 ? (
         <div id="scan-sources" className="animate-fade-in border-t border-border">
           {groups.map((g) => {
-            const gp = sourceProgress(g.jobs);
+            const running = g.jobs.filter(isActiveJob).length;
             return (
               <div key={g.queue}>
                 <h3 className="flex items-center justify-between bg-surface px-4 py-2 text-xs font-medium text-muted-foreground sm:px-5">
@@ -114,7 +137,8 @@ export function ScanPanel({ caseId, jobs, loading }: { caseId: string; jobs: Job
                     {advanced ? <span className="ml-2 font-mono">queue: {g.queue}</span> : null}
                   </span>
                   <span className="tabular-nums">
-                    {gp.done} of {gp.total} done
+                    {g.jobs.length} source{g.jobs.length === 1 ? "" : "s"}
+                    {running ? ` · ${running} still running` : ""}
                   </span>
                 </h3>
                 <ul className="divide-y divide-border">
@@ -131,7 +155,11 @@ export function ScanPanel({ caseId, jobs, loading }: { caseId: string; jobs: Job
                       onCancel={() => cancel.mutate(job.id)}
                       onRetry={() => {
                         if (!isTargetType(job.target_type)) return;
-                        scan.mutate({ type: job.target_type, value: job.target_value, modules: [job.module] });
+                        scan.mutate({
+                          type: job.target_type,
+                          value: job.target_value,
+                          modules: [job.module],
+                        });
                       }}
                     />
                   ))}

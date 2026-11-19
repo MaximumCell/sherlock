@@ -3,9 +3,21 @@ import { cn } from "@/lib/utils";
 
 export const BAND_META: Record<
   ExposureBand,
-  { label: string; text: string; stroke: string; bar: string; badge: "success" | "warning" | "danger" }
+  {
+    label: string;
+    text: string;
+    stroke: string;
+    bar: string;
+    badge: "success" | "warning" | "danger";
+  }
 > = {
-  low: { label: "Low", text: "text-success", stroke: "stroke-success", bar: "bg-success", badge: "success" },
+  low: {
+    label: "Low",
+    text: "text-success",
+    stroke: "stroke-success",
+    bar: "bg-success",
+    badge: "success",
+  },
   moderate: {
     label: "Moderate",
     text: "text-warning",
@@ -13,8 +25,20 @@ export const BAND_META: Record<
     bar: "bg-warning",
     badge: "warning",
   },
-  high: { label: "High", text: "text-danger", stroke: "stroke-danger", bar: "bg-danger", badge: "danger" },
-  severe: { label: "Severe", text: "text-danger", stroke: "stroke-danger", bar: "bg-danger", badge: "danger" },
+  high: {
+    label: "High",
+    text: "text-danger",
+    stroke: "stroke-danger",
+    bar: "bg-danger",
+    badge: "danger",
+  },
+  severe: {
+    label: "Severe",
+    text: "text-danger",
+    stroke: "stroke-danger",
+    bar: "bg-danger",
+    badge: "danger",
+  },
 };
 
 const R = 52;
@@ -53,12 +77,17 @@ export function ExposureDial({ score, band }: { score: number; band: ExposureBan
           fill="none"
           strokeWidth="9"
           strokeLinecap="round"
-          className={cn(meta.stroke, "transition-[stroke-dasharray] duration-700 motion-reduce:transition-none")}
+          className={cn(
+            meta.stroke,
+            "transition-[stroke-dasharray] duration-700 motion-reduce:transition-none",
+          )}
           strokeDasharray={`${filled} ${C}`}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-4xl font-semibold tabular-nums leading-none tracking-tight">{score}</span>
+        <span className="text-4xl font-semibold tabular-nums leading-none tracking-tight">
+          {score}
+        </span>
         <span className="mt-1.5 text-xs text-muted-foreground">out of 100</span>
       </div>
     </div>

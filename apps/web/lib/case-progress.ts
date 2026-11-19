@@ -43,6 +43,8 @@ export type StepId = "scan" | "links" | "report";
 export interface ProgressStep {
   id: StepId;
   title: string;
+  /** One-word title for narrow screens. */
+  short: string;
   state: StepState;
   /** Short live status, e.g. "14/18 sources", "3 to check", "Ready". */
   detail: string;
@@ -52,32 +54,44 @@ export interface StepInput {
   jobs: readonly JobLike[];
   pendingLinks: number;
   totalLinks: number;
+  /** Found results; results without any scan job (imported or older cases) count as scanned. */
+  results?: number;
 }
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** The three steps of the case page: 1 Scanning → 2 Check the links → 3 Report ready. */
-export function deriveSteps({ jobs, pendingLinks, totalLinks }: StepInput): ProgressStep[] {
+export function deriveSteps({
+  jobs,
+  pendingLinks,
+  totalLinks,
+  results = 0,
+}: StepInput): ProgressStep[] {
   const p = sourceProgress(jobs);
+  const scanned = p.total > 0 || results > 0;
   const scan: ProgressStep = {
     id: "scan",
     title: "Scanning",
-    state: p.scanning ? "current" : p.total > 0 ? "done" : "current",
+    short: "Scan",
+    state: p.scanning ? "current" : scanned ? "done" : "current",
     detail: p.scanning
       ? `${p.done}/${p.total} sources`
       : p.total > 0
         ? `${plural(p.total, "source")} checked`
-        : "Not started",
+        : scanned
+          ? "Done"
+          : "Not started",
   };
   const links: ProgressStep = {
     id: "links",
     title: "Check the links",
+    short: "Links",
     state:
       pendingLinks > 0
         ? p.scanning
           ? "upcoming"
           : "current"
-        : p.scanning || p.total === 0
+        : p.scanning || !scanned
           ? "upcoming"
           : "done",
     detail:
@@ -85,14 +99,15 @@ export function deriveSteps({ jobs, pendingLinks, totalLinks }: StepInput): Prog
         ? `${pendingLinks} to check`
         : totalLinks > 0
           ? "All checked"
-          : p.scanning || p.total === 0
+          : p.scanning || !scanned
             ? "Waiting for results"
             : "None to check",
   };
-  const ready = !p.scanning && p.total > 0 && pendingLinks === 0;
+  const ready = !p.scanning && scanned && pendingLinks === 0;
   const report: ProgressStep = {
     id: "report",
     title: "Report ready",
+    short: "Report",
     state: ready ? "done" : "upcoming",
     detail: ready ? "Ready" : pendingLinks > 0 && !p.scanning ? "Draft available" : "Not yet",
   };

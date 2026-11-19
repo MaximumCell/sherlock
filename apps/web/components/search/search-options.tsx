@@ -52,7 +52,8 @@ export function SearchOptions({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={`${idPrefix}-tags`}>
-              Tags <span className="font-normal text-muted-foreground">(optional, comma-separated)</span>
+              Tags{" "}
+              <span className="font-normal text-muted-foreground">(optional, comma-separated)</span>
             </Label>
             <Input
               id={`${idPrefix}-tags`}
@@ -84,9 +85,13 @@ export function SearchOptions({
                   />
                   <Label htmlFor={id} className="text-sm font-normal leading-snug">
                     {m.title}
-                    {!m.available ? <span className="text-muted-foreground"> · not set up</span> : null}
+                    {!m.available ? (
+                      <span className="text-muted-foreground"> · not set up</span>
+                    ) : null}
                     {advanced ? (
-                      <span className="block font-mono text-2xs text-muted-foreground">{m.name}</span>
+                      <span className="block font-mono text-2xs text-muted-foreground">
+                        {m.name}
+                      </span>
                     ) : null}
                   </Label>
                 </li>

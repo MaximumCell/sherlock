@@ -35,7 +35,10 @@ export function InvestigationCard({ row }: { row: CaseRow }) {
   // Only an exposure score that is already cached; the start screen never calls the gateway.
   const exposure = client.getQueryData<Exposure>(keys.exposure(mode, row.case.id)) ?? null;
   const kind = row.status.kind;
-  const Icon = kind === "idle" && sourceProgress(row.jobs).total === 0 ? CircleDot : ICON[kind];
+  const Icon =
+    kind === "idle" && sourceProgress(row.jobs).total === 0 && row.foundCount === 0
+      ? CircleDot
+      : ICON[kind];
   const line = caseStatusLine({
     archived: kind === "archived",
     jobs: row.jobs,
@@ -71,8 +74,15 @@ export function InvestigationCard({ row }: { row: CaseRow }) {
       </div>
       <div className="mt-auto space-y-2">
         <p className={cn("flex items-center gap-1.5 text-sm", TONE[kind])}>
-          <Icon className={cn("h-4 w-4 shrink-0", kind === "scanning" && "animate-spin")} aria-hidden />
-          <span className={kind === "idle" || kind === "archived" ? "text-muted-foreground" : undefined}>{line}</span>
+          <Icon
+            className={cn("h-4 w-4 shrink-0", kind === "scanning" && "animate-spin")}
+            aria-hidden
+          />
+          <span
+            className={kind === "idle" || kind === "archived" ? "text-muted-foreground" : undefined}
+          >
+            {line}
+          </span>
         </p>
         {kind === "scanning" ? (
           <ProgressBar value={row.status.progress ?? 0} label="Scan progress" className="h-1" />
@@ -81,7 +91,10 @@ export function InvestigationCard({ row }: { row: CaseRow }) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="flex flex-wrap gap-1">
               {row.case.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-muted px-2 py-0.5 text-2xs text-muted-foreground">
+                <span
+                  key={tag}
+                  className="rounded-full bg-muted px-2 py-0.5 text-2xs text-muted-foreground"
+                >
                   {tag}
                 </span>
               ))}

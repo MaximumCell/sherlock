@@ -13,11 +13,7 @@ import { CandidateCard } from "./candidate-card";
 /** Ranked people for a name search. Picking one adds its identifiers as suggested searches. */
 export function PeopleSection({ caseId }: { caseId: string }) {
   return (
-    <CaseSection
-      id="people"
-      title="People"
-      description="Several people can share a name. Pick the one you mean and we suggest what to search next."
-    >
+    <CaseSection id="people" title="People">
       <PeopleBody caseId={caseId} />
     </CaseSection>
   );
@@ -45,9 +41,10 @@ function PeopleBody({ caseId }: { caseId: string }) {
       <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
       <p className="text-muted-foreground">
         Several people can share{" "}
-        <span className="font-medium text-foreground">{names.join(", ") || "a name"}</span>. Each card
-        groups public profiles that look like the same person and says why. Choosing one records your
-        decision and adds its handles and sites to Next steps. It never starts a search on its own.
+        <span className="font-medium text-foreground">{names.join(", ") || "a name"}</span>. Each
+        card groups public profiles that look like the same person and says why. Choosing one
+        records your decision and adds its handles and sites to Next steps. It never starts a search
+        on its own.
       </p>
     </div>
   );

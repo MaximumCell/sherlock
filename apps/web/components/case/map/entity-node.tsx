@@ -18,14 +18,25 @@ import { cn } from "@/lib/utils";
 
 export type EntityFlowNode = Node<{ node: GraphNode }, "entity">;
 
-export const KIND_META: Record<GraphNodeKind, { label: string; icon: LucideIcon; className: string }> = {
-  seed: { label: "What you searched", icon: Crosshair, className: "border-accent bg-accent/15 text-foreground" },
+export const KIND_META: Record<
+  GraphNodeKind,
+  { label: string; icon: LucideIcon; className: string }
+> = {
+  seed: {
+    label: "What you searched",
+    icon: Crosshair,
+    className: "border-accent bg-accent/15 text-foreground",
+  },
   account: { label: "Accounts", icon: UserRound, className: "border-border bg-card" },
   email: { label: "Emails", icon: Mail, className: "border-success/40 bg-success/10" },
   infra: { label: "Websites and IPs", icon: Server, className: "border-warning/40 bg-warning/10" },
   breach: { label: "Breaches", icon: ShieldAlert, className: "border-danger/50 bg-danger/10" },
   handle: { label: "Other identifiers", icon: AtSign, className: "border-border bg-muted" },
-  cluster: { label: "Grouped accounts", icon: Layers, className: "border-dashed border-muted-foreground/50 bg-surface" },
+  cluster: {
+    label: "Grouped accounts",
+    icon: Layers,
+    className: "border-dashed border-muted-foreground/50 bg-surface",
+  },
 };
 
 const HANDLE =
@@ -62,7 +73,8 @@ export const EntityNode = memo(function EntityNode({ data, selected }: NodeProps
         <span
           className={cn(
             "block truncate text-xs font-medium leading-tight",
-            (node.kind === "seed" || node.kind === "email" || node.kind === "handle") && "font-mono",
+            (node.kind === "seed" || node.kind === "email" || node.kind === "handle") &&
+              "font-mono",
           )}
         >
           {node.label}

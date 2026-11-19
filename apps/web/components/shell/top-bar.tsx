@@ -6,7 +6,13 @@ import { useNewInvestigation } from "@/components/cases/new-investigation-contex
 import { Kbd } from "@/components/common/bits";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AccountMenu } from "./account-menu";
 import { openCommandPalette } from "./command-palette";
@@ -100,9 +106,17 @@ export function TopBar() {
             <Brand />
           </SheetHeader>
           <nav aria-label="Main" className="space-y-4">
-            <NavLinks items={NAV_ITEMS} orientation="vertical" onNavigate={() => setMenuOpen(false)} />
+            <NavLinks
+              items={NAV_ITEMS}
+              orientation="vertical"
+              onNavigate={() => setMenuOpen(false)}
+            />
             <div className="border-t border-border pt-4">
-              <NavLinks items={MORE_ITEMS} orientation="vertical" onNavigate={() => setMenuOpen(false)} />
+              <NavLinks
+                items={MORE_ITEMS}
+                orientation="vertical"
+                onNavigate={() => setMenuOpen(false)}
+              />
             </div>
             <div className="flex items-center justify-between border-t border-border pt-4 text-sm text-muted-foreground">
               <span>Theme</span>

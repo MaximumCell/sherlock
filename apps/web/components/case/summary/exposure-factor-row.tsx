@@ -53,7 +53,10 @@ export function ExposureFactorRow({
           className="mt-1.5 inline-flex items-center gap-1 rounded text-xs font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ChevronDown
-            className={cn("h-3.5 w-3.5 transition-transform motion-reduce:transition-none", open && "rotate-180")}
+            className={cn(
+              "h-3.5 w-3.5 transition-transform motion-reduce:transition-none",
+              open && "rotate-180",
+            )}
             aria-hidden
           />
           {open ? "Hide" : "What to do"}
@@ -61,7 +64,10 @@ export function ExposureFactorRow({
         </button>
       ) : null}
       {open ? (
-        <div id={panelId} className="mt-2 space-y-3 rounded-md border border-border bg-muted/30 p-3">
+        <div
+          id={panelId}
+          className="mt-2 space-y-3 rounded-md border border-border bg-muted/30 p-3"
+        >
           {factor.remediation.length ? (
             <ol className="space-y-1.5 text-sm">
               {factor.remediation.map((step, i) => (

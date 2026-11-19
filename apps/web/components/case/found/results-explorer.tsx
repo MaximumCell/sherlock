@@ -19,7 +19,9 @@ export const PAGE_SIZE = 25;
 const SHOWS: ResultStatusFilter[] = ["found", "all", "not_found", "error"];
 
 /** Filter state from the URL. `misses=1` (old links) means "everything checked". */
-export function parseResultFilters(params: { get(name: string): string | null }): ResultFilterState {
+export function parseResultFilters(params: {
+  get(name: string): string | null;
+}): ResultFilterState {
   const show = params.get("show");
   const group = params.get("group");
   return {
@@ -144,7 +146,7 @@ export function ResultsExplorer({ caseId, findings }: { caseId: string; findings
       )}
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
         <p aria-live="polite">
-          {rows.length} of {findings.length} checked
+          {rows.length} of {inGroup.length} {filters.group ? "in this group" : "checked"}
           {rows.length > PAGE_SIZE ? ` · page ${page} of ${pageCount}` : ""}
         </p>
         {pageCount > 1 ? (
@@ -157,7 +159,12 @@ export function ResultsExplorer({ caseId, findings }: { caseId: string; findings
             >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={page >= pageCount} onClick={() => set({ page: String(page + 1) })}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= pageCount}
+              onClick={() => set({ page: String(page + 1) })}
+            >
               Next
             </Button>
           </div>

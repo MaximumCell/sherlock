@@ -1,6 +1,14 @@
 "use client";
 
-import { AtSign, Briefcase, CheckCircle2, ExternalLink, Link2, MapPin, UserCheck } from "lucide-react";
+import {
+  AtSign,
+  Briefcase,
+  CheckCircle2,
+  ExternalLink,
+  Link2,
+  MapPin,
+  UserCheck,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,13 +18,25 @@ import { useUrlState } from "@/lib/use-url-state";
 import { cn } from "@/lib/utils";
 import { goToSection } from "../section-nav";
 
-function strength(score: number): { label: string; bar: string; badge: "success" | "warning" | "muted" } {
+function strength(score: number): {
+  label: string;
+  bar: string;
+  badge: "success" | "warning" | "muted";
+} {
   if (score >= 0.7) return { label: "Strong match", bar: "bg-success", badge: "success" };
   if (score >= 0.4) return { label: "Possible match", bar: "bg-warning", badge: "warning" };
   return { label: "Weak match", bar: "bg-muted-foreground/60", badge: "muted" };
 }
 
-function Facts({ icon: Icon, label, children }: { icon: typeof MapPin; label: string; children: ReactNode }) {
+function Facts({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: typeof MapPin;
+  label: string;
+  children: ReactNode;
+}) {
   return (
     <div className="flex min-w-0 items-start gap-2 text-sm">
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
@@ -79,7 +99,10 @@ export function CandidateCard({
           aria-valuenow={pct}
           aria-label="Match score"
         >
-          <div className={cn("h-full rounded-full", s.bar)} style={{ width: `${Math.max(pct, 2)}%` }} />
+          <div
+            className={cn("h-full rounded-full", s.bar)}
+            style={{ width: `${Math.max(pct, 2)}%` }}
+          />
         </div>
         <span className="w-10 text-right text-xs tabular-nums">{pct}%</span>
       </div>
@@ -119,13 +142,23 @@ export function CandidateCard({
                 const text = (
                   <>
                     <span className="font-mono">{h.handle}</span>
-                    {h.platform ? <span className="text-muted-foreground"> · {h.platform}</span> : null}
+                    {h.platform ? (
+                      <span className="text-muted-foreground"> · {h.platform}</span>
+                    ) : null}
                   </>
                 );
                 return (
-                  <li key={`${h.platform}-${h.handle}`} className="max-w-full truncate rounded border border-border px-1.5 py-0.5 text-xs">
+                  <li
+                    key={`${h.platform}-${h.handle}`}
+                    className="max-w-full truncate rounded border border-border px-1.5 py-0.5 text-xs"
+                  >
                     {url ? (
-                      <a href={url} target="_blank" rel="noreferrer noopener" className="hover:text-accent">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="hover:text-accent"
+                      >
                         {text}
                       </a>
                     ) : (
@@ -145,7 +178,12 @@ export function CandidateCard({
                 return (
                   <li key={link} className="truncate text-xs">
                     {url ? (
-                      <a href={url} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 text-accent hover:underline">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="inline-flex items-center gap-1 text-accent hover:underline"
+                      >
                         {link}
                         <ExternalLink className="h-3 w-3" aria-hidden />
                       </a>
@@ -181,7 +219,12 @@ export function CandidateCard({
             See suggested searches
           </Button>
         ) : (
-          <Button size="sm" variant={rank === 1 && !anyConfirmed ? "default" : "outline"} disabled={pending} onClick={onConfirm}>
+          <Button
+            size="sm"
+            variant={rank === 1 && !anyConfirmed ? "default" : "outline"}
+            disabled={pending}
+            onClick={onConfirm}
+          >
             <UserCheck aria-hidden />
             {pending ? "Confirming…" : "This is the person"}
           </Button>

@@ -3,7 +3,13 @@
 import { ExternalLink, Pin } from "lucide-react";
 import { Avatar } from "@/components/common/bits";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { findingTitle, parseFinding } from "@/lib/findings";
 import { useCorrelations, useFindings } from "@/lib/query/hooks";
 import { useCurate } from "@/lib/query/mutations";

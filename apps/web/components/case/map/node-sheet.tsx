@@ -1,17 +1,28 @@
 "use client";
 
 import { Avatar } from "@/components/common/bits";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { findingTitle, parseFinding } from "@/lib/findings";
 import { findingNodeId, type GraphModel, type GraphNode } from "@/lib/graph/build";
 import type { Finding } from "@/lib/types";
 import { KIND_META } from "./entity-node";
 
 /** Findings behind a non-finding node: cluster members, or everything attached to an identifier. */
-export function findingsForNode(node: GraphNode, model: GraphModel, findings: readonly Finding[]): Finding[] {
+export function findingsForNode(
+  node: GraphNode,
+  model: GraphModel,
+  findings: readonly Finding[],
+): Finding[] {
   const ids = new Set(node.memberIds);
   for (const edge of model.edges) {
-    const other = edge.source === node.id ? edge.target : edge.target === node.id ? edge.source : null;
+    const other =
+      edge.source === node.id ? edge.target : edge.target === node.id ? edge.source : null;
     if (!other) continue;
     const linked = model.nodes.find((n) => n.id === other);
     if (linked?.findingId) ids.add(linked.findingId);
@@ -53,7 +64,8 @@ export function NodeSheet({
               </h3>
               {related.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nothing is connected to this yet. If it is a suggested search, run it from Next steps.
+                  Nothing is connected to this yet. If it is a suggested search, run it from Next
+                  steps.
                 </p>
               ) : (
                 <ul className="divide-y divide-border rounded-md border border-border">
@@ -70,7 +82,9 @@ export function NodeSheet({
                           className="h-7 w-7"
                         />
                         <span className="min-w-0">
-                          <span className="block truncate text-sm font-medium">{findingTitle(f)}</span>
+                          <span className="block truncate text-sm font-medium">
+                            {findingTitle(f)}
+                          </span>
                           <span className="block truncate font-mono text-xs text-muted-foreground">
                             {f.identifier_value}
                           </span>

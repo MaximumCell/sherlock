@@ -30,7 +30,7 @@ export function useStartSearch(onStarted?: () => void) {
             description: `Checking ${jobs.length} data source${jobs.length === 1 ? "" : "s"} for ${value}.`,
           });
           onStarted?.();
-          router.push(`${caseHref(created.id)}#scan`);
+          router.push(caseHref(created.id));
         },
       },
     );

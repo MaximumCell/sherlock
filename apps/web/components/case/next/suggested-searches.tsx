@@ -10,7 +10,8 @@ import { findingTitle } from "@/lib/findings";
 import { useScan } from "@/lib/query/mutations";
 import { TARGET_TYPES, type Entity, type Finding, type Job, type TargetType } from "@/lib/types";
 
-const isTargetType = (kind: string): kind is TargetType => (TARGET_TYPES as readonly string[]).includes(kind);
+const isTargetType = (kind: string): kind is TargetType =>
+  (TARGET_TYPES as readonly string[]).includes(kind);
 
 /** Identifiers found in results that have not been searched themselves and were not typed in. */
 export function pivotSuggestions(entities: readonly Entity[]): (Entity & { kind: TargetType })[] {
@@ -67,11 +68,15 @@ export function SuggestedSearches({
     <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2" data-tour="next-steps">
       {pivots.map((entity) => {
         const running = jobs.some(
-          (j) => j.target_value === entity.value && (j.status === "queued" || j.status === "running"),
+          (j) =>
+            j.target_value === entity.value && (j.status === "queued" || j.status === "running"),
         );
         const pending = scan.isPending && scan.variables?.value === entity.value;
         return (
-          <li key={entity.id} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-soft">
+          <li
+            key={entity.id}
+            className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-soft"
+          >
             <div className="flex items-start gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
                 <TargetIcon type={entity.kind} className="h-4 w-4" />
@@ -81,7 +86,10 @@ export function SuggestedSearches({
                   {entity.value}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {why(entity, entity.source_finding_id ? byId.get(entity.source_finding_id) : undefined)}
+                  {why(
+                    entity,
+                    entity.source_finding_id ? byId.get(entity.source_finding_id) : undefined,
+                  )}
                 </p>
                 {advanced ? (
                   <p className="font-mono text-2xs text-muted-foreground">

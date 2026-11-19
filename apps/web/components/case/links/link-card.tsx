@@ -138,12 +138,16 @@ export function ReviewCard({
       </ul>
       {missing > 0 ? (
         <p className="text-xs text-muted-foreground">
-          {missing} result{missing === 1 ? " in this link is" : "s in this link are"} no longer in this investigation.
+          {missing} result{missing === 1 ? " in this link is" : "s in this link are"} no longer in
+          this investigation.
         </p>
       ) : null}
 
       {notes.length + orphanRefs.length > 0 ? (
-        <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground" aria-label="Evidence">
+        <ul
+          className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground"
+          aria-label="Evidence"
+        >
           {notes.map((text) => (
             <li key={text}>{text}</li>
           ))}

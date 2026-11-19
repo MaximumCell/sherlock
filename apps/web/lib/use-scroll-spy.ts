@@ -22,7 +22,8 @@ export function useScrollSpy(ids: readonly string[], offset = 160): string | nul
         if (el && el.getBoundingClientRect().top - offset <= 0) current = id;
       }
       const atBottom =
-        window.scrollY > 0 && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+        window.scrollY > 0 &&
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
       if (atBottom) current = list[list.length - 1] ?? current;
       setActive(current);
     };

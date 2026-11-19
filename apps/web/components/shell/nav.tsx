@@ -1,6 +1,13 @@
 "use client";
 
-import { BookOpen, Blocks, FolderSearch, PlayCircle, ScrollText, type LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  Blocks,
+  FolderSearch,
+  PlayCircle,
+  ScrollText,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -42,7 +49,9 @@ export function Brand({ compact = false }: { compact?: boolean }) {
         <path d="M15.5 15.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         <circle cx="10.5" cy="10.5" r="2" fill="currentColor" />
       </svg>
-      {compact ? null : <span className="text-[1.0625rem] font-semibold tracking-tight">Sherlock</span>}
+      {compact ? null : (
+        <span className="text-[1.0625rem] font-semibold tracking-tight">Sherlock</span>
+      )}
     </Link>
   );
 }

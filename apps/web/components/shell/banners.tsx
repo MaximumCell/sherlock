@@ -5,13 +5,7 @@ import { useData } from "@/components/providers/data-provider";
 import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 
-function Banner({
-  tone,
-  children,
-}: {
-  tone: "warning" | "info";
-  children: React.ReactNode;
-}) {
+function Banner({ tone, children }: { tone: "warning" | "info"; children: React.ReactNode }) {
   const Icon = tone === "warning" ? TriangleAlert : FlaskConical;
   return (
     <div
@@ -25,7 +19,10 @@ function Banner({
       )}
     >
       <Icon
-        className={cn("mt-0.5 h-4 w-4 shrink-0", tone === "warning" ? "text-warning" : "text-accent")}
+        className={cn(
+          "mt-0.5 h-4 w-4 shrink-0",
+          tone === "warning" ? "text-warning" : "text-accent",
+        )}
         aria-hidden
       />
       <p className="min-w-0">{children}</p>

@@ -80,7 +80,9 @@ export function AuditView() {
         <ErrorState error={audit.error} onRetry={() => void audit.refetch()} />
       ) : entries.length === 0 ? (
         <EmptyState icon={ScrollText} title="Nothing recorded yet">
-          {caseId ? "Nothing has happened in this investigation yet." : "Activity is recorded here as soon as you run a search."}
+          {caseId
+            ? "Nothing has happened in this investigation yet."
+            : "Activity is recorded here as soon as you run a search."}
         </EmptyState>
       ) : (
         <>
@@ -126,7 +128,9 @@ export function AuditView() {
                     </TableCell>
                     <TableCell className="max-w-md break-words text-sm text-muted-foreground">
                       {describeAudit(entry).detail ?? "—"}
-                      {advanced ? <span className="block font-mono text-xs">{detailText(entry)}</span> : null}
+                      {advanced ? (
+                        <span className="block font-mono text-xs">{detailText(entry)}</span>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -135,9 +139,16 @@ export function AuditView() {
           </div>
           <ul className="grid grid-cols-1 gap-2 md:hidden">
             {entries.map((entry) => (
-              <li key={entry.id} className="space-y-1.5 rounded-lg border border-border bg-card p-3">
+              <li
+                key={entry.id}
+                className="space-y-1.5 rounded-lg border border-border bg-card p-3"
+              >
                 <div className="flex items-center justify-between gap-2">
-                  <span className={entry.action.includes("fail") ? "font-medium text-danger" : "font-medium"}>
+                  <span
+                    className={
+                      entry.action.includes("fail") ? "font-medium text-danger" : "font-medium"
+                    }
+                  >
                     {describeAudit(entry).title}
                   </span>
                   <span className="text-2xs text-muted-foreground">
@@ -147,11 +158,20 @@ export function AuditView() {
                 <p className="text-sm">
                   <span>{describeAudit(entry).by}</span>
                   {entry.case_id ? (
-                    <span className="text-muted-foreground"> · {titles.get(entry.case_id) ?? entry.case_id.slice(0, 8)}</span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {titles.get(entry.case_id) ?? entry.case_id.slice(0, 8)}
+                    </span>
                   ) : null}
                 </p>
-                <p className="break-words text-sm text-muted-foreground">{describeAudit(entry).detail}</p>
-                {advanced ? <p className="break-words font-mono text-xs text-muted-foreground">{entry.action} · {detailText(entry)}</p> : null}
+                <p className="break-words text-sm text-muted-foreground">
+                  {describeAudit(entry).detail}
+                </p>
+                {advanced ? (
+                  <p className="break-words font-mono text-xs text-muted-foreground">
+                    {entry.action} · {detailText(entry)}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>

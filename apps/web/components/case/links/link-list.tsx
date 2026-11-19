@@ -92,7 +92,10 @@ export function LinkList({
         </p>
       </div>
       {queue.length === 0 ? (
-        <EmptyState icon={ListChecks} title={filter === "pending" ? "Nothing left to check" : "No links here"}>
+        <EmptyState
+          icon={ListChecks}
+          title={filter === "pending" ? "Nothing left to check" : "No links here"}
+        >
           {filter === "pending"
             ? "Every possible link has a decision. Pick another filter to revisit them."
             : "Pick another filter to see the rest."}

@@ -14,7 +14,11 @@ import { InvestigationCard } from "./investigation-card";
 
 export function RecentSkeleton() {
   return (
-    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Loading investigations">
+    <ul
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      aria-busy="true"
+      aria-label="Loading investigations"
+    >
       {Array.from({ length: 3 }, (_, i) => (
         <Skeleton key={i} className="h-36 rounded-xl" />
       ))}
@@ -50,7 +54,10 @@ export function RecentInvestigations({
   };
 
   if (pending) return <RecentSkeleton />;
-  if (error) return <ErrorState title="Could not load your investigations" error={error} onRetry={onRetry} />;
+  if (error)
+    return (
+      <ErrorState title="Could not load your investigations" error={error} onRetry={onRetry} />
+    );
   if (total === 0) {
     return (
       <p className="text-center text-sm text-muted-foreground">
@@ -79,11 +86,16 @@ export function RecentInvestigations({
         >
           <SlidersHorizontal aria-hidden />
           Search and filter
-          {filtering ? <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-label="filters active" /> : null}
+          {filtering ? (
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-label="filters active" />
+          ) : null}
         </Button>
       </div>
       {open ? (
-        <div id="recent-filters" className="animate-fade-in rounded-xl border border-border bg-surface/60 p-3">
+        <div
+          id="recent-filters"
+          className="animate-fade-in rounded-xl border border-border bg-surface/60 p-3"
+        >
           <CasesToolbar key={resetKey} query={query} tags={tags} onChange={set} />
         </div>
       ) : null}

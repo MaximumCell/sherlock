@@ -1,14 +1,22 @@
 import { CheckCircle2, MapPinned, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import type { ActivityInfo, DnsInfo, ImageInfo, NetworkInfo, WalletInfo } from "@/lib/finding-extras";
+import type {
+  ActivityInfo,
+  DnsInfo,
+  ImageInfo,
+  NetworkInfo,
+  WalletInfo,
+} from "@/lib/finding-extras";
 import { compactNumber, formatDate, formatDateTime } from "@/lib/format";
 import { ActivityHeatmap, ActivityStrips } from "./activity-heatmap";
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h3 className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+      <h3 className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h3>
       {children}
     </section>
   );
@@ -34,7 +42,13 @@ function Check({ ok, label }: { ok: boolean | null; label: string }) {
   if (ok === null) return null;
   const Icon = ok ? CheckCircle2 : XCircle;
   return (
-    <span className={ok ? "inline-flex items-center gap-1 text-success" : "inline-flex items-center gap-1 text-danger"}>
+    <span
+      className={
+        ok
+          ? "inline-flex items-center gap-1 text-success"
+          : "inline-flex items-center gap-1 text-danger"
+      }
+    >
       <Icon className="h-3.5 w-3.5" aria-hidden />
       {label} {ok ? "present" : "missing"}
     </span>
@@ -47,7 +61,9 @@ export function DnsSection({ dns }: { dns: DnsInfo }) {
       <dl className="overflow-hidden rounded-md border border-border text-sm">
         {Object.entries(dns.records).map(([type, values]) => (
           <div key={type} className="flex gap-3 border-b border-border px-3 py-1.5 last:border-0">
-            <dt className="w-12 shrink-0 font-mono text-xs font-semibold text-muted-foreground">{type}</dt>
+            <dt className="w-12 shrink-0 font-mono text-xs font-semibold text-muted-foreground">
+              {type}
+            </dt>
             <dd className="min-w-0 space-y-0.5 break-all font-mono text-xs">
               {values.map((value) => (
                 <p key={value}>{value}</p>
@@ -62,7 +78,9 @@ export function DnsSection({ dns }: { dns: DnsInfo }) {
           <Check ok={dns.dmarc} label="DMARC" />
         </p>
       ) : null}
-      {dns.dmarcRecord ? <p className="break-all font-mono text-2xs text-muted-foreground">{dns.dmarcRecord}</p> : null}
+      {dns.dmarcRecord ? (
+        <p className="break-all font-mono text-2xs text-muted-foreground">{dns.dmarcRecord}</p>
+      ) : null}
     </Section>
   );
 }
@@ -104,7 +122,9 @@ export function NetworkSection({ network }: { network: NetworkInfo }) {
           ["Tags", network.tags.join(", ")],
         ]}
       />
-      <p className="text-xs text-muted-foreground">From a passive scan index. Sherlock did not probe this host.</p>
+      <p className="text-xs text-muted-foreground">
+        From a passive scan index. Sherlock did not probe this host.
+      </p>
     </Section>
   );
 }
@@ -115,7 +135,8 @@ export function WalletSection({ wallet }: { wallet: WalletInfo }) {
       <div className="rounded-md border border-border bg-muted/30 p-3">
         <p className="text-2xs uppercase tracking-wider text-muted-foreground">Balance</p>
         <p className="font-mono text-xl font-semibold tabular-nums">
-          {wallet.balance ?? "unknown"} <span className="text-sm text-muted-foreground">{wallet.unit}</span>
+          {wallet.balance ?? "unknown"}{" "}
+          <span className="text-sm text-muted-foreground">{wallet.unit}</span>
         </p>
       </div>
       <Facts
@@ -138,7 +159,10 @@ export function ImageSection({ image }: { image: ImageInfo }) {
   return (
     <Section title="Image metadata">
       {image.gpsPresent ? (
-        <p role="alert" className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/10 p-2 text-sm text-warning">
+        <p
+          role="alert"
+          className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/10 p-2 text-sm text-warning"
+        >
           <MapPinned className="h-4 w-4 shrink-0" aria-hidden />
           This image carries GPS coordinates. Sherlock does not display them.
         </p>
@@ -171,9 +195,19 @@ export function ActivitySection({ activity }: { activity: ActivityInfo }) {
       ) : null}
       <Facts
         rows={[
-          ["Likely time zone", activity.offsetLabel ? `${activity.offsetLabel}${activity.confidence ? ` (${activity.confidence} confidence)` : ""}` : null],
+          [
+            "Likely time zone",
+            activity.offsetLabel
+              ? `${activity.offsetLabel}${activity.confidence ? ` (${activity.confidence} confidence)` : ""}`
+              : null,
+          ],
           ["Events sampled", activity.sampleSize !== null ? String(activity.sampleSize) : null],
-          ["Window", activity.first && activity.last ? `${formatDateTime(activity.first)} to ${formatDateTime(activity.last)}` : null],
+          [
+            "Window",
+            activity.first && activity.last
+              ? `${formatDateTime(activity.first)} to ${formatDateTime(activity.last)}`
+              : null,
+          ],
           ["Sources", activity.sources.join(", ")],
         ]}
       />

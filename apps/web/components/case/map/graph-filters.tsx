@@ -52,7 +52,9 @@ export function GraphFilters({
         type="multiple"
         size="sm"
         value={filters.kinds.filter((k) => k !== "seed")}
-        onValueChange={(value) => onChange({ ...filters, kinds: ["seed", ...(value as GraphNodeKind[])] })}
+        onValueChange={(value) =>
+          onChange({ ...filters, kinds: ["seed", ...(value as GraphNodeKind[])] })
+        }
         aria-label="What to show on the map"
         className="flex-wrap justify-start"
       >
@@ -67,7 +69,10 @@ export function GraphFilters({
         })}
       </ToggleGroup>
       <div className="flex items-center gap-2">
-        <Label htmlFor="min-confidence" className="whitespace-nowrap text-sm font-normal text-muted-foreground">
+        <Label
+          htmlFor="min-confidence"
+          className="whitespace-nowrap text-sm font-normal text-muted-foreground"
+        >
           Hide links below
         </Label>
         <input

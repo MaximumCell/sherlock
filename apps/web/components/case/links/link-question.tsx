@@ -10,7 +10,15 @@ import { describeRule } from "@/lib/rules";
 import type { Correlation, EvidenceRef, Finding, ReviewDecision } from "@/lib/types";
 import { ConfidenceMeter } from "./confidence-meter";
 
-function Side({ finding, evidence, onOpen }: { finding: Finding; evidence: EvidenceRef[]; onOpen: () => void }) {
+function Side({
+  finding,
+  evidence,
+  onOpen,
+}: {
+  finding: Finding;
+  evidence: EvidenceRef[];
+  onOpen: () => void;
+}) {
   const view = parseFinding(finding);
   const title = findingTitle(finding);
   return (
@@ -24,7 +32,9 @@ function Side({ finding, evidence, onOpen }: { finding: Finding; evidence: Evide
         <Avatar src={view.avatarUrl} name={title} className="h-11 w-11 rounded-lg" />
         <span className="min-w-0">
           <span className="block truncate font-medium">{title}</span>
-          <span className="block truncate font-mono text-xs text-muted-foreground">{finding.identifier_value}</span>
+          <span className="block truncate font-mono text-xs text-muted-foreground">
+            {finding.identifier_value}
+          </span>
         </span>
       </button>
       {view.fullname || view.bio ? (
@@ -38,7 +48,9 @@ function Side({ finding, evidence, onOpen }: { finding: Finding; evidence: Evide
           {evidence.map((item, i) => (
             <div key={`${item.field}-${i}`} className="text-sm">
               <dt className="text-xs text-muted-foreground">{item.field.replace(/_/g, " ")}</dt>
-              <dd className="break-all rounded bg-warning/10 px-1.5 py-0.5 font-mono text-xs">{item.value}</dd>
+              <dd className="break-all rounded bg-warning/10 px-1.5 py-0.5 font-mono text-xs">
+                {item.value}
+              </dd>
             </div>
           ))}
         </dl>
@@ -76,7 +88,9 @@ export function LinkQuestion({
   const [note, setNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
   const rule = describeRule(c.type);
-  const linked = c.entities_involved.map((id) => findings.get(id)).filter((f): f is Finding => f !== undefined);
+  const linked = c.entities_involved
+    .map((id) => findings.get(id))
+    .filter((f): f is Finding => f !== undefined);
   const missing = c.entities_involved.length - linked.length;
   const refs = c.evidence.filter((e): e is EvidenceRef => typeof e !== "string");
   const notes = c.evidence.filter((e): e is string => typeof e === "string");
@@ -100,14 +114,23 @@ export function LinkQuestion({
         <ConfidenceMeter confidence={c.confidence} />
       </header>
 
-      <ul className={linked.length > 2 ? "grid gap-3 md:grid-cols-3" : "grid gap-3 md:grid-cols-2"} aria-label="Results in this link">
+      <ul
+        className={linked.length > 2 ? "grid gap-3 md:grid-cols-3" : "grid gap-3 md:grid-cols-2"}
+        aria-label="Results in this link"
+      >
         {linked.map((f) => (
-          <Side key={f.id} finding={f} evidence={refs.filter((r) => r.finding_id === f.id)} onOpen={() => onOpenFinding(f.id)} />
+          <Side
+            key={f.id}
+            finding={f}
+            evidence={refs.filter((r) => r.finding_id === f.id)}
+            onOpen={() => onOpenFinding(f.id)}
+          />
         ))}
       </ul>
       {missing > 0 ? (
         <p className="text-sm text-muted-foreground">
-          {missing} result{missing === 1 ? " in this link is" : "s in this link are"} no longer in this investigation.
+          {missing} result{missing === 1 ? " in this link is" : "s in this link are"} no longer in
+          this investigation.
         </p>
       ) : null}
 
@@ -145,7 +168,12 @@ export function LinkQuestion({
 
       <footer className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="grid grid-cols-2 gap-2 sm:flex">
-          <Button size="lg" disabled={pending} onClick={() => decide("approve")} className="bg-success text-background hover:bg-success/90">
+          <Button
+            size="lg"
+            disabled={pending}
+            onClick={() => decide("approve")}
+            className="bg-success text-background hover:bg-success/90"
+          >
             <Check aria-hidden />
             Yes, same
           </Button>
@@ -166,7 +194,11 @@ export function LinkQuestion({
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:ml-auto">
           {!noteOpen ? (
-            <button type="button" className="text-sm font-medium text-accent hover:underline" onClick={() => setNoteOpen(true)}>
+            <button
+              type="button"
+              className="text-sm font-medium text-accent hover:underline"
+              onClick={() => setNoteOpen(true)}
+            >
               Add a note
             </button>
           ) : null}

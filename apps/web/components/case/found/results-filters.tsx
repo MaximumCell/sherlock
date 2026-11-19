@@ -101,28 +101,43 @@ export function ResultsFilters({
           label="Filter by group"
           allLabel="All groups"
           value={filters.group}
-          options={FINDING_GROUP_IDS.map((id) => ({ value: id, label: FINDING_GROUP_META[id].title }))}
+          options={FINDING_GROUP_IDS.map((id) => ({
+            value: id,
+            label: FINDING_GROUP_META[id].title,
+          }))}
           onChange={(v) => onChange({ group: v })}
         />
         <FacetSelect
           label="Filter by data source"
           allLabel="All data sources"
           value={filters.module}
-          options={facets.modules.map((f) => ({ value: f.value, label: sourceLabel(f.value), count: f.count }))}
+          options={facets.modules.map((f) => ({
+            value: f.value,
+            label: sourceLabel(f.value),
+            count: f.count,
+          }))}
           onChange={(v) => onChange({ module: v })}
         />
         <FacetSelect
           label="Filter by category"
           allLabel="All categories"
           value={filters.category}
-          options={facets.categories.map((f) => ({ value: f.value, label: f.value, count: f.count }))}
+          options={facets.categories.map((f) => ({
+            value: f.value,
+            label: f.value,
+            count: f.count,
+          }))}
           onChange={(v) => onChange({ category: v })}
         />
         <FacetSelect
           label="Filter by site"
           allLabel="All sites"
           value={filters.platform}
-          options={facets.platforms.map((f) => ({ value: f.value, label: f.value, count: f.count }))}
+          options={facets.platforms.map((f) => ({
+            value: f.value,
+            label: f.value,
+            count: f.count,
+          }))}
           onChange={(v) => onChange({ platform: v })}
         />
         <Select

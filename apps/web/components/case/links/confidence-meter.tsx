@@ -21,7 +21,13 @@ export function ConfidenceHint() {
 }
 
 /** Confidence as a meter with a plain word, not just a percentage. */
-export function ConfidenceMeter({ confidence, className }: { confidence: number; className?: string }) {
+export function ConfidenceMeter({
+  confidence,
+  className,
+}: {
+  confidence: number;
+  className?: string;
+}) {
   const pct = Math.round(confidence * 100);
   const band = BAND[confidenceBand(confidence)];
   return (
@@ -42,7 +48,10 @@ export function ConfidenceMeter({ confidence, className }: { confidence: number;
         aria-valuetext={`${pct}%, ${band.label.toLowerCase()}`}
         className="h-1.5 overflow-hidden rounded-full bg-muted"
       >
-        <div className={cn("h-full rounded-full", band.bar)} style={{ width: `${Math.max(pct, 3)}%` }} />
+        <div
+          className={cn("h-full rounded-full", band.bar)}
+          style={{ width: `${Math.max(pct, 3)}%` }}
+        />
       </div>
       <p className={cn("text-xs", band.text)}>{band.label}</p>
     </div>

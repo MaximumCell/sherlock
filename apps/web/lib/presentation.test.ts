@@ -19,8 +19,20 @@ const params = (entries: Record<string, string>) => new URLSearchParams(entries)
 
 describe("sourceProgress", () => {
   it("counts only the batches still running", () => {
-    const jobs = [job("succeeded", "old"), job("failed", "old"), job("succeeded"), job("running"), job("queued")];
-    expect(sourceProgress(jobs)).toEqual({ total: 3, done: 1, failed: 0, active: 2, scanning: true });
+    const jobs = [
+      job("succeeded", "old"),
+      job("failed", "old"),
+      job("succeeded"),
+      job("running"),
+      job("queued"),
+    ];
+    expect(sourceProgress(jobs)).toEqual({
+      total: 3,
+      done: 1,
+      failed: 0,
+      active: 2,
+      scanning: true,
+    });
   });
 
   it("counts every job once nothing runs", () => {
@@ -36,7 +48,11 @@ describe("sourceProgress", () => {
 
 describe("deriveSteps", () => {
   it("scanning: step 1 current with a live count", () => {
-    const steps = deriveSteps({ jobs: [job("succeeded"), job("running")], pendingLinks: 2, totalLinks: 2 });
+    const steps = deriveSteps({
+      jobs: [job("succeeded"), job("running")],
+      pendingLinks: 2,
+      totalLinks: 2,
+    });
     expect(steps.map((s) => [s.id, s.state, s.detail])).toEqual([
       ["scan", "current", "1/2 sources"],
       ["links", "upcoming", "2 to check"],
@@ -63,10 +79,19 @@ describe("deriveSteps", () => {
     expect(steps[1]).toMatchObject({ state: "upcoming", detail: "Waiting for results" });
   });
 
+  it("results without scan jobs count as scanned", () => {
+    const steps = deriveSteps({ jobs: [], pendingLinks: 0, totalLinks: 0, results: 7 });
+    expect(steps.map((s) => [s.state, s.detail])).toEqual([
+      ["done", "Done"],
+      ["done", "None to check"],
+      ["done", "Ready"],
+    ]);
+  });
+
   it("finished scan without any link", () => {
-    expect(deriveSteps({ jobs: [job("succeeded")], pendingLinks: 0, totalLinks: 0 })[1]?.detail).toBe(
-      "None to check",
-    );
+    expect(
+      deriveSteps({ jobs: [job("succeeded")], pendingLinks: 0, totalLinks: 0 })[1]?.detail,
+    ).toBe("None to check");
   });
 });
 
@@ -74,12 +99,20 @@ describe("caseStatusLine", () => {
   const base = { archived: false, jobs: [] as JobDigest[], pendingLinks: 0, foundCount: 0 };
   it.each([
     [{ ...base, archived: true, jobs: [job("running")] }, "Archived"],
-    [{ ...base, jobs: [job("succeeded"), job("running"), job("queued")] }, "Scanning · 1 of 3 sources done"],
+    [
+      { ...base, jobs: [job("succeeded"), job("running"), job("queued")] },
+      "Scanning · 1 of 3 sources done",
+    ],
     [{ ...base, jobs: [job("succeeded")], pendingLinks: 3 }, "3 links need your decision"],
     [{ ...base, jobs: [job("succeeded")], pendingLinks: 1 }, "1 link needs your decision"],
     [{ ...base, jobs: [job("succeeded")], foundCount: 46 }, "Done · 46 results"],
     [
-      { ...base, jobs: [job("succeeded")], foundCount: 46, exposure: { score: 63, band: "high" as const } },
+      {
+        ...base,
+        jobs: [job("succeeded")],
+        foundCount: 46,
+        exposure: { score: 63, band: "high" as const },
+      },
       "Done · 46 results · exposure 63 High",
     ],
     [base, "Not scanned yet"],
@@ -89,11 +122,25 @@ describe("caseStatusLine", () => {
 });
 
 describe("buildSummarySentence", () => {
-  const base = { subject: "ada-fixture", accounts: 0, results: 0, sources: 0, breaches: 0, pendingLinks: 0 };
+  const base = {
+    subject: "ada-fixture",
+    accounts: 0,
+    results: 0,
+    sources: 0,
+    breaches: 0,
+    pendingLinks: 0,
+  };
 
   it("the full sentence", () => {
     expect(
-      buildSummarySentence({ ...base, accounts: 32, results: 46, sources: 52, breaches: 3, pendingLinks: 5 }),
+      buildSummarySentence({
+        ...base,
+        accounts: 32,
+        results: 46,
+        sources: 52,
+        breaches: 3,
+        pendingLinks: 5,
+      }),
     ).toBe(
       "We found 32 accounts for ada-fixture across 52 sites, 3 breach listings and 5 possible links for you to check.",
     );
@@ -116,8 +163,16 @@ describe("buildSummarySentence", () => {
       "We are asking 18 data sources about ada-fixture. Results appear here as each one finishes.",
     );
     expect(
-      buildSummarySentence({ ...base, accounts: 4, results: 4, sources: 6, scanning: { done: 6, total: 18 } }),
-    ).toBe("We found 4 accounts for ada-fixture across 6 sites so far. Still waiting on 12 of 18 data sources.");
+      buildSummarySentence({
+        ...base,
+        accounts: 4,
+        results: 4,
+        sources: 6,
+        scanning: { done: 6, total: 18 },
+      }),
+    ).toBe(
+      "We found 4 accounts for ada-fixture across 6 sites so far. Still waiting on 12 of 18 data sources.",
+    );
   });
 
   it("nothing found, or nothing run", () => {
@@ -142,15 +197,49 @@ describe("finding groups", () => {
   it("maps findings onto human groups", () => {
     const meta = (category: string) => ({ category });
     expect(groupOf(make({ platform: "breach", extra_metadata: meta("breach") }))).toBe("breaches");
-    expect(groupOf(make({ platform: "GitHub", identifier_type: "username", extra_metadata: meta("development") }))).toBe("accounts");
-    expect(groupOf(make({ platform: "dns", identifier_type: "domain", extra_metadata: meta("dns") }))).toBe("web");
-    expect(groupOf(make({ platform: "crt.sh", identifier_type: "username", extra_metadata: meta("certificate") }))).toBe("web");
-    expect(groupOf(make({ platform: "exif", identifier_type: "image", extra_metadata: meta("media") }))).toBe("images");
-    expect(groupOf(make({ platform: "hn", identifier_type: "username", extra_metadata: meta("activity") }))).toBe("activity");
-    expect(groupOf(make({ platform: "carrier", identifier_type: "phone", extra_metadata: meta("telephony") }))).toBe("phone");
-    expect(groupOf(make({ platform: "eth", identifier_type: "wallet", extra_metadata: meta("wallet") }))).toBe("wallet");
-    expect(groupOf(make({ platform: "web", identifier_type: "name", extra_metadata: meta("identity") }))).toBe("names");
-    expect(groupOf(make({ platform: "x", identifier_type: "other", extra_metadata: {} }))).toBe("other");
+    expect(
+      groupOf(
+        make({
+          platform: "GitHub",
+          identifier_type: "username",
+          extra_metadata: meta("development"),
+        }),
+      ),
+    ).toBe("accounts");
+    expect(
+      groupOf(make({ platform: "dns", identifier_type: "domain", extra_metadata: meta("dns") })),
+    ).toBe("web");
+    expect(
+      groupOf(
+        make({
+          platform: "crt.sh",
+          identifier_type: "username",
+          extra_metadata: meta("certificate"),
+        }),
+      ),
+    ).toBe("web");
+    expect(
+      groupOf(make({ platform: "exif", identifier_type: "image", extra_metadata: meta("media") })),
+    ).toBe("images");
+    expect(
+      groupOf(
+        make({ platform: "hn", identifier_type: "username", extra_metadata: meta("activity") }),
+      ),
+    ).toBe("activity");
+    expect(
+      groupOf(
+        make({ platform: "carrier", identifier_type: "phone", extra_metadata: meta("telephony") }),
+      ),
+    ).toBe("phone");
+    expect(
+      groupOf(make({ platform: "eth", identifier_type: "wallet", extra_metadata: meta("wallet") })),
+    ).toBe("wallet");
+    expect(
+      groupOf(make({ platform: "web", identifier_type: "name", extra_metadata: meta("identity") })),
+    ).toBe("names");
+    expect(groupOf(make({ platform: "x", identifier_type: "other", extra_metadata: {} }))).toBe(
+      "other",
+    );
   });
 
   it("groups the demo case in display order, found rows only", () => {
@@ -210,7 +299,11 @@ describe("prioritisedSteps", () => {
       factor("high", 9, ["Change reused passwords", "Use a password manager"]),
       factor("none", 0, ["Never shown"]),
     ]);
-    expect(steps.map((s) => s.text)).toEqual(["Change reused passwords", "Use a password manager", "Tidy bios"]);
+    expect(steps.map((s) => s.text)).toEqual([
+      "Change reused passwords",
+      "Use a password manager",
+      "Tidy bios",
+    ]);
     expect(steps[0]).toMatchObject({ factorKey: "high", points: 9 });
   });
 });

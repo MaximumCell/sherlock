@@ -1,6 +1,15 @@
 "use client";
 
-import { Ban, ChevronDown, CircleAlert, CircleCheck, Clock, LoaderCircle, RotateCw, type LucideIcon } from "lucide-react";
+import {
+  Ban,
+  ChevronDown,
+  CircleAlert,
+  CircleCheck,
+  Clock,
+  LoaderCircle,
+  RotateCw,
+  type LucideIcon,
+} from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { formatDateTime, timeAgo } from "@/lib/format";
@@ -76,7 +85,12 @@ export function SourceRow({
             {sourceTitle(job.module, modules)}
             <span className="sr-only">: {meta.label}</span>
           </p>
-          <p className={cn("truncate text-sm", job.status === "failed" ? "text-warning" : "text-muted-foreground")}>
+          <p
+            className={cn(
+              "truncate text-sm",
+              job.status === "failed" ? "text-warning" : "text-muted-foreground",
+            )}
+          >
             {outcome(job)}
             <span className="text-muted-foreground"> · </span>
             <span className="font-mono text-xs text-muted-foreground" title={job.target_value}>
@@ -85,15 +99,29 @@ export function SourceRow({
           </p>
         </div>
         {job.status === "running" ? (
-          <span className="hidden text-xs tabular-nums text-muted-foreground sm:inline">{job.progress}%</span>
+          <span className="hidden text-xs tabular-nums text-muted-foreground sm:inline">
+            {job.progress}%
+          </span>
         ) : null}
         {active ? (
-          <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy} aria-label={`Stop ${sourceTitle(job.module, modules)}`}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            disabled={busy}
+            aria-label={`Stop ${sourceTitle(job.module, modules)}`}
+          >
             {busy ? "Stopping…" : "Stop"}
           </Button>
         ) : null}
         {job.status === "failed" || job.status === "cancelled" ? (
-          <Button variant="outline" size="sm" onClick={onRetry} disabled={busy} aria-label={`Retry ${sourceTitle(job.module, modules)}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRetry}
+            disabled={busy}
+            aria-label={`Retry ${sourceTitle(job.module, modules)}`}
+          >
             <RotateCw aria-hidden />
             Retry
           </Button>
@@ -111,17 +139,19 @@ export function SourceRow({
           </Button>
         ) : null}
       </div>
-      {active ? (
+      {job.status === "running" ? (
         <div className="ml-[30px] mt-2 h-1 overflow-hidden rounded-full bg-muted" aria-hidden>
-          {job.status === "queued" ? (
-            <div className="h-full w-1/3 animate-indeterminate rounded-full bg-muted-foreground/40" />
-          ) : (
-            <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${job.progress}%` }} />
-          )}
+          <div
+            className="h-full rounded-full bg-accent transition-[width] duration-500"
+            style={{ width: `${job.progress}%` }}
+          />
         </div>
       ) : null}
       {open ? (
-        <dl id={panel} className="ml-[30px] mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg bg-muted/50 p-3 text-xs">
+        <dl
+          id={panel}
+          className="ml-[30px] mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg bg-muted/50 p-3 text-xs"
+        >
           {job.error ? (
             <>
               <dt className="text-muted-foreground">What went wrong</dt>
@@ -133,7 +163,9 @@ export function SourceRow({
             {job.attempts} of {job.max_attempts}
           </dd>
           <dt className="text-muted-foreground">{job.finished_at ? "Finished" : "Queued"}</dt>
-          <dd title={formatDateTime(job.finished_at ?? job.created_at)}>{timeAgo(job.finished_at ?? job.created_at)}</dd>
+          <dd title={formatDateTime(job.finished_at ?? job.created_at)}>
+            {timeAgo(job.finished_at ?? job.created_at)}
+          </dd>
           {advanced ? (
             <>
               <dt className="text-muted-foreground">Data source id</dt>

@@ -22,7 +22,8 @@ import { applyChange, keys } from "./cache";
 
 /** Every command failure surfaces as a toast; nothing fails silently. */
 function reportError(title: string, err: unknown) {
-  const signIn = err instanceof GatewayError && err.status === 403 && /sign|anonymous|account/i.test(err.detail);
+  const signIn =
+    err instanceof GatewayError && err.status === 403 && /sign|anonymous|account/i.test(err.detail);
   toast.error(title, {
     description: signIn ? `${describeError(err)} Sign in to continue.` : describeError(err),
     action: signIn ? { label: "Sign in", onClick: () => requestSignIn() } : undefined,
@@ -107,7 +108,10 @@ export function useScan(caseId: string) {
     mutationFn: (body: ScanBody) => ds.scan(caseId, body),
     onSuccess: ({ jobs }, body) => {
       client.setQueryData<Job[]>(keys.jobs(mode, caseId), (old) =>
-        jobs.reduce<Job[] | undefined>((list, job) => applyChange(list, "INSERT", job.id, job), old),
+        jobs.reduce<Job[] | undefined>(
+          (list, job) => applyChange(list, "INSERT", job.id, job),
+          old,
+        ),
       );
       void client.invalidateQueries({ queryKey: keys.cases(mode) });
       toast.success(`Searching ${body.value}`, {

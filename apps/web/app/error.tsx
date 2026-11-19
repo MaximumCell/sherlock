@@ -17,14 +17,18 @@ export default function RouteError({
   }, [error]);
 
   return (
-    <div role="alert" className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
+    <div
+      role="alert"
+      className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center"
+    >
       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-danger/10 text-danger">
         <TriangleAlert className="h-5 w-5" aria-hidden />
       </span>
       <div className="space-y-1">
         <h1 className="text-xl font-semibold">This page ran into a problem</h1>
         <p className="text-sm text-muted-foreground">
-          Something went wrong while showing it. Your data is safe and nothing was changed. Try again, or go back to the start.
+          Something went wrong while showing it. Your data is safe and nothing was changed. Try
+          again, or go back to the start.
         </p>
         {error.digest ? (
           <p className="font-mono text-xs text-muted-foreground">ref {error.digest}</p>

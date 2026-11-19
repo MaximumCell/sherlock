@@ -55,7 +55,10 @@ export function RemediationList({
               Show all {list.length} steps
             </>
           )}
-          <ChevronDown className={cn("h-4 w-4 transition-transform", all && "rotate-180")} aria-hidden />
+          <ChevronDown
+            className={cn("h-4 w-4 transition-transform", all && "rotate-180")}
+            aria-hidden
+          />
         </button>
       ) : null}
     </div>

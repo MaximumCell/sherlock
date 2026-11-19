@@ -43,7 +43,11 @@ export function MapView({
     () =>
       buildGraph(
         { case: c, findings, correlations, entities },
-        { kinds: new Set(filters.kinds), minConfidence: filters.minConfidence, showRejected: filters.showRejected },
+        {
+          kinds: new Set(filters.kinds),
+          minConfidence: filters.minConfidence,
+          showRejected: filters.showRejected,
+        },
       ),
     [c, findings, correlations, entities, filters],
   );
@@ -71,11 +75,17 @@ export function MapView({
         >
           <SlidersHorizontal aria-hidden />
           Filters
-          <ChevronDown className={cn("transition-transform", filtersOpen && "rotate-180")} aria-hidden />
+          <ChevronDown
+            className={cn("transition-transform", filtersOpen && "rotate-180")}
+            aria-hidden
+          />
         </Button>
       </div>
       {filtersOpen ? (
-        <div id="map-filters" className="animate-fade-in rounded-xl border border-border bg-surface/60 p-3">
+        <div
+          id="map-filters"
+          className="animate-fade-in rounded-xl border border-border bg-surface/60 p-3"
+        >
           <GraphFilters filters={filters} onChange={setFilters} />
         </div>
       ) : null}

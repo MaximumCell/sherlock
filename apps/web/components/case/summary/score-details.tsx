@@ -25,7 +25,13 @@ export function ScoreDetails({ exposure, findings }: { exposure: Exposure; findi
         className="flex w-full items-center justify-between gap-3 rounded-2xl px-5 py-4 text-left text-base font-medium hover:bg-muted/40"
       >
         How this score is calculated
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            open && "rotate-180",
+          )}
+          aria-hidden
+        />
       </button>
       {open ? (
         <div id={panelId} className="animate-fade-in space-y-5 border-t border-border px-5 py-5">

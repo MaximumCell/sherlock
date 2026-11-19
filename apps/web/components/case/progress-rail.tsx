@@ -51,10 +51,18 @@ export function ProgressRail({ steps, scanning }: { steps: ProgressStep[]; scann
                 )}
               </span>
               <span className="min-w-0">
-                <span className={cn("block truncate text-xs font-medium sm:text-sm", !done && !current && "text-muted-foreground")}>
-                  {step.title}
+                <span
+                  className={cn(
+                    "block truncate text-xs font-medium sm:text-sm",
+                    !done && !current && "text-muted-foreground",
+                  )}
+                >
+                  <span className="sm:hidden">{step.short}</span>
+                  <span className="hidden sm:inline">{step.title}</span>
                 </span>
-                <span className="block truncate text-2xs text-muted-foreground sm:text-xs">{step.detail}</span>
+                <span className="block truncate text-2xs text-muted-foreground sm:text-xs">
+                  {step.detail}
+                </span>
               </span>
             </button>
           </li>

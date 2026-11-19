@@ -44,7 +44,9 @@ export function TypeChip({
           <span className="truncate">
             {label ? (
               <>
-                <span className="text-muted-foreground">{chosen ? "Searching as" : "Looks like"}</span>{" "}
+                <span className="text-muted-foreground">
+                  {chosen ? "Searching as" : "Looks like"}
+                </span>{" "}
                 <span className="font-medium">{label}</span>
               </>
             ) : (
@@ -56,7 +58,10 @@ export function TypeChip({
           </span>
           <span className="inline-flex items-center gap-0.5 font-medium text-accent">
             {label ? "change" : "choose"}
-            <ChevronDown className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-180" aria-hidden />
+            <ChevronDown
+              className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-180"
+              aria-hidden
+            />
           </span>
           {type && TARGET_TYPE_META[type].requiresSignIn ? (
             <Lock className="h-3 w-3 shrink-0 text-warning" aria-label="requires sign-in" />

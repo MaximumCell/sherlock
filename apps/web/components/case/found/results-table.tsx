@@ -16,7 +16,10 @@ import { timeAgo } from "@/lib/format";
 import type { Finding, FindingStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const STATUS_BADGE: Record<FindingStatus, { label: string; variant: "success" | "muted" | "danger" }> = {
+const STATUS_BADGE: Record<
+  FindingStatus,
+  { label: string; variant: "success" | "muted" | "danger" }
+> = {
   found: { label: "Found", variant: "success" },
   not_found: { label: "Not found", variant: "muted" },
   error: { label: "Error", variant: "danger" },
@@ -58,7 +61,10 @@ function summaryLine(finding: Finding): string {
   if (view.breach) return view.breach.dataClasses.join(", ") || "Breach exposure";
   if (view.error) return view.error;
   if (view.wallet) {
-    return [view.wallet.balance ? `${view.wallet.balance} ${view.wallet.unit}` : null, view.wallet.txCount !== null ? `${view.wallet.txCount} transactions` : null]
+    return [
+      view.wallet.balance ? `${view.wallet.balance} ${view.wallet.unit}` : null,
+      view.wallet.txCount !== null ? `${view.wallet.txCount} transactions` : null,
+    ]
       .filter(Boolean)
       .join(" · ");
   }
@@ -68,12 +74,21 @@ function summaryLine(finding: Finding): string {
   if (view.dns) return Object.keys(view.dns.records).join(", ") + " records";
   if (view.activity?.offsetLabel) return `Activity suggests ${view.activity.offsetLabel}`;
   if (view.image) {
-    return [view.image.camera, view.image.width && view.image.height ? `${view.image.width}×${view.image.height}` : null, view.image.gpsPresent ? "GPS present" : null]
+    return [
+      view.image.camera,
+      view.image.width && view.image.height ? `${view.image.width}×${view.image.height}` : null,
+      view.image.gpsPresent ? "GPS present" : null,
+    ]
       .filter(Boolean)
       .join(" · ");
   }
   return (
-    view.fullname ?? view.bio ?? view.other.slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(" · ")
+    view.fullname ??
+    view.bio ??
+    view.other
+      .slice(0, 2)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(" · ")
   );
 }
 
@@ -108,7 +123,11 @@ export function ResultsTable({ rows, onOpen, onCurate, sourceLabel, advanced }: 
             {rows.map((f) => {
               const view = parseFinding(f);
               return (
-                <TableRow key={f.id} className="relative cursor-pointer" onClick={() => onOpen(f.id)}>
+                <TableRow
+                  key={f.id}
+                  className="relative cursor-pointer"
+                  onClick={() => onOpen(f.id)}
+                >
                   <TableCell className="pr-0">
                     <PinButton finding={f} onCurate={onCurate} />
                   </TableCell>
@@ -130,7 +149,10 @@ export function ResultsTable({ rows, onOpen, onCurate, sourceLabel, advanced }: 
                       </span>
                     </button>
                   </TableCell>
-                  <TableCell className="max-w-48 truncate font-mono text-xs" title={f.identifier_value}>
+                  <TableCell
+                    className="max-w-48 truncate font-mono text-xs"
+                    title={f.identifier_value}
+                  >
                     {f.identifier_value}
                   </TableCell>
                   <TableCell className="max-w-72 truncate text-muted-foreground">
@@ -139,7 +161,9 @@ export function ResultsTable({ rows, onOpen, onCurate, sourceLabel, advanced }: 
                   <TableCell className="max-w-40 text-xs text-muted-foreground">
                     <span className="block truncate">{sourceLabel(f.module ?? f.source_tool)}</span>
                     {advanced ? (
-                      <span className="block truncate font-mono text-2xs">{f.module ?? f.source_tool}</span>
+                      <span className="block truncate font-mono text-2xs">
+                        {f.module ?? f.source_tool}
+                      </span>
                     ) : null}
                   </TableCell>
                   <TableCell>
@@ -159,7 +183,10 @@ export function ResultsTable({ rows, onOpen, onCurate, sourceLabel, advanced }: 
         {rows.map((f) => {
           const view = parseFinding(f);
           return (
-            <li key={f.id} className="relative flex items-start gap-3 rounded-xl border border-border bg-card p-3">
+            <li
+              key={f.id}
+              className="relative flex items-start gap-3 rounded-xl border border-border bg-card p-3"
+            >
               <Avatar src={view.avatarUrl} name={findingTitle(f)} />
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center justify-between gap-2">
@@ -172,7 +199,9 @@ export function ResultsTable({ rows, onOpen, onCurate, sourceLabel, advanced }: 
                   </button>
                   <FindingStatusBadge status={f.status} />
                 </div>
-                <p className="truncate font-mono text-xs text-muted-foreground">{f.identifier_value}</p>
+                <p className="truncate font-mono text-xs text-muted-foreground">
+                  {f.identifier_value}
+                </p>
                 <p className="line-clamp-2 text-xs text-muted-foreground">{summaryLine(f)}</p>
               </div>
               <PinButton finding={f} onCurate={onCurate} />

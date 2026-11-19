@@ -87,7 +87,9 @@ export function CaseHeader({ c }: { c: Case }) {
             <TitleEditor c={c} onDone={() => setEditing(false)} />
           ) : (
             <div className="flex min-w-0 items-center gap-1.5">
-              <h1 className="min-w-0 break-words text-3xl font-semibold tracking-tight">{caseDisplayTitle(c)}</h1>
+              <h1 className="min-w-0 break-words text-3xl font-semibold tracking-tight">
+                {caseDisplayTitle(c)}
+              </h1>
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -104,7 +106,9 @@ export function CaseHeader({ c }: { c: Case }) {
             {c.identifiers.map((idf) => (
               <TargetChip key={`${idf.type}:${idf.value}`} type={idf.type} value={idf.value} />
             ))}
-            {c.tags.length > 0 ? <span className="mx-1 hidden h-4 w-px bg-border sm:block" aria-hidden /> : null}
+            {c.tags.length > 0 ? (
+              <span className="mx-1 hidden h-4 w-px bg-border sm:block" aria-hidden />
+            ) : null}
             {c.tags.map((tag) => (
               <Badge key={tag} variant="muted">
                 {tag}
@@ -114,7 +118,9 @@ export function CaseHeader({ c }: { c: Case }) {
           </div>
           <p className="text-sm text-muted-foreground">
             <span title={formatDateTime(c.created_at)}>Started {timeAgo(c.created_at)}</span>
-            {c.updated_at ? <span title={formatDateTime(c.updated_at)}> · updated {timeAgo(c.updated_at)}</span> : null}
+            {c.updated_at ? (
+              <span title={formatDateTime(c.updated_at)}> · updated {timeAgo(c.updated_at)}</span>
+            ) : null}
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2" data-print="hide">
@@ -123,7 +129,9 @@ export function CaseHeader({ c }: { c: Case }) {
           <Button variant="outline" size="sm" onClick={() => setNotesOpen(true)}>
             <NotebookPen aria-hidden />
             Notes
-            {c.notes.trim() ? <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-label="has notes" /> : null}
+            {c.notes.trim() ? (
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-label="has notes" />
+            ) : null}
           </Button>
           <CaseMenu
             c={c}

@@ -1,0 +1,15 @@
+{
+  "id": "4fc42e3e74c011e4bea40242ac11001b",
+  "uuid": "4fc42e3e-74c0-11e4-bea4-0242ac11001b",
+  "orgname": "nginx",
+  "full_name": "NGINX Inc.",
+  "location": "San Francisco",
+  "company": "NGINX Inc.",
+  "profile_url": "https://www.nginx.com/",
+  "date_joined": "2014-05-06T20:52:50Z",
+  "gravatar_url": "https://www.gravatar.com/avatar/6a6c67f4815a0379d3b697174b4f6805?s=80&r=g&d=mm",
+  "gravatar_email": "",
+  "type": "Organization",
+  "badge": "verified_publisher",
+  "is_active": true
+}

@@ -1,0 +1,26 @@
+{
+  "objects": [
+    {
+      "package": {
+        "name": "@exampleuser/range-list",
+        "version": "1.0.0",
+        "publisher": {
+          "email": "exampleuser@example.net",
+          "username": "exampleuser"
+        },
+        "maintainers": [
+          {
+            "email": "someone-else@example.net",
+            "username": "exampleuser2"
+          },
+          {
+            "email": "exampleuser@example.net",
+            "username": "exampleuser"
+          }
+        ]
+      }
+    }
+  ],
+  "total": 1,
+  "time": "2026-11-19T18:38:44.705Z"
+}

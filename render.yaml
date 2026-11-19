@@ -59,6 +59,8 @@ services:
       # Module keys are read by the gateway too, so GET /modules reports availability correctly.
       - key: GITHUB_TOKEN
         sync: false
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false
       - key: SERPAPI_KEY
         sync: false
       - key: SCRAPING_API_KEY
@@ -82,6 +84,8 @@ services:
       - key: SUPABASE_SERVICE_KEY
         sync: false
       - key: GITHUB_TOKEN
+        sync: false
+      - key: COMPANIES_HOUSE_API_KEY
         sync: false
       - key: SERPAPI_KEY
         sync: false
@@ -107,6 +111,8 @@ services:
         sync: false
       - key: GITHUB_TOKEN
         sync: false
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false
       - key: SERPAPI_KEY
         sync: false
       - key: SCRAPING_API_KEY
@@ -130,6 +136,8 @@ services:
       - key: SUPABASE_SERVICE_KEY
         sync: false
       - key: GITHUB_TOKEN
+        sync: false
+      - key: COMPANIES_HOUSE_API_KEY
         sync: false
       - key: SERPAPI_KEY
         sync: false

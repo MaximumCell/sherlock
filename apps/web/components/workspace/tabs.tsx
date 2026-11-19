@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   ListChecks,
   Table2,
+  UsersRound,
   Waypoints,
   type LucideIcon,
 } from "lucide-react";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 export const WORKSPACE_TABS = [
   "overview",
+  "people",
   "findings",
   "graph",
   "timeline",
@@ -24,7 +26,9 @@ export const WORKSPACE_TABS = [
 ] as const;
 export type WorkspaceTab = (typeof WORKSPACE_TABS)[number];
 
-export function parseTab(value: string | null): WorkspaceTab {
+/** `people` only exists on cases with a name identifier. */
+export function parseTab(value: string | null, hasPeople = true): WorkspaceTab {
+  if (value === "people" && !hasPeople) return "overview";
   return (WORKSPACE_TABS as readonly string[]).includes(value ?? "")
     ? (value as WorkspaceTab)
     : "overview";
@@ -32,6 +36,7 @@ export function parseTab(value: string | null): WorkspaceTab {
 
 const META: Record<WorkspaceTab, { label: string; icon: LucideIcon }> = {
   overview: { label: "Overview", icon: LayoutDashboard },
+  people: { label: "People", icon: UsersRound },
   findings: { label: "Findings", icon: Table2 },
   graph: { label: "Graph", icon: Waypoints },
   timeline: { label: "Timeline", icon: Clock },
@@ -40,7 +45,15 @@ const META: Record<WorkspaceTab, { label: string; icon: LucideIcon }> = {
 };
 
 /** Tabs are links: the active tab lives in `?tab=` so it survives reloads and can be shared. */
-export function WorkspaceTabs({ caseId, active }: { caseId: string; active: WorkspaceTab }) {
+export function WorkspaceTabs({
+  caseId,
+  active,
+  hasPeople,
+}: {
+  caseId: string;
+  active: WorkspaceTab;
+  hasPeople: boolean;
+}) {
   const { params, pathname } = useUrlState();
   const findings = useFindings(caseId);
   const correlations = useCorrelations(caseId);
@@ -59,7 +72,7 @@ export function WorkspaceTabs({ caseId, active }: { caseId: string; active: Work
       data-print="hide"
       className="scrollbar-thin -mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-0"
     >
-      {WORKSPACE_TABS.map((tab) => {
+      {WORKSPACE_TABS.filter((t) => t !== "people" || hasPeople).map((tab) => {
         const { label, icon: Icon } = META[tab];
         const selected = tab === active;
         const count = counts[tab];

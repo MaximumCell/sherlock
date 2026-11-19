@@ -19,9 +19,10 @@ import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/query/hooks";
 import { useCreateCase } from "@/lib/query/mutations";
 import { hasAcknowledged, recordAcknowledgement } from "@/lib/storage";
-import type { TargetType } from "@/lib/types";
+import type { NameHints, TargetType } from "@/lib/types";
 import { useCaseHref } from "@/lib/use-case-href";
-import { TARGET_TYPE_META, parseTags, validateTarget } from "@/lib/validation";
+import { TARGET_TYPE_META, cleanHints, parseTags, validateTarget } from "@/lib/validation";
+import { NameHintsFields } from "./name-hints-fields";
 import { TargetTypePicker } from "./target-type-picker";
 
 export function NewInvestigationDialog({
@@ -41,6 +42,7 @@ export function NewInvestigationDialog({
   const [value, setValue] = useState("");
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
+  const [hints, setHints] = useState<NameHints>({});
   const [needsAck] = useState(() => !hasAcknowledged());
   const [ack, setAck] = useState(false);
   const [valueError, setValueError] = useState<string | null>(null);
@@ -69,6 +71,7 @@ export function NewInvestigationDialog({
         tags: parseTags(tags),
         identifiers: [{ type, value: result.value }],
         scan: true,
+        ...(type === "name" ? { hints: cleanHints(hints) } : {}),
       },
       {
         onSuccess: ({ case: created, jobs }) => {
@@ -122,6 +125,10 @@ export function NewInvestigationDialog({
                 </p>
               )}
             </div>
+
+            {type === "name" ? (
+              <NameHintsFields value={hints} onChange={setHints} idPrefix="new-hint" />
+            ) : null}
 
             {blockedBySignIn ? (
               <div className="flex flex-col gap-2 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm sm:flex-row sm:items-center">

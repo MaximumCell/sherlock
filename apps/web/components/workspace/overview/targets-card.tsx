@@ -14,8 +14,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useScan } from "@/lib/query/mutations";
-import { TARGET_TYPES, type Case, type Entity, type Job, type TargetType } from "@/lib/types";
-import { TARGET_TYPE_META, validateTarget } from "@/lib/validation";
+import { NameHintsFields } from "@/components/cases/name-hints-fields";
+import {
+  TARGET_TYPES,
+  type Case,
+  type Entity,
+  type Job,
+  type NameHints,
+  type TargetType,
+} from "@/lib/types";
+import { TARGET_TYPE_META, cleanHints, validateTarget } from "@/lib/validation";
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
@@ -24,13 +32,17 @@ function AddTargetForm({ caseId }: { caseId: string }) {
   const [type, setType] = useState<TargetType>("username");
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [hints, setHints] = useState<NameHints>({});
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const result = validateTarget(type, value);
     if (!result.ok) return setError(result.error);
     setError(null);
-    scan.mutate({ type, value: result.value }, { onSuccess: () => setValue("") });
+    scan.mutate(
+      { type, value: result.value, ...(type === "name" ? { hints: cleanHints(hints) } : {}) },
+      { onSuccess: () => setValue("") },
+    );
   };
 
   return (
@@ -71,6 +83,9 @@ function AddTargetForm({ caseId }: { caseId: string }) {
         <p id="add-target-error" role="alert" className="text-sm text-danger">
           {error}
         </p>
+      ) : null}
+      {type === "name" ? (
+        <NameHintsFields value={hints} onChange={setHints} idPrefix="add-hint" />
       ) : null}
     </form>
   );

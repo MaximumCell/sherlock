@@ -1,4 +1,4 @@
-import type { TargetType } from "./types";
+import type { NameHints, TargetType } from "./types";
 
 export type ValidationResult = { ok: true; value: string } | { ok: false; error: string };
 
@@ -176,4 +176,14 @@ export function parseTags(input: string): string[] {
     if (tag) seen.add(tag);
   }
   return [...seen].slice(0, 12);
+}
+
+/** Trim the optional name-search hints and drop empty ones; `undefined` when nothing is left. */
+export function cleanHints(hints: NameHints): NameHints | undefined {
+  const out: NameHints = {};
+  for (const key of ["city", "employer", "school", "keywords"] as const) {
+    const v = hints[key]?.trim().slice(0, 120);
+    if (v) out[key] = v;
+  }
+  return Object.keys(out).length ? out : undefined;
 }

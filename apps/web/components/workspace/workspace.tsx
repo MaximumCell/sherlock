@@ -15,6 +15,7 @@ import { JobsPanel } from "./jobs/jobs-panel";
 import { OverviewTab } from "./overview/overview-tab";
 import { ReportTab } from "./report/report-tab";
 import { ReviewTab } from "./review/review-tab";
+import { PeopleTab } from "./people/people-tab";
 import { parseTab, WorkspaceTabs, type WorkspaceTab } from "./tabs";
 import { TimelineTab } from "./timeline/timeline-tab";
 
@@ -45,6 +46,8 @@ function TabPanel({ tab, caseId }: { tab: WorkspaceTab; caseId: string }) {
   switch (tab) {
     case "overview":
       return <OverviewTab caseId={caseId} />;
+    case "people":
+      return <PeopleTab caseId={caseId} />;
     case "findings":
       return <FindingsTab caseId={caseId} />;
     case "graph":
@@ -60,8 +63,9 @@ function TabPanel({ tab, caseId }: { tab: WorkspaceTab; caseId: string }) {
 
 export function Workspace({ caseId }: { caseId: string }) {
   const { params } = useUrlState();
-  const tab = parseTab(params.get("tab"));
   const caseQuery = useCase(caseId);
+  const hasPeople = caseQuery.data?.identifiers.some((i) => i.type === "name") ?? false;
+  const tab = parseTab(params.get("tab"), hasPeople);
   const jobs = useJobs(caseId);
   useCaseRealtime(caseId);
   useWakeStuckJobs(caseId, jobs.data);
@@ -96,7 +100,7 @@ export function Workspace({ caseId }: { caseId: string }) {
   return (
     <div className="space-y-4 pb-16">
       <CaseHeader c={caseQuery.data} />
-      <WorkspaceTabs caseId={caseId} active={tab} />
+      <WorkspaceTabs caseId={caseId} active={tab} hasPeople={hasPeople} />
       <section
         id={`panel-${tab}`}
         role="tabpanel"

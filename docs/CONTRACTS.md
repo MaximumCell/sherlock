@@ -51,6 +51,8 @@ Conventions inside `extra_metadata.extra` (use these names when the source has t
 
 Legacy rows keep their old shapes (documented in `packages/core/sherlock_core/correlation/facts.py`, the only code allowed to know them). Breach rows: `platform = "breach"`, top-level meta `breach_name`, `breach_date`, `data_classes`; pass `discriminator=<breach name>` so each breach is its own row.
 
+Rows with top-level meta `summary: true` are scan coverage summaries (checked / found / error counts); fan-out modules emit one instead of hundreds of `not_found` rows. They are never correlation input.
+
 `not_found` rows are stored (they show coverage) but are never correlation input.
 
 ## Module (`sherlock_core.modules`)
@@ -78,7 +80,9 @@ corrs = correlate(case_id, findings)      # list of rows for store.sync_correlat
 stats = summarize(findings)               # case summary (handle reuse counts etc.), not review items
 ```
 
-Correlation row: `type` (rule name), `corr_key` (deterministic), `matched_value`, `entities_involved` (**finding ids**), `confidence` (0..1), `evidence` (list of human-readable strings or `{finding_id, field, value}` dicts), `priority`.
+`extract_entities(findings)` returns pivot candidates (emails, handles, urls, domains) for `store.upsert_entities`.
+
+Correlation row: `type` (rule name), `corr_key` (deterministic), `matched_value`, `entities_involved` (**finding ids**), `confidence` (0..1), `evidence` (list of human-readable strings or `{finding_id, platform, field, value}` dicts), `priority`.
 Review state lives in `status` (`pending | approved | rejected`) and is owned by `store.sync_correlations` / `set_correlation_status`. The engine never sets it.
 
 ## Jobs
@@ -107,7 +111,9 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 | `DELETE /cases/{id}` | | 204 |
 | `POST /cases/{id}/scan` | `{type, value, modules?: string[]}` | `{batch_id, jobs: Job[]}` (202) |
 | `POST /cases/{id}/jobs/{job_id}/cancel` | | `Job` |
+| `POST /cases/{id}/wake` | | 202; re-pokes workers that have queued jobs for this case |
 | `POST /cases/{id}/correlate` | | `{correlations: number}` |
+| `GET /cases/{id}/exposure` | | `{score, band, factors[], computed_from, method}` (see `sherlock_core.scoring`) |
 | `POST /cases/{id}/findings/{fid}/curate` | `{curated: bool}` | `Finding` |
 | `POST /cases/{id}/correlations` | `{finding_ids: string[], note?}` | `Correlation` (manual link) |
 | `POST /correlations/{id}/review` | `{decision: approve \| reject \| reset, note?}` | `Correlation` |
@@ -118,6 +124,7 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 Rules:
 - `type = "name"` requires a non-anonymous session (403 otherwise) and is limited by `NAME_SEARCHES_PER_USER_PER_DAY`.
 - Scans are limited by `SCANS_PER_SESSION_PER_DAY` and `SCANS_GLOBAL_PER_DAY` (429 with a clear message).
+- `POST /cases` and manual links return 201. A case owned by someone else is 403; a missing case is 404. Validation errors are 422 with a string `detail`.
 - Reads (lists of cases, findings, correlations, jobs, entities, audit) are **not** on the gateway; the web app reads them from Supabase.
 
 ## Worker HTTP API

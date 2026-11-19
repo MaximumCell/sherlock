@@ -7,60 +7,64 @@
  * :root is the light theme, .dark the default "investigation console".
  */
 @layer base {
+  /*
+   * Light theme. Soft neutral surfaces, one indigo accent used sparingly,
+   * colour otherwise reserved for status (exposure band, confirmed / pending / rejected).
+   */
   :root {
-    --background: 210 20% 98%;
-    --surface: 210 20% 96%;
-    --foreground: 222 30% 12%;
+    --background: 220 20% 98.5%;
+    --surface: 220 18% 96.5%;
+    --foreground: 224 26% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222 30% 12%;
+    --card-foreground: 224 26% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 30% 12%;
-    --primary: 215 85% 40%;
+    --popover-foreground: 224 26% 11%;
+    --primary: 224 26% 13%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 214 20% 92%;
-    --secondary-foreground: 222 30% 14%;
-    --muted: 214 20% 93%;
-    --muted-foreground: 220 12% 36%;
-    --accent: 215 85% 40%;
+    --secondary: 220 16% 94%;
+    --secondary-foreground: 224 26% 13%;
+    --muted: 220 16% 94.5%;
+    --muted-foreground: 222 10% 38%;
+    --accent: 234 72% 55%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 42%;
+    --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 16% 84%;
-    --input: 214 14% 70%;
-    --ring: 215 85% 40%;
-    --success: 152 70% 26%;
-    --warning: 28 90% 32%;
-    --danger: 0 72% 42%;
-    --shadow: 222 40% 20%;
-    --radius: 0.5rem;
+    --border: 220 14% 89%;
+    --input: 220 12% 80%;
+    --ring: 234 72% 55%;
+    --success: 152 64% 28%;
+    --warning: 30 92% 34%;
+    --danger: 0 70% 45%;
+    --shadow: 224 30% 20%;
+    --radius: 0.625rem;
     color-scheme: light;
   }
 
   .dark {
-    --background: 222 26% 7%;
-    --surface: 222 24% 9%;
-    --foreground: 210 20% 93%;
-    --card: 222 22% 10.5%;
-    --card-foreground: 210 20% 93%;
-    --popover: 222 22% 12%;
-    --popover-foreground: 210 20% 93%;
-    --primary: 212 100% 67%;
-    --primary-foreground: 222 47% 8%;
-    --secondary: 222 16% 16%;
-    --secondary-foreground: 210 20% 93%;
-    --muted: 222 16% 15%;
-    --muted-foreground: 215 14% 68%;
-    --accent: 212 100% 67%;
-    --accent-foreground: 222 47% 8%;
-    --destructive: 0 80% 62%;
-    --destructive-foreground: 222 47% 8%;
-    --border: 222 14% 20%;
-    --input: 222 12% 32%;
-    --ring: 212 100% 67%;
-    --success: 150 60% 55%;
+    --background: 228 14% 6.5%;
+    --surface: 228 13% 8.5%;
+    --foreground: 220 16% 93%;
+    --card: 228 12% 9.5%;
+    --card-foreground: 220 16% 93%;
+    --popover: 228 12% 11%;
+    --popover-foreground: 220 16% 93%;
+    --primary: 220 16% 94%;
+    --primary-foreground: 228 18% 9%;
+    --secondary: 228 10% 15%;
+    --secondary-foreground: 220 16% 93%;
+    --muted: 228 10% 13.5%;
+    --muted-foreground: 222 9% 65%;
+    --accent: 232 92% 74%;
+    --accent-foreground: 228 30% 10%;
+    --destructive: 0 80% 64%;
+    --destructive-foreground: 228 30% 8%;
+    --border: 228 10% 17%;
+    --input: 228 9% 27%;
+    --ring: 232 92% 74%;
+    --success: 150 55% 54%;
     --warning: 38 92% 60%;
     --danger: 0 86% 70%;
-    --shadow: 222 60% 2%;
+    --shadow: 228 60% 2%;
     color-scheme: dark;
   }
 
@@ -75,6 +79,13 @@
   body {
     @apply bg-background font-sans text-base text-foreground antialiased;
     font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   :focus-visible {
@@ -87,6 +98,12 @@
 }
 
 @layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
@@ -113,6 +130,7 @@
   stroke: hsl(var(--muted-foreground) / 0.35);
   stroke-width: 1;
 }
+.react-flow__edge-path.edge-mentions,
 .edge-mentions .react-flow__edge-path {
   stroke: hsl(var(--muted-foreground) / 0.5);
   stroke-width: 1;
@@ -156,6 +174,14 @@
 @media print {
   [data-print="hide"] {
     display: none !important;
+  }
+  body[data-printing="report"] [data-print-unless-report],
+  body[data-printing="report"] [data-section]:not(#report) {
+    display: none !important;
+  }
+  body[data-printing="report"] #report {
+    border: 0;
+    padding: 0;
   }
   body {
     background: #fff;

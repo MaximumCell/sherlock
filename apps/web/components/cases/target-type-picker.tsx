@@ -14,7 +14,7 @@ export function TargetTypePicker({
   onChange: (type: TargetType) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label="Target type" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div role="radiogroup" aria-label="Target type" className="grid grid-cols-2 gap-1.5">
       {TARGET_TYPES.map((type) => {
         const meta = TARGET_TYPE_META[type];
         const selected = type === value;

@@ -22,7 +22,8 @@ import { applyChange, keys } from "./cache";
 
 /** Every command failure surfaces as a toast; nothing fails silently. */
 function reportError(title: string, err: unknown) {
-  const signIn = err instanceof GatewayError && err.status === 403 && /sign|anonymous|account/i.test(err.detail);
+  const signIn =
+    err instanceof GatewayError && err.status === 403 && /sign|anonymous|account/i.test(err.detail);
   toast.error(title, {
     description: signIn ? `${describeError(err)} Sign in to continue.` : describeError(err),
     action: signIn ? { label: "Sign in", onClick: () => requestSignIn() } : undefined,
@@ -41,6 +42,36 @@ export function useCreateCase() {
       void client.invalidateQueries({ queryKey: keys.cases(mode) });
     },
     onError: (err) => reportError("Could not create the investigation", err),
+  });
+}
+
+/**
+ * Create a case and start its scan. With `modules` (a subset of data sources) the case is
+ * created without a scan and one scan limited to those sources is queued right after.
+ */
+export function useStartInvestigation() {
+  const { ds, mode } = useData();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ body, modules }: { body: CreateCaseBody; modules?: string[] }) => {
+      if (!modules) return ds.createCase({ ...body, scan: true });
+      const created = await ds.createCase({ ...body, scan: false });
+      const first = body.identifiers[0];
+      if (!first) return created;
+      const { jobs } = await ds.scan(created.case.id, {
+        type: first.type,
+        value: first.value,
+        modules,
+        ...(body.hints ? { hints: body.hints } : {}),
+      });
+      return { case: created.case, jobs };
+    },
+    onSuccess: ({ case: created, jobs }) => {
+      client.setQueryData(keys.case(mode, created.id), created);
+      client.setQueryData(keys.jobs(mode, created.id), jobs);
+      void client.invalidateQueries({ queryKey: keys.cases(mode) });
+    },
+    onError: (err) => reportError("Could not start the search", err),
   });
 }
 
@@ -77,14 +108,17 @@ export function useScan(caseId: string) {
     mutationFn: (body: ScanBody) => ds.scan(caseId, body),
     onSuccess: ({ jobs }, body) => {
       client.setQueryData<Job[]>(keys.jobs(mode, caseId), (old) =>
-        jobs.reduce<Job[] | undefined>((list, job) => applyChange(list, "INSERT", job.id, job), old),
+        jobs.reduce<Job[] | undefined>(
+          (list, job) => applyChange(list, "INSERT", job.id, job),
+          old,
+        ),
       );
       void client.invalidateQueries({ queryKey: keys.cases(mode) });
-      toast.success(`Scan queued for ${body.value}`, {
-        description: `${jobs.length} module${jobs.length === 1 ? "" : "s"} will run.`,
+      toast.success(`Searching ${body.value}`, {
+        description: `Checking ${jobs.length} data source${jobs.length === 1 ? "" : "s"}. Follow along in Scan progress.`,
       });
     },
-    onError: (err) => reportError("Could not start the scan", err),
+    onError: (err) => reportError("Could not start the search", err),
   });
 }
 
@@ -98,7 +132,7 @@ export function useCancelJob(caseId: string) {
         applyChange(old, "UPDATE", job.id, job),
       );
     },
-    onError: (err) => reportError("Could not cancel the job", err),
+    onError: (err) => reportError("Could not stop that source", err),
   });
 }
 
@@ -119,7 +153,7 @@ export function useCurate(caseId: string) {
     },
     onError: (err, _v, context) => {
       if (context?.previous) client.setQueryData(key, context.previous);
-      reportError("Could not update the shortlist", err);
+      reportError("Could not update your pins", err);
     },
   });
 }
@@ -150,7 +184,7 @@ export function useReview(caseId: string) {
     },
     onError: (err, _v, context) => {
       if (context?.previous) client.setQueryData(key, context.previous);
-      reportError("Review was not saved", err);
+      reportError("Your decision was not saved", err);
     },
   });
 }
@@ -169,12 +203,12 @@ export function useConfirmCandidate(caseId: string) {
         added.reduce<Entity[] | undefined>((list, e) => applyChange(list, "INSERT", e.id, e), old),
       );
       void client.invalidateQueries({ queryKey: keys.entities(mode, caseId) });
-      toast.success("Candidate confirmed", {
+      toast.success("Person confirmed", {
         description: added.length
-          ? `${added.length} new pivot suggestion${added.length === 1 ? "" : "s"} on Overview. No scans were started.`
-          : "No new identifiers to pivot on.",
+          ? `${added.length} new suggested search${added.length === 1 ? "" : "es"} in Next steps. Nothing was searched yet.`
+          : "No new searches to suggest.",
       });
     },
-    onError: (err) => reportError("Could not confirm the candidate", err),
+    onError: (err) => reportError("Could not confirm this person", err),
   });
 }

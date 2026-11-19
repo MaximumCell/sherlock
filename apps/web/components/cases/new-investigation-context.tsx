@@ -14,13 +14,13 @@ export const useNewInvestigation = () => useContext(Context);
 
 /** Mounts the dialog once so any button, shortcut or the command palette can open it. */
 export function NewInvestigationProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<{ open: boolean; type: TargetType; nonce: number }>({
+  const [state, setState] = useState<{ open: boolean; type: TargetType | null; nonce: number }>({
     open: false,
-    type: "username",
+    type: null,
     nonce: 0,
   });
   const open = useCallback((preset?: { type?: TargetType }) => {
-    setState((s) => ({ open: true, type: preset?.type ?? "username", nonce: s.nonce + 1 }));
+    setState((s) => ({ open: true, type: preset?.type ?? null, nonce: s.nonce + 1 }));
   }, []);
   const value = useMemo(() => ({ open }), [open]);
   return (

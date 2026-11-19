@@ -1,124 +1,155 @@
 "use client";
 
 import { CircleCheck, ExternalLink, KeyRound } from "lucide-react";
-import { TargetChip } from "@/components/common/bits";
+import { TargetIcon } from "@/components/common/bits";
 import { ErrorState, PageHeader } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { safeUrl } from "@/lib/findings";
+import { useAdvanced } from "@/lib/preferences";
 import { useModules } from "@/lib/query/hooks";
-import { QUEUES, type ModuleInfo, type Queue } from "@/lib/types";
+import { SOURCE_GROUPS } from "@/lib/sources";
+import type { ModuleInfo } from "@/lib/types";
 
-const QUEUE_META: Record<Queue, { title: string; description: string }> = {
-  identity: {
-    title: "Identity queue",
-    description: "Usernames, emails, phone numbers and names.",
-  },
-  infra: { title: "Infrastructure queue", description: "Domains, IP addresses and wallets." },
-  media: { title: "Media queue", description: "Images: hashing and metadata." },
-};
-
-function ModuleCard({ module: m }: { module: ModuleInfo }) {
+function SourceCard({ module: m, advanced }: { module: ModuleInfo; advanced: boolean }) {
   const source = safeUrl(m.source_url);
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+    <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-semibold">{m.title}</h3>
-          <p className="font-mono text-xs text-muted-foreground">{m.name}</p>
-        </div>
+        <h3 className="font-medium leading-snug">{m.title}</h3>
         {m.available ? (
           <Badge variant="success">
             <CircleCheck className="h-3 w-3" aria-hidden />
-            Available
+            Ready
           </Badge>
         ) : (
           <Badge variant="warning">
             <KeyRound className="h-3 w-3" aria-hidden />
-            Needs key
+            Needs setup
           </Badge>
         )}
       </div>
       <p className="flex-1 text-sm text-muted-foreground">{m.description}</p>
-      {!m.available && m.requires_env.length > 0 ? (
-        <p className="text-xs text-warning">
-          Missing:{" "}
-          {m.requires_env.map((key) => (
-            <code key={key} className="mr-1 rounded bg-warning/10 px-1 py-0.5 font-mono">
-              {key}
-            </code>
-          ))}
+      {!m.available ? (
+        <p className="text-sm text-warning">
+          Needs an API key on the server before it can run.
+          {advanced && m.requires_env.length ? (
+            <span className="mt-1 block">
+              {m.requires_env.map((key) => (
+                <code
+                  key={key}
+                  className="mr-1 rounded bg-warning/10 px-1 py-0.5 font-mono text-xs"
+                >
+                  {key}
+                </code>
+              ))}
+            </span>
+          ) : null}
         </p>
       ) : null}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-        <div className="flex flex-wrap items-center gap-1" aria-label="Accepted input types">
-          {m.inputs.map((input) => (
-            <TargetChip key={input} type={input} value={input} />
-          ))}
+      {advanced || source ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs">
+          {advanced ? (
+            <span className="font-mono text-muted-foreground">
+              {m.name} · queue {m.queue} · inputs {m.inputs.join(", ")}
+            </span>
+          ) : (
+            <span />
+          )}
+          {source ? (
+            <a
+              href={source}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-1 rounded-sm text-accent underline-offset-4 hover:underline"
+            >
+              About this source
+              <ExternalLink className="h-3 w-3" aria-hidden />
+            </a>
+          ) : null}
         </div>
-        {source ? (
-          <a
-            href={source}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 rounded-sm text-xs text-accent underline-offset-4 hover:underline"
-          >
-            Source
-            <ExternalLink className="h-3 w-3" aria-hidden />
-          </a>
-        ) : null}
-      </div>
+      ) : null}
     </li>
   );
 }
 
+/** The data-source catalogue, grouped by what you can search with it. */
 export function ModulesView() {
   const catalogue = useModules();
+  const [advanced] = useAdvanced();
   const modules = catalogue.data?.modules ?? [];
   const available = modules.filter((m) => m.available).length;
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-10">
       <PageHeader
-        title="Modules"
-        description="Every data source is a plugin: one class that declares its inputs, queue and required keys. The registry below is what the gateway uses to plan a scan."
+        title="Data sources"
+        description="Every place Sherlock can check, grouped by what you search. All of them read public data only. A source that searches several kinds of target is listed under each."
       />
       {catalogue.isPending ? (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">
           {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-44" />
+            <Skeleton key={i} className="h-40 rounded-xl" />
           ))}
         </div>
       ) : catalogue.isError ? (
-        <ErrorState error={catalogue.error} onRetry={() => void catalogue.refetch()} />
+        <ErrorState
+          title="Could not load the data sources"
+          error={catalogue.error}
+          onRetry={() => void catalogue.refetch()}
+        />
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            <span className="font-mono text-foreground">{available}</span> of{" "}
-            <span className="font-mono text-foreground">{modules.length}</span> modules available
+            {available} of {modules.length} sources are ready.{" "}
             {catalogue.data?.bundled
-              ? " · showing the bundled catalogue (the scan service was not queried)"
-              : " · live from the scan service"}
+              ? "This is the built-in list; the scan service was not asked."
+              : "Live from the scan service."}
           </p>
-          {QUEUES.map((queue) => {
-            const list = modules.filter((m) => m.queue === queue);
-            if (list.length === 0) return null;
+          <nav aria-label="Jump to a kind of search" className="flex flex-wrap gap-1.5">
+            {SOURCE_GROUPS.map((g) => (
+              <a
+                key={g.id}
+                href={`#sources-${g.id}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <TargetIcon type={g.types[0] ?? "username"} className="h-3.5 w-3.5" />
+                {g.title}
+              </a>
+            ))}
+          </nav>
+          {SOURCE_GROUPS.map((g) => {
+            const list = modules.filter((m) => g.types.some((t) => m.inputs.includes(t)));
             return (
-              <section key={queue} aria-labelledby={`queue-${queue}`} className="space-y-3">
+              <section
+                key={g.id}
+                id={`sources-${g.id}`}
+                aria-labelledby={`sources-${g.id}-title`}
+                className="scroll-mt-24 space-y-3"
+              >
                 <div>
-                  <h2 id={`queue-${queue}`} className="text-lg font-semibold">
-                    {QUEUE_META[queue].title}
-                    <span className="ml-2 font-mono text-sm font-normal text-muted-foreground">
-                      {list.length}
-                    </span>
+                  <h2
+                    id={`sources-${g.id}-title`}
+                    className="flex items-center gap-2 text-xl font-semibold"
+                  >
+                    <TargetIcon
+                      type={g.types[0] ?? "username"}
+                      className="h-5 w-5 text-muted-foreground"
+                    />
+                    {g.title}
+                    <span className="text-sm font-normal text-muted-foreground">{list.length}</span>
                   </h2>
-                  <p className="text-sm text-muted-foreground">{QUEUE_META[queue].description}</p>
+                  <p className="text-sm text-muted-foreground">{g.description}</p>
                 </div>
-                <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {list.map((m) => (
-                    <ModuleCard key={m.name} module={m} />
-                  ))}
-                </ul>
+                {list.length ? (
+                  <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {list.map((m) => (
+                      <SourceCard key={m.name} module={m} advanced={advanced} />
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No source can search this yet.</p>
+                )}
               </section>
             );
           })}

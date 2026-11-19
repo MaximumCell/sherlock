@@ -1,6 +1,13 @@
 "use client";
 
-import { Blocks, FolderSearch, Info, PlayCircle, ScrollText, type LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  Blocks,
+  FolderSearch,
+  PlayCircle,
+  ScrollText,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -12,59 +19,78 @@ export interface NavItem {
   match: (pathname: string) => boolean;
 }
 
+/** The three top-level places. Everything else is reached from a menu or the palette. */
 export const NAV_ITEMS: NavItem[] = [
   {
     href: "/",
-    label: "Cases",
+    label: "Investigations",
     icon: FolderSearch,
-    match: (p) => p === "/" || p.startsWith("/case/"),
+    match: (p) => p === "/" || p.startsWith("/case/") || p.startsWith("/demo"),
   },
-  { href: "/modules", label: "Modules", icon: Blocks, match: (p) => p.startsWith("/modules") },
-  { href: "/audit", label: "Audit log", icon: ScrollText, match: (p) => p.startsWith("/audit") },
-  { href: "/demo", label: "Live demo", icon: PlayCircle, match: (p) => p.startsWith("/demo") },
-  { href: "/about", label: "About", icon: Info, match: (p) => p.startsWith("/about") },
+  { href: "/modules", label: "Data sources", icon: Blocks, match: (p) => p.startsWith("/modules") },
+  { href: "/about", label: "How it works", icon: BookOpen, match: (p) => p.startsWith("/about") },
 ];
 
-export function Brand() {
+/** Secondary destinations, listed in the palette and the mobile menu. */
+export const MORE_ITEMS: NavItem[] = [
+  { href: "/demo", label: "Try the demo", icon: PlayCircle, match: (p) => p.startsWith("/demo") },
+  { href: "/audit", label: "Activity log", icon: ScrollText, match: (p) => p.startsWith("/audit") },
+];
+
+export function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <Link href="/" className="flex items-center gap-2 rounded-md px-1 py-1" aria-label="Sherlock home">
+    <Link
+      href="/"
+      className="flex shrink-0 items-center gap-2 rounded-md px-1 py-1"
+      aria-label="Sherlock, start a new search"
+    >
       <svg viewBox="0 0 24 24" className="h-6 w-6 text-accent" aria-hidden>
         <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" strokeWidth="2" />
         <path d="M15.5 15.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         <circle cx="10.5" cy="10.5" r="2" fill="currentColor" />
       </svg>
-      <span className="text-lg font-semibold tracking-tight">Sherlock</span>
-      <span className="rounded border border-border px-1 font-mono text-2xs text-muted-foreground">
-        v2
-      </span>
+      {compact ? null : (
+        <span className="text-[1.0625rem] font-semibold tracking-tight">Sherlock</span>
+      )}
     </Link>
   );
 }
 
-export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+export function NavLinks({
+  items = NAV_ITEMS,
+  orientation = "horizontal",
+  onNavigate,
+}: {
+  items?: NavItem[];
+  orientation?: "horizontal" | "vertical";
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname() ?? "/";
+  const vertical = orientation === "vertical";
   return (
-    <nav aria-label="Main" className="flex flex-col gap-0.5">
-      {NAV_ITEMS.map((item) => {
+    <ul className={cn("flex", vertical ? "flex-col gap-0.5" : "items-center gap-1")}>
+      {items.map((item) => {
         const active = item.match(pathname);
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
-              active
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-            )}
-          >
-            <item.icon className={cn("h-4 w-4", active && "text-accent")} aria-hidden />
-            {item.label}
-          </Link>
+          <li key={item.href}>
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex items-center gap-2 rounded-md text-sm font-medium transition-colors",
+                vertical ? "px-3 py-2.5" : "px-3 py-1.5",
+                active
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+              )}
+            >
+              {vertical ? <item.icon className="h-4 w-4" aria-hidden /> : null}
+              {item.label}
+            </Link>
+          </li>
         );
       })}
-    </nav>
+    </ul>
   );
 }

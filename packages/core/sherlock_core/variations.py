@@ -19,9 +19,19 @@ platforms. They decorate, truncate, prefix and suffix with platform conventions:
 """
 import json
 import re
-from typing import Optional
+from typing import Any, Protocol
 
-from gateway.agent.llm import LLMClient, GeminiLLM
+
+class LLMClient(Protocol):
+    """What this module needs from an LLM (gateway.agent.llm.LLMClient satisfies it)."""
+
+    def send(self, history: list[dict], system_instruction: str, tools: list[dict]) -> dict[str, Any]: ...
+
+
+def _default_llm() -> LLMClient:
+    # The LLM client lives in the gateway; core must not import it at module load.
+    from gateway.agent.llm import default_client
+    return default_client()
 
 
 def _to_pascal(s: str) -> str:
@@ -230,7 +240,7 @@ def _apply_and_validate(
     picks: list,
     original: str,
     count: int,
-    exclude: Optional[set[str]] = None,
+    exclude: set[str] | None = None,
 ) -> list[str]:
     """Apply each picked transformation to `original`, validate, and dedup.
 
@@ -276,8 +286,8 @@ def _apply_and_validate(
 def generate_variations(
     username: str,
     count: int = 5,
-    llm: Optional[LLMClient] = None,
-    exclude: Optional[set[str] | list[str]] = None,
+    llm: LLMClient | None = None,
+    exclude: set[str] | list[str] | None = None,
     max_attempts: int = 3,
 ) -> list[str]:
     """Return up to `count` close variations of `username`. LLM picks, code applies.
@@ -289,7 +299,7 @@ def generate_variations(
     with the still-missing slots filled in, so the caller always gets the
     requested count as long as the transformation space has enough variety.
     """
-    llm = llm or GeminiLLM()
+    llm = llm or _default_llm()
     exclude_set: set[str] = set(exclude or [])
     available_list = "\n".join(f"- {n}: {desc}" for n, (desc, _) in TRANSFORMATIONS.items())
 
@@ -355,8 +365,8 @@ def _split_email(email: str) -> tuple[str, str] | None:
 def generate_email_variations(
     email: str,
     count: int = 5,
-    llm: Optional[LLMClient] = None,
-    exclude: Optional[set[str] | list[str]] = None,
+    llm: LLMClient | None = None,
+    exclude: set[str] | list[str] | None = None,
 ) -> list[str]:
     """Generate close email variations: same handle on common providers + local-part permutations.
 
@@ -370,7 +380,7 @@ def generate_email_variations(
     if not parts:
         return []
     local, original_domain = parts
-    llm = llm or GeminiLLM()
+    llm = llm or _default_llm()
     exclude_set: set[str] = {e.lower() for e in (exclude or [])}
 
     # 1. LLM picks local-part transformations
@@ -409,7 +419,6 @@ def generate_email_variations(
 
 
 if __name__ == "__main__":
-    import sys
     # Test 1: pure transformation correctness (no LLM)
     print("=== pure transforms ===")
     test_cases = [

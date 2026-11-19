@@ -56,6 +56,7 @@ class Store:
     def list_findings(self, case_id: str, *, status: str | None = None,
                       curated: bool | None = None) -> list[Row]: raise NotImplementedError
     def set_curated(self, finding_id: str, curated: bool) -> Row | None: raise NotImplementedError
+    def get_finding(self, finding_id: str) -> Row | None: raise NotImplementedError
 
     # ---- correlations
     def sync_correlations(self, case_id: str, corrs: list[Row]) -> list[Row]:
@@ -72,6 +73,7 @@ class Store:
     def list_correlations(self, case_id: str, *, status: str | None = None) -> list[Row]: raise NotImplementedError
     def set_correlation_status(self, correlation_id: str, status: str,
                                note: str | None = None) -> Row | None: raise NotImplementedError
+    def get_correlation(self, correlation_id: str) -> Row | None: raise NotImplementedError
 
     # ---- entities
     def upsert_entities(self, case_id: str, entities: list[Row]) -> None:
@@ -91,6 +93,9 @@ class Store:
         """retry=True requeues while attempts < max_attempts, otherwise marks failed."""
         raise NotImplementedError
     def get_job(self, job_id: str) -> Row | None: raise NotImplementedError
+    def cancel_job(self, job_id: str) -> Row | None:
+        """Mark a queued or running job cancelled (finished jobs are left alone). Returns the row."""
+        raise NotImplementedError
     def list_jobs(self, case_id: str, *, active_only: bool = False) -> list[Row]: raise NotImplementedError
     def queued_queues(self) -> set[str]:
         """Queues that currently have queued jobs (used to decide which workers to wake)."""
@@ -178,6 +183,9 @@ class SupabaseStore(Store):
     def set_curated(self, finding_id, curated):
         return self._one(self._t("raw_findings").update({"curated": curated}).eq("id", finding_id).execute())
 
+    def get_finding(self, finding_id):
+        return self._one(self._t("raw_findings").select("*").eq("id", finding_id).execute())
+
     # ---- correlations
     def sync_correlations(self, case_id, corrs):
         existing = {r["corr_key"]: r for r in self.list_correlations(case_id)}
@@ -214,6 +222,9 @@ class SupabaseStore(Store):
         if note is not None:
             upd["review_note"] = note
         return self._one(self._t("correlations").update(upd).eq("id", correlation_id).execute())
+
+    def get_correlation(self, correlation_id):
+        return self._one(self._t("correlations").select("*").eq("id", correlation_id).execute())
 
     # ---- entities
     def upsert_entities(self, case_id, entities):
@@ -267,6 +278,12 @@ class SupabaseStore(Store):
 
     def get_job(self, job_id):
         return self._one(self._t("jobs").select("*").eq("id", job_id).execute())
+
+    def cancel_job(self, job_id):
+        self._t("jobs").update({
+            "status": "cancelled", "finished_at": now_iso(), "locked_by": None,
+        }).eq("id", job_id).in_("status", ["queued", "running"]).execute()
+        return self.get_job(job_id)
 
     def list_jobs(self, case_id, *, active_only=False):
         q = self._t("jobs").select("*").eq("case_id", case_id)
@@ -375,6 +392,9 @@ class MemoryStore(Store):
         self.findings[finding_id]["curated"] = curated
         return self._cp(self.findings[finding_id])
 
+    def get_finding(self, finding_id):
+        return self._cp(self.findings.get(finding_id))
+
     # ---- correlations
     def _new_corr(self, corr: Row, case_id: str) -> Row:
         row = {
@@ -416,6 +436,9 @@ class MemoryStore(Store):
         if note is not None:
             r["review_note"] = note
         return copy.deepcopy(r)
+
+    def get_correlation(self, correlation_id):
+        return self._cp(self.correlations.get(correlation_id))
 
     # ---- entities
     def upsert_entities(self, case_id, entities):
@@ -494,6 +517,12 @@ class MemoryStore(Store):
 
     def get_job(self, job_id):
         return self._cp(self.jobs.get(job_id))
+
+    def cancel_job(self, job_id):
+        j = self.jobs.get(job_id)
+        if j and j["status"] in ("queued", "running"):
+            j.update(status="cancelled", finished_at=now_iso(), locked_by=None)
+        return self._cp(j)
 
     def list_jobs(self, case_id, *, active_only=False):
         rows = [j for j in self.jobs.values() if j["case_id"] == case_id

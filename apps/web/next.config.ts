@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // A second dev server (e.g. a fixtures-only demo) needs its own build folder.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Routes that existed before the case workspace; keep old links working.
   async redirects() {
     return [

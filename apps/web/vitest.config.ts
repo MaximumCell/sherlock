@@ -10,7 +10,7 @@ export default defineConfig({
     globals: false,
     setupFiles: ["./test/setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules/**", ".next/**"],
+    exclude: ["node_modules/**", ".next/**", ".next-*/**"],
     css: false,
   },
 });

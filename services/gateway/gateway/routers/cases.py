@@ -21,6 +21,7 @@ from gateway.schemas import (
     ChatRequest,
     CorrelateResult,
     CurateRequest,
+    ExposureOut,
     ManualLinkRequest,
     ScanAccepted,
     ScanRequest,
@@ -209,6 +210,15 @@ def report(case_id: str, principal: CurrentPrincipal, store: StoreDep):
     markdown = generate_markdown(case_id, store=store)
     store.log(case_id, "report_generated", "user", {})
     return PlainTextResponse(markdown, media_type="text/markdown; charset=utf-8")
+
+
+@router.get("/{case_id}/exposure", response_model=ExposureOut)
+def exposure(case_id: str, principal: CurrentPrincipal, store: StoreDep):
+    """Deterministic exposure score of the case (no LLM). Read-only, so demo cases are allowed."""
+    load_case(store, case_id, principal, write=False)
+    from sherlock_core.scoring import score_exposure
+
+    return score_exposure(store.list_findings(case_id), store.list_correlations(case_id))
 
 
 @router.get("/{case_id}/variations", response_model=VariationsOut)

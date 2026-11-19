@@ -7,13 +7,15 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response
 from fastapi.responses import PlainTextResponse
-from sherlock_core.jobs import recorrelate
+from sherlock_core.jobs import normalize_target, recorrelate
 from sherlock_core.models import Case, Correlation, Finding, Job, now_iso
 
 from gateway.agent.llm import LLMClient, default_client
 from gateway.agent.orchestrator import Agent
 from gateway.auth import CurrentPrincipal
 from gateway.schemas import (
+    CandidateConfirmed,
+    CandidatesOut,
     CaseCreate,
     CaseCreated,
     CasePatch,
@@ -36,6 +38,7 @@ from gateway.service import (
     enqueue_planned,
     is_uuid,
     load_case,
+    name_params,
     normalize_or_400,
     plan_or_400,
     start_scan,
@@ -70,8 +73,12 @@ def create_case(body: CaseCreate, principal: CurrentPrincipal, store: StoreDep,
         if not any(i["type"] == ident.type and i["value"] == value for i in identifiers):
             identifiers.append({"type": ident.type, "value": value})
 
+    if body.hints is not None and not any(i["type"] == "name" for i in identifiers):
+        raise HTTPException(400, "hints are only accepted together with a name identifier")
     # Plan before anything is written, so an unusable request leaves nothing behind.
-    batches = [plan_or_400("", i["type"], i["value"]) for i in identifiers] if body.scan else []
+    batches = [plan_or_400("", i["type"], i["value"], params=name_params(i["type"], body.hints)
+                           if i["type"] == "name" else None)
+               for i in identifiers] if body.scan else []
     for i in identifiers if body.scan else []:
         consume_scan_quota(store, principal, i["type"])
 
@@ -120,7 +127,8 @@ def delete_case(case_id: str, principal: CurrentPrincipal, store: StoreDep):
 def scan(case_id: str, body: ScanRequest, principal: CurrentPrincipal, store: StoreDep,
          background: BackgroundTasks, waker: WakerDep):
     load_case(store, case_id, principal, write=True)
-    jobs = start_scan(store, principal, case_id, body.type, body.value, body.modules)
+    jobs = start_scan(store, principal, case_id, body.type, body.value, body.modules,
+                      params=name_params(body.type, body.hints))
     background.add_task(waker, {j["queue"] for j in jobs})
     return {"batch_id": jobs[0]["batch_id"], "jobs": jobs}
 
@@ -198,6 +206,98 @@ def manual_link(case_id: str, body: ManualLinkRequest, principal: CurrentPrincip
     }, case_id)
     store.log(case_id, "manual_link", "user", {"correlation_id": row["id"], "finding_ids": ids})
     return row
+
+
+# ----------------------------------------------------------------------------- name-search candidates
+def _name_search(store, case: dict, name: str | None) -> tuple[str, dict]:
+    """The searched name (the case's name identifier unless one is given) and the hints it ran with."""
+    jobs = [j for j in store.list_jobs(case["id"]) if j.get("target_type") == "name"]   # newest first
+    known = [i["value"] for i in case.get("identifiers") or [] if i.get("type") == "name"]
+    known += [j["target_value"] for j in jobs if j["target_value"] not in known]
+    if name is not None:
+        name = normalize_or_400("name", name)
+        if name not in known:
+            raise HTTPException(404, "this case has no name search for that name")
+    elif known:
+        name = known[0]
+    else:
+        raise HTTPException(404, "this case has no name search")
+    hints = next((j.get("params") or {} for j in jobs if j["target_value"] == name and j.get("params")), {})
+    return name, dict(hints)
+
+
+def _candidates(store, case_id: str, name: str, hints: dict):
+    from sherlock_core.resolve import resolve_candidates, unassigned_finding_ids
+
+    findings = [f for f in store.list_findings(case_id, status="found")
+                if f.get("identifier_type") == "name" and f.get("identifier_value") == name]
+    cands = resolve_candidates(findings, name, hints)
+    return cands, unassigned_finding_ids(findings, cands)
+
+
+@router.get("/{case_id}/candidates", response_model=CandidatesOut)
+def candidates(case_id: str, principal: CurrentPrincipal, store: StoreDep,
+               name: Annotated[str | None, Query(min_length=2, max_length=100)] = None):
+    """The distinct people among a name search's findings, ranked and explained (deterministic, no LLM).
+    Read-only, so demo cases are allowed."""
+    case = load_case(store, case_id, principal, write=False)
+    name, hints = _name_search(store, case, name)
+    cands, unassigned = _candidates(store, case_id, name, hints)
+    return {"name": name, "hints": hints, "candidates": [c.to_dict() for c in cands],
+            "unassigned_finding_ids": unassigned}
+
+
+def _pivots(candidate) -> list[dict]:
+    """A confirmed candidate's handles, emails, links and domains as unscanned entity rows."""
+    a = candidate.attributes
+    source = candidate.finding_ids[0] if candidate.finding_ids else None
+    rows: list[dict] = []
+
+    def add(kind: str, value: str, platform: str | None = None) -> None:
+        try:
+            v = normalize_target(kind, value) if kind != "url" else value.strip()
+        except ValueError:
+            return                       # e.g. a fediverse handle that is not a plain username
+        if v and not any(r["kind"] == kind and r["value"] == v for r in rows):
+            rows.append({"kind": kind, "value": v, "platform": platform, "source_finding_id": source,
+                         "is_seed": False, "scanned": False})
+
+    for h in a.get("handles") or []:
+        add("username", h["handle"], h["platform"])
+    for email in a.get("emails") or []:
+        add("email", email)
+    for link in a.get("links") or []:
+        if link.lower().startswith(("http://", "https://")) and len(link) <= 2048:
+            add("url", link)
+    for domain in a.get("domains") or []:
+        add("domain", domain)
+    return rows
+
+
+@router.post("/{case_id}/candidates/{candidate_id}/confirm", response_model=CandidateConfirmed)
+def confirm_candidate(case_id: str, candidate_id: str, principal: CurrentPrincipal, store: StoreDep,
+                      name: Annotated[str | None, Query(min_length=2, max_length=100)] = None):
+    """The investigator says "this is the person". Records it and adds the candidate's accounts,
+    emails, links and domains as pivot suggestions. Starts NO scan: pivoting stays a separate,
+    rate-limited user action."""
+    case = load_case(store, case_id, principal, write=True)
+    check_target_allowed(principal, "name")
+    name, hints = _name_search(store, case, name)
+    cands, _ = _candidates(store, case_id, name, hints)
+    candidate = next((c for c in cands if c.candidate_id == candidate_id), None)
+    if candidate is None:
+        raise HTTPException(404, "candidate not found (the findings may have changed; reload the candidates)")
+    before = {(e["kind"], e["value"]) for e in store.list_entities(case_id)}
+    pivots = [r for r in _pivots(candidate) if (r["kind"], r["value"]) not in before]
+    store.upsert_entities(case_id, pivots)
+    added = {(r["kind"], r["value"]) for r in pivots}
+    entities = [e for e in store.list_entities(case_id) if (e["kind"], e["value"]) in added]
+    store.log(case_id, "candidate_confirmed", "user", {
+        "user": principal.user_id, "name": name, "candidate_id": candidate.candidate_id, "label": candidate.label,
+        "score": candidate.score, "finding_ids": candidate.finding_ids,
+        "entities": [{"kind": e["kind"], "value": e["value"]} for e in entities],
+    })
+    return {"candidate": candidate.to_dict(), "entities": entities}
 
 
 # ----------------------------------------------------------------------------- report, variations, chat

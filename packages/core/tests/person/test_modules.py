@@ -326,3 +326,12 @@ def test_web_is_unavailable_without_a_provider(monkeypatch):
     assert "person_web" not in {m.name for m in modules.modules_for("name")}
     monkeypatch.setenv("SERPAPI_KEY", "k")
     assert mod.available()
+
+
+def test_plan_scan_copies_params_onto_every_job():
+    from sherlock_core.jobs import plan_scan
+    hints = {"city": "Boston", "keywords": ["web"]}
+    rows = plan_scan("case-1", "name", "  Tim   Berners-Lee ", ["person_openalex", "person_orcid"], params=hints)
+    assert [r["params"] for r in rows] == [hints, hints] and rows[0]["params"] is not hints
+    assert all(r["target_value"] == "Tim Berners-Lee" for r in rows)
+    assert plan_scan("case-1", "name", "Tim Berners-Lee", ["person_orcid"])[0]["params"] == {}

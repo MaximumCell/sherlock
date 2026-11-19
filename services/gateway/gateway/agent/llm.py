@@ -4,8 +4,8 @@ The Agent class in orchestrator.py only talks to LLMClient. To swap models,
 implement a new LLMClient and wire it in orchestrator.Agent.__init__.
 """
 import os
-from typing import Any
 from abc import ABC, abstractmethod
+from typing import Any
 
 from sherlock_core import config
 
@@ -27,10 +27,11 @@ class GeminiLLM(LLMClient):
     """google-genai implementation. Model name comes from MODEL_NAME env."""
 
     def __init__(self, api_key: str | None = None, model: str | None = None):
+        key = api_key or os.getenv("GOOGLE_API_KEY") or config.GOOGLE_API_KEY
+        if not key:
+            raise RuntimeError("GOOGLE_API_KEY is not set")
         from google import genai
-        self.client = genai.Client(api_key=api_key or os.getenv("GOOGLE_API_KEY") or "")
-        if not (api_key or os.getenv("GOOGLE_API_KEY")):
-            raise RuntimeError("GOOGLE_API_KEY not set in .env")
+        self.client = genai.Client(api_key=key)
         self.model = model or config.MODEL_NAME
 
     def send(self, history: list[dict], system_instruction: str, tools: list[dict]) -> dict:
@@ -81,7 +82,8 @@ class GeminiLLM(LLMClient):
         text_parts: list[str] = []
         function_calls: list[dict] = []
         if response.candidates:
-            for part in (response.candidates[0].content.parts or []):
+            content = response.candidates[0].content
+            for part in (content.parts if content and content.parts else []):
                 if part.text:
                     text_parts.append(part.text)
                 if part.function_call:

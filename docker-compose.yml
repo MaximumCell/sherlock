@@ -1,0 +1,57 @@
+# Local development: the gateway and one worker per queue, as on Render.
+#   cp .env.example .env   (fill in SUPABASE_URL, SUPABASE_SERVICE_KEY, INTERNAL_SECRET)
+#   docker compose up --build
+# Gateway http://localhost:8000, workers on 8101 (identity), 8102 (infra), 8103 (media).
+
+x-worker: &worker
+  build:
+    context: .
+    dockerfile: Dockerfile.worker
+  image: sherlock-worker
+  env_file: .env
+  restart: unless-stopped
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    image: sherlock-gateway
+    env_file: .env
+    environment:
+      PORT: "8000"
+      # inside the compose network the workers are reached by service name
+      WORKER_URL_IDENTITY: http://worker-identity:8101
+      WORKER_URL_INFRA: http://worker-infra:8102
+      WORKER_URL_MEDIA: http://worker-media:8103
+    ports:
+      - "8000:8000"
+    depends_on:
+      - worker-identity
+      - worker-infra
+      - worker-media
+    restart: unless-stopped
+
+  worker-identity:
+    <<: *worker
+    environment:
+      WORKER_QUEUE: identity
+      PORT: "8101"
+    ports:
+      - "8101:8101"
+
+  worker-infra:
+    <<: *worker
+    environment:
+      WORKER_QUEUE: infra
+      PORT: "8102"
+    ports:
+      - "8102:8102"
+
+  worker-media:
+    <<: *worker
+    environment:
+      WORKER_QUEUE: media
+      PORT: "8103"
+    ports:
+      - "8103:8103"

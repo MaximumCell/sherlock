@@ -18,7 +18,7 @@ const SORT_LABELS: Record<CaseSort, string> = {
   updated: "Recently updated",
   created: "Newest first",
   title: "Title A to Z",
-  findings: "Most findings",
+  findings: "Most results",
 };
 
 const ALL = "__all__";
@@ -41,7 +41,7 @@ export function CasesToolbar({
         />
         <Input
           type="search"
-          aria-label="Search cases"
+          aria-label="Search your investigations"
           placeholder="Search by title, target or tag"
           className="pl-8"
           defaultValue={query.q}
@@ -68,7 +68,7 @@ export function CasesToolbar({
         value={query.sort}
         onValueChange={(value) => onChange({ sort: value === "updated" ? null : value })}
       >
-        <SelectTrigger className="sm:w-48" aria-label="Sort cases">
+        <SelectTrigger className="sm:w-48" aria-label="Sort investigations">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

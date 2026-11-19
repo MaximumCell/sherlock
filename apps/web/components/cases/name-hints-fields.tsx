@@ -22,10 +22,14 @@ export function NameHintsFields({
   idPrefix: string;
 }) {
   return (
-    <fieldset className="space-y-2 rounded-md border border-border p-3">
+    <fieldset className="space-y-2 rounded-xl border border-border bg-surface/60 p-4">
       <legend className="px-1 text-sm font-medium">
-        Hints <span className="font-normal text-muted-foreground">(optional, sharpen the ranking)</span>
+        Help us find the right person{" "}
+        <span className="font-normal text-muted-foreground">(optional)</span>
       </legend>
+      <p className="text-sm text-muted-foreground">
+        Many people share a name. Anything you know about this one sharpens the ranking.
+      </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {FIELDS.map((f) => (
           <div key={f.key} className="space-y-1">

@@ -1,18 +1,21 @@
 "use client";
 
-import { LogIn, LogOut, UserRound } from "lucide-react";
+import { LogIn, LogOut, ScrollText, UserRound } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useData } from "@/components/providers/data-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAdvanced } from "@/lib/preferences";
 import { useSession } from "@/lib/query/hooks";
 import { onSignInRequest } from "@/lib/sign-in-prompt";
 import { SignInDialog } from "./sign-in-dialog";
@@ -21,6 +24,7 @@ export function AccountMenu() {
   const { ds } = useData();
   const session = useSession();
   const [signInOpen, setSignInOpen] = useState(false);
+  const [advanced, setAdvanced] = useAdvanced();
   const user = session.data;
   const signedIn = Boolean(user && !user.anonymous);
   useEffect(() => onSignInRequest(() => setSignInOpen(true)), []);
@@ -62,6 +66,20 @@ export function AccountMenu() {
                   : "Anonymous. Your cases stay tied to this browser."}
             </p>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/audit">
+              <ScrollText aria-hidden />
+              Activity log
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuCheckboxItem
+            checked={advanced}
+            onCheckedChange={(checked) => setAdvanced(checked === true)}
+            onSelect={(event) => event.preventDefault()}
+          >
+            Advanced details
+          </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
           {signedIn ? (
             <DropdownMenuItem onSelect={() => void signOut()}>

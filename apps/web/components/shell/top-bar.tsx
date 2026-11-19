@@ -10,7 +10,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AccountMenu } from "./account-menu";
 import { openCommandPalette } from "./command-palette";
-import { Brand, NavLinks } from "./nav";
+import { HelpMenu } from "./help-menu";
+import { Brand, MORE_ITEMS, NAV_ITEMS, NavLinks } from "./nav";
+import { ScanIndicator } from "./scan-indicator";
 
 export function ThemeToggle() {
   const { theme, toggle } = useTheme();
@@ -27,67 +29,86 @@ export function ThemeToggle() {
   );
 }
 
+/** Slim top bar: logo, the three places, a compact search entry, and the personal menus. */
 export function TopBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { open } = useNewInvestigation();
   return (
     <header
       data-print="hide"
-      className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/90 px-3 backdrop-blur sm:px-6"
+      className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70"
     >
-      <Button
-        variant="ghost"
-        size="icon"
-        className="lg:hidden"
-        onClick={() => setMenuOpen(true)}
-        aria-label="Open navigation"
-      >
-        <Menu aria-hidden />
-      </Button>
-      <div className="lg:hidden">
-        <Brand />
-      </div>
-      <button
-        type="button"
-        onClick={openCommandPalette}
-        className="ml-auto hidden h-9 w-full max-w-xs items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm text-muted-foreground transition-colors hover:text-foreground sm:flex lg:ml-0"
-      >
-        <Search className="h-4 w-4" aria-hidden />
-        <span className="flex-1 text-left">Search or jump to…</span>
-        <Kbd>⌘K</Kbd>
-      </button>
-      <div className="ml-auto flex items-center gap-1">
+      <div className="mx-auto flex h-14 max-w-[1320px] items-center gap-2 px-4 sm:px-6">
         <Button
           variant="ghost"
           size="icon"
-          className="sm:hidden"
-          onClick={openCommandPalette}
-          aria-label="Open command palette"
+          className="-ml-2 md:hidden"
+          onClick={() => setMenuOpen(true)}
+          aria-label="Open navigation"
         >
-          <Search aria-hidden />
+          <Menu aria-hidden />
         </Button>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="outline" size="sm" onClick={() => open()} aria-label="New investigation">
-              <Plus aria-hidden />
-              <span className="hidden sm:inline">New</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            New investigation <span className="ml-1 font-mono text-muted-foreground">N</span>
-          </TooltipContent>
-        </Tooltip>
-        <ThemeToggle />
-        <AccountMenu />
+        <Brand />
+        <nav aria-label="Main" className="ml-4 hidden md:block">
+          <NavLinks />
+        </nav>
+
+        <div className="ml-auto flex items-center gap-1">
+          <ScanIndicator />
+          <button
+            type="button"
+            onClick={openCommandPalette}
+            className="hidden h-9 w-56 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-muted-foreground shadow-soft transition-colors hover:border-input hover:text-foreground lg:flex"
+          >
+            <Search className="h-4 w-4" aria-hidden />
+            <span className="flex-1 text-left">Jump to…</span>
+            <Kbd>⌘K</Kbd>
+          </button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={openCommandPalette}
+            aria-label="Open command palette"
+          >
+            <Search aria-hidden />
+          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="sm" className="ml-1" onClick={() => open()} aria-label="New search">
+                <Plus aria-hidden />
+                <span className="hidden sm:inline">New search</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              New search <span className="ml-1 font-mono text-muted-foreground">N</span>
+            </TooltipContent>
+          </Tooltip>
+          <div className="hidden items-center sm:flex">
+            <HelpMenu />
+            <ThemeToggle />
+          </div>
+          <AccountMenu />
+        </div>
       </div>
+
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="left" className="w-72 sm:max-w-xs">
           <SheetHeader>
             <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <SheetDescription className="sr-only">Main sections of the app</SheetDescription>
+            <SheetDescription className="sr-only">Main places in the app</SheetDescription>
             <Brand />
           </SheetHeader>
-          <NavLinks onNavigate={() => setMenuOpen(false)} />
+          <nav aria-label="Main" className="space-y-4">
+            <NavLinks items={NAV_ITEMS} orientation="vertical" onNavigate={() => setMenuOpen(false)} />
+            <div className="border-t border-border pt-4">
+              <NavLinks items={MORE_ITEMS} orientation="vertical" onNavigate={() => setMenuOpen(false)} />
+            </div>
+            <div className="flex items-center justify-between border-t border-border pt-4 text-sm text-muted-foreground">
+              <span>Theme</span>
+              <ThemeToggle />
+            </div>
+          </nav>
         </SheetContent>
       </Sheet>
     </header>

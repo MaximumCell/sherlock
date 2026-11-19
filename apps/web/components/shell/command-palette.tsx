@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderSearch, Moon, Plus, Sun } from "lucide-react";
+import { Compass, FolderSearch, Moon, Plus, SlidersHorizontal, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useNewInvestigation } from "@/components/cases/new-investigation-context";
@@ -15,12 +15,15 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { TOUR_HREF } from "@/components/tour/tour-steps";
 import { caseDisplayTitle } from "@/lib/case-status";
+import { DETECTION_LABEL } from "@/lib/detect-target";
+import { useAdvanced } from "@/lib/preferences";
 import { useCaseSummaries } from "@/lib/query/hooks";
 import { isTypingTarget } from "@/lib/storage";
 import { TARGET_TYPES } from "@/lib/types";
 import { TARGET_TYPE_META } from "@/lib/validation";
-import { NAV_ITEMS } from "./nav";
+import { MORE_ITEMS, NAV_ITEMS } from "./nav";
 
 const OPEN_EVENT = "sherlock:open-palette";
 
@@ -33,7 +36,7 @@ function RecentCases({ onSelect }: { onSelect: (href: string) => void }) {
   const recent = (cases.data ?? []).slice(0, 6);
   if (recent.length === 0) return null;
   return (
-    <CommandGroup heading="Cases">
+    <CommandGroup heading="Recent investigations">
       {recent.map(({ case: c }) => (
         <CommandItem
           key={c.id}
@@ -53,6 +56,7 @@ export function CommandPalette() {
   const router = useRouter();
   const { open: openNew } = useNewInvestigation();
   const { theme, toggle } = useTheme();
+  const [advanced, setAdvanced] = useAdvanced();
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -87,16 +91,16 @@ export function CommandPalette() {
       <DialogContent className="top-[20%] max-w-xl translate-y-0 overflow-hidden p-0">
         <DialogTitle className="sr-only">Command palette</DialogTitle>
         <DialogDescription className="sr-only">
-          Search cases, navigate, or start a scan.
+          Find an investigation, go somewhere, or start a search.
         </DialogDescription>
         <Command>
-          <CommandInput placeholder="Type a command or search cases…" />
+          <CommandInput placeholder="Type a command or find an investigation…" />
           <CommandList className="max-h-[min(60dvh,420px)]">
-            <CommandEmpty>No matches.</CommandEmpty>
+            <CommandEmpty>Nothing matches. Try another word.</CommandEmpty>
             <CommandGroup heading="Actions">
-              <CommandItem value="new investigation scan" onSelect={() => run(() => openNew())}>
+              <CommandItem value="new search investigation scan" onSelect={() => run(() => openNew())}>
                 <Plus aria-hidden />
-                New investigation
+                New search
                 <CommandShortcut>N</CommandShortcut>
               </CommandItem>
               {TARGET_TYPES.map((type) => (
@@ -106,16 +110,27 @@ export function CommandPalette() {
                   onSelect={() => run(() => openNew({ type }))}
                 >
                   <Plus aria-hidden />
-                  New {TARGET_TYPE_META[type].label.toLowerCase()} scan
+                  Search {DETECTION_LABEL[type]}
                 </CommandItem>
               ))}
+              <CommandItem value="take the tour help walkthrough" onSelect={() => run(() => router.push(TOUR_HREF))}>
+                <Compass aria-hidden />
+                Take the tour
+              </CommandItem>
+              <CommandItem
+                value="advanced details technical toggle"
+                onSelect={() => run(() => setAdvanced(!advanced))}
+              >
+                <SlidersHorizontal aria-hidden />
+                {advanced ? "Hide" : "Show"} advanced details
+              </CommandItem>
               <CommandItem value="toggle theme dark light" onSelect={() => run(toggle)}>
                 {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
                 Switch to {theme === "dark" ? "light" : "dark"} theme
               </CommandItem>
             </CommandGroup>
             <CommandGroup heading="Go to">
-              {NAV_ITEMS.map((item) => (
+              {[...NAV_ITEMS, ...MORE_ITEMS].map((item) => (
                 <CommandItem
                   key={item.href}
                   value={`go ${item.label}`}

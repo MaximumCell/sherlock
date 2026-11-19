@@ -83,5 +83,29 @@ class ChatOut(BaseModel):
     tool_calls_made: list[dict[str, Any]]
 
 
+class ExposureFactor(BaseModel):
+    key: str
+    label: str
+    points: float
+    max_points: int
+    detail: str
+    evidence_finding_ids: list[str]
+    remediation: list[str]
+
+
+class ExposureComputedFrom(BaseModel):
+    findings: int
+    approved_correlations: int
+
+
+class ExposureOut(BaseModel):
+    """`sherlock_core.scoring.score_exposure` output."""
+    score: int = Field(ge=0, le=100)
+    band: Literal["low", "moderate", "high", "severe"]
+    factors: list[ExposureFactor]
+    computed_from: ExposureComputedFrom
+    method: str
+
+
 class ErrorOut(BaseModel):
     detail: str

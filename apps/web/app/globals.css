@@ -108,6 +108,40 @@
   --xy-attribution-background-color: transparent;
 }
 
+.react-flow__edge-path.edge-found,
+.edge-found .react-flow__edge-path {
+  stroke: hsl(var(--muted-foreground) / 0.35);
+  stroke-width: 1;
+}
+.edge-mentions .react-flow__edge-path {
+  stroke: hsl(var(--muted-foreground) / 0.5);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+.react-flow__edge-path.edge-approved,
+.edge-approved .react-flow__edge-path {
+  stroke: hsl(var(--success));
+  stroke-width: 2;
+}
+.react-flow__edge-path.edge-pending,
+.edge-pending .react-flow__edge-path {
+  stroke: hsl(var(--warning));
+  stroke-width: 1.75;
+  stroke-dasharray: 6 5;
+}
+.react-flow__edge-path.edge-rejected,
+.edge-rejected .react-flow__edge-path {
+  stroke: hsl(var(--danger) / 0.6);
+  stroke-width: 1.25;
+  stroke-dasharray: 1 5;
+}
+.react-flow__edge-text {
+  font-size: 10px;
+}
+.react-flow__edge-path {
+  fill: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

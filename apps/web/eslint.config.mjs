@@ -6,6 +6,8 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    // An explicit version skips eslint-plugin-react's auto-detection, which predates ESLint 10.
+    settings: { react: { version: "19.2" } },
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": [

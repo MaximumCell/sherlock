@@ -115,7 +115,11 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
   const byIdentifier = new Map<string, Finding[]>();
   for (const f of found) {
     const key = identifierNodeId(f.identifier_type, f.identifier_value);
-    if (!nodes.has(key)) plain(key, kindForType(f.identifier_type), f.identifier_value, f.identifier_type);
+    // an image URL that is not a seed adds nothing next to its own finding node
+    const standalone = f.identifier_type === "image" && !nodes.has(key);
+    if (!standalone && !nodes.has(key)) {
+      plain(key, kindForType(f.identifier_type), f.identifier_value, f.identifier_type);
+    }
     const list = byIdentifier.get(key) ?? [];
     list.push(f);
     byIdentifier.set(key, list);
@@ -175,6 +179,7 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
         avatarUrl: safeImageUrl(typeof avatar === "string" ? avatar : null),
         curated: f.curated,
       });
+      if (!nodes.has(identifierId)) continue;
       edges.push({
         id: `e:${identifierId}>${id}`,
         source: identifierId,

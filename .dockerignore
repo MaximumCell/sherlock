@@ -1,0 +1,24 @@
+.git
+.github
+.claude
+.venv
+**/.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+**/tests
+apps
+docs
+supabase
+node_modules
+out
+*.log
+.DS_Store
+# never bake secrets into an image
+.env
+.env.*
+!.env.example
+Dockerfile.*
+docker-compose.yml
+render.yaml

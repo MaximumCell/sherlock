@@ -1,0 +1,44 @@
+{
+ "search": [
+  {
+   "id": "Q80",
+   "label": "Tim Berners-Lee",
+   "description": "English computer scientist (born 1955)"
+  },
+  {
+   "id": "Q120373140",
+   "label": "Tim Berners-Lee",
+   "description": "2015 edition of a biography by Claudia Martin"
+  },
+  {
+   "id": "Q120373262",
+   "label": "Tim Berners-Lee",
+   "description": "2015 biography by Jason Porterfield"
+  },
+  {
+   "id": "Q22991023",
+   "label": "Tim Berners-Lee: A Magna Carta for the web",
+   "description": "TED2014"
+  },
+  {
+   "id": "Q22946133",
+   "label": "Tim Berners-Lee: The year open data went worldwide",
+   "description": "TED2010"
+  },
+  {
+   "id": "Q22980417",
+   "label": "Tim Berners-Lee: The next web",
+   "description": "TED2009"
+  },
+  {
+   "id": "Q19761597",
+   "label": "Tim Berners-Lee",
+   "description": "Wikinews article"
+  },
+  {
+   "id": "Q55693401",
+   "label": "Tim Berners-Lee",
+   "description": "article in Physics Today"
+  }
+ ]
+}

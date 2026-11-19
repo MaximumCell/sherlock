@@ -1,0 +1,30 @@
+{
+ "_note": "SYNTHETIC: built from the documented AppointmentList schema; fictional person and companies.",
+ "kind": "personal-appointment",
+ "name": "Ada EXAMPLE",
+ "date_of_birth": {"month": 3, "year": 1970},
+ "is_corporate_officer": false,
+ "total_results": 2,
+ "items": [
+  {
+   "officer_role": "director",
+   "appointed_on": "2015-04-01",
+   "name": "Ada EXAMPLE",
+   "nationality": "British",
+   "country_of_residence": "England",
+   "occupation": "Engineer",
+   "address": {"premises": "12", "address_line_1": "Sample Street", "locality": "London", "postal_code": "AB1 2CD"},
+   "appointed_to": {"company_name": "EXAMPLE ENGINES LTD", "company_number": "01234567", "company_status": "active"},
+   "links": {"company": "/company/01234567"}
+  },
+  {
+   "officer_role": "secretary",
+   "appointed_on": "2009-01-10",
+   "resigned_on": "2012-06-30",
+   "name": "Ada EXAMPLE",
+   "address": {"premises": "12", "address_line_1": "Sample Street", "locality": "London", "postal_code": "AB1 2CD"},
+   "appointed_to": {"company_name": "OLD WIDGETS LIMITED", "company_number": "07654321", "company_status": "dissolved"},
+   "links": {"company": "/company/07654321"}
+  }
+ ]
+}

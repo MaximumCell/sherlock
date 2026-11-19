@@ -130,10 +130,13 @@ def normalize_target(target_type: str, value: str) -> str:
 
 
 # ----------------------------------------------------------------------------- planning
-def plan_scan(case_id: str, target_type: str, value: str, modules: list[str] | None = None) -> list[Row]:
+def plan_scan(case_id: str, target_type: str, value: str, modules: list[str] | None = None,
+              params: dict[str, Any] | None = None) -> list[Row]:
     """Job rows for one scan batch: one per applicable, available module.
 
     `modules` optionally restricts the batch to those registry names.
+    `params` is copied onto every job and reaches the module as `Target.params`
+    (name searches pass their disambiguation hints this way).
     Raises ValueError on invalid input or when no module applies.
     """
     from sherlock_core import modules as registry  # the parameter shadows the module name
@@ -153,7 +156,7 @@ def plan_scan(case_id: str, target_type: str, value: str, modules: list[str] | N
     return [
         {
             "case_id": case_id, "batch_id": batch_id, "queue": m.queue, "module": m.name,
-            "target_type": target_type, "target_value": value, "params": {},
+            "target_type": target_type, "target_value": value, "params": dict(params or {}),
         }
         for m in applicable
     ]

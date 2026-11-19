@@ -302,6 +302,9 @@ def _classify(f: dict, meta: dict, platform: str) -> str:
     return "account"
 
 
+_NON_EVIDENCE_MODULES = frozenset({"reverse_image_links", "reverse_image"})
+
+
 def facts_for(finding: dict) -> FindingFacts | None:
     """Typed facts for one finding row, or None when the row is unusable."""
     if not isinstance(finding, dict):
@@ -310,6 +313,9 @@ def facts_for(finding: dict) -> FindingFacts | None:
     if not fid:
         return None
     meta = _dict(finding.get("extra_metadata"))
+    # Coverage summaries and ready-made search links describe a scan, not the subject.
+    if meta.get("summary") is True or _str(finding.get("module")) in _NON_EVIDENCE_MODULES:
+        return None
     label = _str(finding.get("platform"))
     platform = norm.canonical_platform(label)
     kind = _classify(finding, meta, platform)

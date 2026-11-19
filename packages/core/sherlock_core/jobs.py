@@ -186,6 +186,18 @@ def _persist(job: Row, findings: list[Row], store: Store) -> Row:
     return {"findings": len(findings), "found": sum(1 for f in findings if f.get("status") == "found")}
 
 
+async def _with_avatar_hashes(findings: list[Row], http: httpx.AsyncClient) -> list[Row]:
+    """Add perceptual hashes for profile pictures so `avatar_match` can compare them.
+    Best effort: needs Pillow/imagehash (worker image) and must never cost the scan."""
+    try:
+        from sherlock_core.modules.avatar_hash import hash_avatars
+        hashed = {f["finding_key"]: f for f in await asyncio.wait_for(hash_avatars(findings, http), timeout=60)}
+    except Exception as e:
+        log.info("avatar hashing skipped: %s", str(e) or type(e).__name__)
+        return findings
+    return [hashed.get(f.get("finding_key"), f) for f in findings]
+
+
 async def _fail(job: Row, store: Store, error: str, *, retry: bool = True) -> None:
     def work() -> None:
         current = store.get_job(job["id"])
@@ -268,7 +280,8 @@ async def run_job(job: Row, store: Store, http: httpx.AsyncClient | None = None)
             current = await asyncio.to_thread(store.get_job, job_id)
             if current and current["status"] == "cancelled":
                 return
-            result = await asyncio.to_thread(_persist, job, list(findings or []), store)
+            rows = await _with_avatar_hashes(list(findings or []), client)
+            result = await asyncio.to_thread(_persist, job, rows, store)
             await asyncio.to_thread(store.complete_job, job_id, result)
             await asyncio.to_thread(store.log, case_id, "job_succeeded", f"worker:{module.name}", {
                 "job_id": job_id, "target": job["target_value"], **result,

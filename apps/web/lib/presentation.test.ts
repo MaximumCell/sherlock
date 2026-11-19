@@ -1,10 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { caseStatusLine, deriveSteps, sourceProgress } from "./case-progress";
+import { caseStatusLine, deriveSteps, sourceProgress, sourceProgressText } from "./case-progress";
 import { buildSummarySentence, joinList } from "./case-summary";
 import { DEMO_CASE_ID } from "./data/fixtures/demo-case";
 import { createFixtureState } from "./data/fixtures/state";
 import type { JobDigest } from "./data/types";
-import { FINDING_GROUP_IDS, groupFindings, groupOf, highlightScore } from "./finding-groups";
+import {
+  FINDING_GROUP_IDS,
+  countAccounts,
+  groupFindings,
+  groupOf,
+  highlightScore,
+  showAllLabel,
+} from "./finding-groups";
+import { DEFAULT_QUESTION, describeRule } from "./rules";
 import { prioritisedSteps } from "./remediation";
 import { sectionFromUrl, visibleSections } from "./sections";
 import type { Finding } from "./types";
@@ -18,7 +26,7 @@ const job = (status: JobDigest["status"], batch_id = "b1"): JobDigest => ({
 const params = (entries: Record<string, string>) => new URLSearchParams(entries);
 
 describe("sourceProgress", () => {
-  it("counts only the batches still running", () => {
+  it("counts every source of the investigation, not just the latest batch", () => {
     const jobs = [
       job("succeeded", "old"),
       job("failed", "old"),
@@ -27,22 +35,33 @@ describe("sourceProgress", () => {
       job("queued"),
     ];
     expect(sourceProgress(jobs)).toEqual({
-      total: 3,
-      done: 1,
-      failed: 0,
+      total: 5,
+      done: 3,
+      failed: 1,
       active: 2,
       scanning: true,
     });
+    expect(sourceProgressText(sourceProgress(jobs))).toBe(
+      "3 of 5 sources done · 1 could not be checked",
+    );
   });
 
-  it("counts every job once nothing runs", () => {
-    expect(sourceProgress([job("succeeded"), job("failed", "x"), job("cancelled")])).toEqual({
-      total: 3,
-      done: 3,
-      failed: 1,
-      active: 0,
-      scanning: false,
-    });
+  it("failed and cancelled sources are done but could not be checked", () => {
+    const p = sourceProgress([job("succeeded"), job("failed", "x"), job("cancelled")]);
+    expect(p).toEqual({ total: 3, done: 3, failed: 2, active: 0, scanning: false });
+  });
+
+  it("matches the demo checklist: 3 still running out of 15 sources", () => {
+    const state = createFixtureState(Date.parse("2026-06-01T12:00:00Z"));
+    const jobs = state.jobs.filter((j) => j.case_id === DEMO_CASE_ID);
+    const p = sourceProgress(jobs);
+    expect(p.total).toBe(jobs.length);
+    expect(p.total - p.done).toBe(3);
+    expect(sourceProgressText(p)).toBe(
+      `${jobs.length - 3} of ${jobs.length} sources done · 2 could not be checked`,
+    );
+    const steps = deriveSteps({ jobs, pendingLinks: 0, totalLinks: 0 });
+    expect(steps[0]?.detail).toBe(`${jobs.length - 3}/${jobs.length} sources`);
   });
 });
 
@@ -305,5 +324,41 @@ describe("prioritisedSteps", () => {
       "Tidy bios",
     ]);
     expect(steps[0]).toMatchObject({ factorKey: "high", points: 9 });
+  });
+});
+
+describe("one account count everywhere", () => {
+  const state = createFixtureState(Date.parse("2026-06-01T12:00:00Z"));
+  const findings = state.findings.filter((f) => f.case_id === DEMO_CASE_ID);
+
+  it("the Summary count equals the Accounts & profiles heading", () => {
+    const accounts = groupFindings(findings).find((g) => g.id === "accounts");
+    expect(countAccounts(findings)).toBe(accounts?.items.length);
+  });
+
+  it("the expander repeats the heading count and names not-found rows", () => {
+    expect(showAllLabel({ items: new Array(29).fill(findings[0]), misses: 10 })).toBe(
+      "Show all · 29 found · 10 not found",
+    );
+    expect(showAllLabel({ items: new Array(8).fill(findings[0]), misses: 0 })).toBe("Show all 8");
+  });
+});
+
+describe("link questions", () => {
+  it("each rule asks its own question", () => {
+    expect(describeRule("breach_overlap").question).toBe(
+      "Is this the same address appearing in several breaches?",
+    );
+    expect(describeRule("shared_avatar").question).toBe("Is this the same profile picture?");
+    expect(describeRule("shared_email").question).toMatch(/same email address/);
+    expect(describeRule("shared_url").question).toMatch(/same website/);
+    expect(describeRule("shared_external_handle").question).toMatch(/point to the other account/);
+    expect(describeRule("shared_bio").question).toMatch(/same bio/);
+    expect(describeRule("shared_name").question).toMatch(/same display name/);
+  });
+
+  it("unknown rules fall back to the default question", () => {
+    expect(describeRule("something_new").question).toBe(DEFAULT_QUESTION);
+    expect(DEFAULT_QUESTION).toBe("Do these belong to the same person?");
   });
 });

@@ -125,3 +125,19 @@ export function groupFindings(
     return [{ id, ...FINDING_GROUP_META[id], items, misses: bucket.misses }];
   });
 }
+
+/**
+ * Accounts and profiles found: the single definition behind the Summary tile, the summary
+ * sentence and the "Accounts & profiles" group heading.
+ */
+export function countAccounts(findings: readonly Finding[]): number {
+  return findings.filter((f) => f.status === "found" && groupOf(f) === "accounts").length;
+}
+
+/** Label of a group's expander: the heading count, with not-found rows named explicitly. */
+export function showAllLabel(group: Pick<FindingGroup, "items" | "misses">): string {
+  const found = group.items.length;
+  return group.misses > 0
+    ? `Show all · ${found} found · ${group.misses} not found`
+    : `Show all ${found}`;
+}

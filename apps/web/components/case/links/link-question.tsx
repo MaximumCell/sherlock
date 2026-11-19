@@ -108,7 +108,7 @@ export function LinkQuestion({
             Link {position} of {total}
           </p>
           <h3 id={`q-${c.id}`} className="text-xl font-semibold tracking-tight sm:text-2xl">
-            Do these belong to the same person?
+            {rule.question}
           </h3>
         </div>
         <ConfidenceMeter confidence={c.confidence} />

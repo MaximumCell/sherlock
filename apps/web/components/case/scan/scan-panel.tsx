@@ -4,7 +4,7 @@ import { ChevronDown, CircleCheck, LoaderCircle, Radar } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ProgressBar } from "@/components/common/bits";
 import { Button } from "@/components/ui/button";
-import { sourceProgress } from "@/lib/case-progress";
+import { sourceProgress, sourceProgressText } from "@/lib/case-progress";
 import { isActiveJob } from "@/lib/case-status";
 import { useAdvanced } from "@/lib/preferences";
 import { useModules } from "@/lib/query/hooks";
@@ -56,7 +56,6 @@ export function ScanPanel({
       ),
     [jobs],
   );
-  const allFailed = jobs.filter((j) => j.status === "failed").length;
   const found = jobs.reduce(
     (sum, j) => sum + (typeof j.result?.found === "number" ? j.result.found : 0),
     0,
@@ -69,8 +68,8 @@ export function ScanPanel({
     : jobs.length === 0
       ? "No search has run yet"
       : p.scanning
-        ? `Scanning · ${p.done} of ${p.total} sources done`
-        : `Scan finished · ${jobs.length} source${jobs.length === 1 ? "" : "s"} checked · ${found} found${allFailed ? ` · ${allFailed} did not finish` : ""}`;
+        ? `Scanning · ${sourceProgressText(p)}`
+        : `Scan finished · ${jobs.length} source${jobs.length === 1 ? "" : "s"} checked · ${found} found${p.failed ? ` · ${p.failed} could not be checked` : ""}`;
 
   return (
     <section

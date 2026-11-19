@@ -9,10 +9,11 @@ import type { ExposureBand, JobStatus } from "./types";
 type JobLike = Pick<JobDigest, "status" | "batch_id">;
 
 export interface SourceProgress {
-  /** Sources in the current scan (or in all scans once nothing is running). */
+  /** Every data-source run of the investigation, whatever batch it belongs to. */
   total: number;
   /** Finished in any way: succeeded, failed or cancelled. */
   done: number;
+  /** Finished without a result: failed or cancelled ("could not be checked"). */
   failed: number;
   active: number;
   scanning: boolean;
@@ -20,21 +21,27 @@ export interface SourceProgress {
 
 const FINISHED: readonly JobStatus[] = ["succeeded", "failed", "cancelled"];
 
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
 /**
- * While something runs, count only the batches still in flight, so "12 of 18"
- * describes the current scan, not every scan ever run on the case.
+ * Progress across ALL data sources of the investigation, so "11 of 14" always matches the
+ * checklist. Failed and cancelled sources count as done but are tallied in `failed`.
  */
 export function sourceProgress(jobs: readonly JobLike[]): SourceProgress {
-  const active = jobs.filter(isActiveJob);
-  const batches = new Set(active.map((j) => j.batch_id ?? "none"));
-  const scope = active.length ? jobs.filter((j) => batches.has(j.batch_id ?? "none")) : jobs;
+  const active = jobs.filter(isActiveJob).length;
   return {
-    total: scope.length,
-    done: scope.filter((j) => FINISHED.includes(j.status)).length,
-    failed: scope.filter((j) => j.status === "failed").length,
-    active: active.length,
-    scanning: active.length > 0,
+    total: jobs.length,
+    done: jobs.filter((j) => FINISHED.includes(j.status)).length,
+    failed: jobs.filter((j) => j.status === "failed" || j.status === "cancelled").length,
+    active,
+    scanning: active > 0,
   };
+}
+
+/** "11 of 14 sources done · 1 could not be checked" */
+export function sourceProgressText(p: SourceProgress): string {
+  const base = `${p.done} of ${plural(p.total, "source")} done`;
+  return p.failed ? `${base} · ${p.failed} could not be checked` : base;
 }
 
 export type StepState = "done" | "current" | "upcoming";
@@ -57,8 +64,6 @@ export interface StepInput {
   /** Found results; results without any scan job (imported or older cases) count as scanned. */
   results?: number;
 }
-
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** The three steps of the case page: 1 Scanning → 2 Check the links → 3 Report ready. */
 export function deriveSteps({
@@ -133,7 +138,7 @@ export interface StatusLineInput {
 export function caseStatusLine(input: StatusLineInput): string {
   if (input.archived) return "Archived";
   const p = sourceProgress(input.jobs);
-  if (p.scanning) return `Scanning · ${p.done} of ${p.total} sources done`;
+  if (p.scanning) return `Scanning · ${sourceProgressText(p)}`;
   if (input.pendingLinks > 0) {
     return `${plural(input.pendingLinks, "link")} ${input.pendingLinks === 1 ? "needs" : "need"} your decision`;
   }

@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { groupFindings, type FindingGroup } from "@/lib/finding-groups";
+import { groupFindings, showAllLabel, type FindingGroup } from "@/lib/finding-groups";
 import { useCurate } from "@/lib/query/mutations";
 import type { Correlation, Finding } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
@@ -54,7 +54,7 @@ function GroupBlock({
         </div>
         {group.items.length > HIGHLIGHTS || group.misses > 0 ? (
           <Button variant="ghost" size="sm" onClick={onShowAll}>
-            Show all {group.items.length + group.misses}
+            {showAllLabel(group)}
             <ChevronDown aria-hidden />
           </Button>
         ) : null}
@@ -170,7 +170,7 @@ export function FoundSection({
                   onShowAll={() =>
                     openExplorer({
                       group: g.id,
-                      show: g.misses && g.items.length <= HIGHLIGHTS ? "all" : null,
+                      show: g.misses ? "all" : null,
                     })
                   }
                   onOpen={(id) => set({ finding: id })}

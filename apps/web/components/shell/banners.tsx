@@ -37,9 +37,14 @@ export function Banners() {
     return (
       <Banner tone="warning">
         <strong className="font-semibold">Supabase is not configured.</strong>{" "}
-        <code className="font-mono text-xs">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-        <code className="font-mono text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> are missing, so the
-        app is running on built-in made-up demo data
+        {env.missingSupabaseVars.map((name, i) => (
+          <span key={name}>
+            {i > 0 ? " and " : ""}
+            <code className="font-mono text-xs">{name}</code>
+          </span>
+        ))}{" "}
+        {env.missingSupabaseVars.length === 1 ? "is" : "are"} missing or invalid, so the app is
+        running on built-in made-up demo data
         {env.isDevelopment ? " (automatic fallback in development)" : ""}. Nothing is saved.
       </Banner>
     );

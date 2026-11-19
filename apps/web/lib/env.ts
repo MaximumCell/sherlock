@@ -13,6 +13,8 @@ export interface AppEnv {
   mode: DataMode;
   /** True when we fell back to fixtures because configuration is missing. */
   fallback: boolean;
+  /** The Supabase variables that are empty or invalid, by name. */
+  missingSupabaseVars: string[];
 }
 
 export interface RawEnv {
@@ -27,7 +29,13 @@ export function resolveEnv(raw: RawEnv): AppEnv {
   const supabaseUrl = (raw.supabaseUrl ?? "").trim();
   const supabaseAnonKey = (raw.supabaseAnonKey ?? "").trim();
   const fixturesRequested = raw.fixtures === "1" || raw.fixtures === "true";
-  const supabaseConfigured = /^https?:\/\//.test(supabaseUrl) && supabaseAnonKey.length > 0;
+  const urlOk = /^https?:\/\//.test(supabaseUrl);
+  const keyOk = supabaseAnonKey.length > 0;
+  const supabaseConfigured = urlOk && keyOk;
+  const missingSupabaseVars = [
+    ...(urlOk ? [] : ["NEXT_PUBLIC_SUPABASE_URL"]),
+    ...(keyOk ? [] : ["NEXT_PUBLIC_SUPABASE_ANON_KEY"]),
+  ];
   const mode: DataMode = fixturesRequested || !supabaseConfigured ? "fixtures" : "supabase";
   return {
     supabaseUrl,
@@ -38,6 +46,7 @@ export function resolveEnv(raw: RawEnv): AppEnv {
     isDevelopment: raw.nodeEnv === "development",
     mode,
     fallback: !fixturesRequested && !supabaseConfigured,
+    missingSupabaseVars,
   };
 }
 

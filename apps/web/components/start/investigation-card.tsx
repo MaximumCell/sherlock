@@ -35,6 +35,8 @@ export function InvestigationCard({ row }: { row: CaseRow }) {
   // Only an exposure score that is already cached; the start screen never calls the gateway.
   const exposure = client.getQueryData<Exposure>(keys.exposure(mode, row.case.id)) ?? null;
   const kind = row.status.kind;
+  const sp = sourceProgress(row.jobs);
+  const scanPercent = sp.total ? (sp.done / sp.total) * 100 : 0;
   const Icon =
     kind === "idle" && sourceProgress(row.jobs).total === 0 && row.foundCount === 0
       ? CircleDot
@@ -85,7 +87,7 @@ export function InvestigationCard({ row }: { row: CaseRow }) {
           </span>
         </p>
         {kind === "scanning" ? (
-          <ProgressBar value={row.status.progress ?? 0} label="Scan progress" className="h-1" />
+          <ProgressBar value={scanPercent} label="Scan progress" className="h-1" />
         ) : null}
         {row.case.tags.length > 0 || kind !== "idle" ? (
           <div className="flex flex-wrap items-center justify-between gap-2">

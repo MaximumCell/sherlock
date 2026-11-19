@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { sourceProgress } from "@/lib/case-progress";
 import { buildSummarySentence } from "@/lib/case-summary";
 import { caseDisplayTitle } from "@/lib/case-status";
+import { countAccounts } from "@/lib/finding-groups";
 import { computeStats } from "@/lib/findings";
 import { useExposure } from "@/lib/query/hooks";
 import { prioritisedSteps } from "@/lib/remediation";
@@ -56,11 +57,12 @@ export function SummarySection({
 }) {
   const exposure = useExposure(c.id);
   const stats = useMemo(() => computeStats(findings, correlations), [findings, correlations]);
+  const accounts = useMemo(() => countAccounts(findings), [findings]);
   const progress = sourceProgress(jobs);
   const results = findings.filter((f) => f.status === "found").length;
   const sentence = buildSummarySentence({
     subject: c.identifiers[0]?.value ?? caseDisplayTitle(c),
-    accounts: stats.accountsFound,
+    accounts,
     results,
     sources: stats.platformsChecked,
     breaches: stats.breaches,
@@ -92,7 +94,7 @@ export function SummarySection({
           <ul className="grid grid-cols-2 gap-3 self-start">
             <KeyNumber
               label="Accounts found"
-              value={stats.accountsFound}
+              value={accounts}
               hint="Profiles and sign-ups"
               target="found"
             />

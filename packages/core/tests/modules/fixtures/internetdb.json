@@ -1,0 +1,28 @@
+{
+ "cpes": [
+  "cpe:/a:cloudflare:cloudflare"
+ ],
+ "hostnames": [
+  "guest.moritthock.com",
+  "wlan.kreisklinikum-siegen.de",
+  "one.one.one.one"
+ ],
+ "ip": "1.1.1.1",
+ "ports": [
+  53,
+  80,
+  443,
+  2082,
+  2083,
+  2086,
+  2087,
+  2095,
+  2096,
+  8443,
+  8880
+ ],
+ "tags": [
+  "pqc"
+ ],
+ "vulns": []
+}

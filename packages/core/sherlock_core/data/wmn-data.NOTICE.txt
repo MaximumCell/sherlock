@@ -1,0 +1,15 @@
+wmn-data.json
+=============
+
+Source:   WhatsMyName project, https://github.com/WebBreacher/WhatsMyName
+File:     https://raw.githubusercontent.com/WebBreacher/WhatsMyName/main/wmn-data.json
+Fetched:  2026-11-19, unmodified (final dataset; the upstream project was archived on 2026-11-09)
+Licence:  Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+          http://creativecommons.org/licenses/by-sa/4.0/
+Credit:   Copyright (C) 2015-2026 Micah Hoffman and the WhatsMyName contributors
+          (the full author list is in the "authors" key of the file).
+
+The file is redistributed here under the same licence. If you modify it, say so in this
+notice and keep the modified file under CC BY-SA 4.0.
+
+Used by sherlock_core/modules/whatsmyname.py.

@@ -1,0 +1,52 @@
+{
+ "total_count": 384126925,
+ "incomplete_results": true,
+ "items": [
+  {
+   "sha": "cd30ecb3de0099e0a466d502992a97e40a0677d9",
+   "html_url": "https://github.com/CrafterKolyan/sandbox/commit/cd30ecb3de0099e0a466d502992a97e40a0677d9",
+   "commit": {
+    "author": {
+     "date": "2099-12-31T23:59:59.000+03:00",
+     "name": "Linus Torvalds",
+     "email": "torvalds@linux-foundation.org"
+    },
+    "message": "(trimmed)"
+   },
+   "author": {
+    "login": "torvalds",
+    "id": 1024025,
+    "html_url": "https://github.com/torvalds",
+    "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+    "type": "User"
+   },
+   "repository": {
+    "full_name": "CrafterKolyan/sandbox",
+    "html_url": "https://github.com/CrafterKolyan/sandbox"
+   }
+  },
+  {
+   "sha": "dfd659e42126e85d1a3cd2df1995de5e2b60594b",
+   "html_url": "https://github.com/comminate/committed/commit/dfd659e42126e85d1a3cd2df1995de5e2b60594b",
+   "commit": {
+    "author": {
+     "date": "2060-03-30T17:06:28.000+01:00",
+     "name": "astheride",
+     "email": "torvalds@linux-foundation.org"
+    },
+    "message": "(trimmed)"
+   },
+   "author": {
+    "login": "torvalds",
+    "id": 1024025,
+    "html_url": "https://github.com/torvalds",
+    "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+    "type": "User"
+   },
+   "repository": {
+    "full_name": "comminate/committed",
+    "html_url": "https://github.com/comminate/committed"
+   }
+  }
+ ]
+}

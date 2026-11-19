@@ -1,0 +1,24 @@
+{
+ "entry": [
+  {
+   "hash": "0bc83cb571cd1c50ba6f3e8a78ef1346",
+   "requestHash": "0bc83cb571cd1c50ba6f3e8a78ef1346",
+   "profileUrl": "https://gravatar.com/exampleuser",
+   "preferredUsername": "exampleuser",
+   "thumbnailUrl": "https://0.gravatar.com/avatar/0bc83cb571cd1c50ba6f3e8a78ef1346",
+   "photos": [{"value": "https://0.gravatar.com/avatar/0bc83cb571cd1c50ba6f3e8a78ef1346", "type": "thumbnail"}],
+   "displayName": "Example User",
+   "pronouns": "they/them",
+   "aboutMe": "Builds example things.",
+   "currentLocation": "Springfield",
+   "job_title": "Engineer",
+   "company": "Example Corp",
+   "emails": [{"primary": "true", "value": "user@example.com"}],
+   "accounts": [
+    {"domain": "x.com", "display": "@exampleuser", "url": "https://x.com/exampleuser", "username": "exampleuser", "verified": true, "name": "X", "shortname": "twitter"},
+    {"domain": "github.com", "display": "exampleuser", "url": "https://github.com/exampleuser", "username": "exampleuser", "verified": true, "name": "GitHub", "shortname": "github"}
+   ],
+   "urls": [{"value": "https://example.com/blog", "title": "Blog"}]
+  }
+ ]
+}

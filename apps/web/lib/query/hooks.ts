@@ -72,6 +72,29 @@ export function useReport(id: string, enabled: boolean) {
   });
 }
 
+/** Exposure score from the gateway. Retries live in the gateway client (cold start). */
+export function useExposure(id: string) {
+  const { ds, mode } = useData();
+  return useQuery({
+    queryKey: keys.exposure(mode, id),
+    queryFn: () => ds.getExposure(id),
+    retry: false,
+    staleTime: 30_000,
+  });
+}
+
+/** Name-search candidates; `data === null` means the gateway does not offer them yet. */
+export function useCandidates(id: string, enabled = true) {
+  const { ds, mode } = useData();
+  return useQuery({
+    queryKey: keys.candidates(mode, id),
+    queryFn: () => ds.listCandidates(id),
+    enabled,
+    retry: false,
+    staleTime: 30_000,
+  });
+}
+
 export interface ModuleCatalogue {
   modules: ModuleInfo[];
   /** True when the gateway could not be reached and the bundled catalogue is shown. */
@@ -108,6 +131,14 @@ export function useCaseRealtime(caseId: string) {
           // correlation runs after a module finishes; make sure nothing was missed
           void client.invalidateQueries({ queryKey: keys.correlations(mode, caseId) });
           void client.invalidateQueries({ queryKey: keys.entities(mode, caseId) });
+          void client.invalidateQueries({ queryKey: keys.candidates(mode, caseId) });
+        }
+        if (
+          (event.table === "jobs" && event.row?.status === "succeeded") ||
+          (event.table === "correlations" && event.type === "UPDATE")
+        ) {
+          // the score only counts found rows and approved links; refresh lazily
+          void client.invalidateQueries({ queryKey: keys.exposure(mode, caseId) });
         }
       }),
     [ds, mode, caseId, client],

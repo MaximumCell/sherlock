@@ -43,17 +43,55 @@ export interface Identifier {
   value: string;
 }
 
-/** Optional exposure summary. Not produced by the backend yet; the UI hides it when absent. */
+/** `GET /cases/{id}/exposure` (gateway `ExposureOut`, computed by `sherlock_core.scoring`). */
+export const EXPOSURE_BANDS = ["low", "moderate", "high", "severe"] as const;
+export type ExposureBand = (typeof EXPOSURE_BANDS)[number];
 export interface ExposureFactor {
+  key: string;
   label: string;
+  points: number;
+  max_points: number;
   detail: string;
-  weight: number;
+  evidence_finding_ids: string[];
+  remediation: string[];
 }
 export interface Exposure {
-  score: number; // 0..100
-  level: "low" | "moderate" | "high" | "critical";
-  factors: ExposureFactor[];
-  computed_at?: string | null;
+  score: number; // 0..100 int
+  band: ExposureBand;
+  factors: ExposureFactor[]; // sorted by points desc
+  computed_from: { findings: number; approved_correlations: number };
+  method: string;
+}
+
+/** Optional context for a `name` search; every field is free text. */
+export interface NameHints {
+  city?: string;
+  employer?: string;
+  school?: string;
+  keywords?: string;
+}
+
+/** One ranked person candidate from `GET /cases/{id}/candidates`. */
+export interface CandidateHandle {
+  platform: string | null;
+  handle: string;
+  url: string | null;
+}
+export interface Candidate {
+  candidate_id: string;
+  label: string;
+  score: number; // 0..1
+  evidence: string[];
+  finding_ids: string[];
+  /** Set once the investigator picked this candidate (tolerated if the gateway omits it). */
+  confirmed: boolean;
+  attributes: {
+    employers: string[];
+    locations: string[];
+    handles: CandidateHandle[];
+    links: string[];
+    sources: string[];
+  };
 }
 
 export interface Case {
@@ -68,8 +106,6 @@ export interface Case {
   created_at: string;
   updated_at: string | null;
   archived_at: string | null;
-  /** Web-side optional extension, see `Exposure`. */
-  exposure?: Exposure | null;
 }
 
 /** `extra_metadata = { url, extra: {...source fields}, ...top-level meta }` */
@@ -185,6 +221,8 @@ export interface CreateCaseBody {
   tags?: string[];
   identifiers: Identifier[];
   scan?: boolean;
+  /** Only sent when an identifier has type `name`. */
+  hints?: NameHints;
 }
 export interface CreateCaseResult {
   case: Case;
@@ -200,6 +238,8 @@ export interface ScanBody {
   type: TargetType;
   value: string;
   modules?: string[];
+  /** Only for `type: "name"`. */
+  hints?: NameHints;
 }
 export interface ScanResult {
   batch_id: string;

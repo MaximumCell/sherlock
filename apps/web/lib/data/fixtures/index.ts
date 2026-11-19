@@ -23,6 +23,8 @@ import type {
   TableRows,
 } from "../types";
 import { FIXTURE_MODULES, modulesFor } from "./catalogue";
+import { scoreFixtureCase } from "./exposure";
+import { entitiesForCandidate } from "./people";
 import { renderFixtureReport } from "./report";
 import { FIXTURE_USER_ID, createFixtureState, type FixtureState } from "./state";
 import { progressNote, syntheticFindings } from "./synthetic";
@@ -290,7 +292,6 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
         created_at: nowIso(),
         updated_at: nowIso(),
         archived_at: null,
-        exposure: null,
       };
       state.cases.unshift(c);
       body.identifiers.forEach((idf, i) =>
@@ -392,6 +393,34 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
           now(),
         ),
       );
+    },
+
+    async getExposure(caseId) {
+      requireCase(caseId);
+      return respond(scoreFixtureCase(byCase(state.findings, caseId), byCase(state.correlations, caseId)));
+    },
+
+    async listCandidates(caseId) {
+      const c = requireCase(caseId);
+      if (!c.identifiers.some((i) => i.type === "name")) return respond([]);
+      return respond([...(state.candidates[caseId] ?? [])].sort((a, b) => b.score - a.score));
+    },
+
+    async confirmCandidate(caseId, candidateId) {
+      const c = requireCase(caseId);
+      const list = state.candidates[caseId] ?? [];
+      const chosen = list.find((x) => x.candidate_id === candidateId);
+      if (!chosen) throw new GatewayError(404, "Candidate not found");
+      list.forEach((x) => (x.confirmed = x.candidate_id === candidateId));
+      const known = new Set(byCase(state.entities, caseId).map((e) => `${e.kind}|${e.value}`));
+      const added = entitiesForCandidate(chosen, now(), newId).filter(
+        (e) => !known.has(`${e.kind}|${e.value}`),
+      );
+      state.entities.push(...added);
+      added.forEach((e) => emit("entities", "INSERT", caseId, e.id, e));
+      audit(caseId, "candidate_confirmed", "investigator", { candidate: chosen.label });
+      touch(c);
+      return respond(added);
     },
   };
 }

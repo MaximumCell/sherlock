@@ -1,11 +1,13 @@
 import type { DataMode } from "../env";
 import type {
   AuditEntry,
+  Candidate,
   Case,
   Correlation,
   CreateCaseBody,
   CreateCaseResult,
   Entity,
+  Exposure,
   Finding,
   Job,
   ModuleInfo,
@@ -89,4 +91,9 @@ export interface DataSource {
   curateFinding(caseId: string, findingId: string, curated: boolean): Promise<Finding>;
   reviewCorrelation(id: string, decision: ReviewDecision, note?: string): Promise<Correlation>;
   getReport(caseId: string): Promise<string>;
+  getExposure(caseId: string): Promise<Exposure>;
+  /** Ranked people for a name search; `null` when the gateway does not offer it yet (404). */
+  listCandidates(caseId: string): Promise<Candidate[] | null>;
+  /** Records the choice; returns the entities added as pivot suggestions (no scans start). */
+  confirmCandidate(caseId: string, candidateId: string): Promise<Entity[]>;
 }

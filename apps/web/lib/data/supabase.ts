@@ -5,6 +5,7 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import type { AppEnv } from "../env";
 import type {
+  Candidate,
   Case,
   Correlation,
   CreateCaseResult,
@@ -12,13 +13,15 @@ import type {
   Job,
   ScanResult,
 } from "../types";
-import { createGateway, type GatewayClient, type GatewayRequest } from "./gateway";
+import { createGateway, GatewayError, type GatewayClient, type GatewayRequest } from "./gateway";
 import {
   isRecord,
   toAuditEntry,
+  toCandidate,
   toCase,
   toCorrelation,
   toEntity,
+  toExposure,
   toFinding,
   toJob,
   toList,
@@ -311,6 +314,32 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
     },
     async getReport(caseId) {
       return command<string>(`/cases/${caseId}/report`, { parse: "text" });
+    },
+    async getExposure(caseId) {
+      return toExposure(await command<unknown>(`/cases/${caseId}/exposure`));
+    },
+    async listCandidates(caseId) {
+      try {
+        const res = await command<unknown>(`/cases/${caseId}/candidates`);
+        const rows = Array.isArray(res) ? res : isRecord(res) ? res.candidates : [];
+        return toList(rows, toCandidate)
+          .filter((c): c is Candidate => c !== null)
+          .sort((a, b) => b.score - a.score);
+      } catch (err) {
+        if (err instanceof GatewayError && (err.status === 404 || err.status === 405)) {
+          // 404 for a missing case is handled by the case query itself
+          return null;
+        }
+        throw err;
+      }
+    },
+    async confirmCandidate(caseId, candidateId) {
+      const res = await command<unknown>(
+        `/cases/${caseId}/candidates/${encodeURIComponent(candidateId)}/confirm`,
+        { method: "POST" },
+      );
+      const rows = Array.isArray(res) ? res : isRecord(res) ? res.entities : [];
+      return toList(rows, toEntity);
     },
   };
 }

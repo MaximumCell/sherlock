@@ -1,7 +1,7 @@
 "use client";
 
 import { LogIn, LogOut, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useData } from "@/components/providers/data-provider";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSession } from "@/lib/query/hooks";
+import { onSignInRequest } from "@/lib/sign-in-prompt";
 import { SignInDialog } from "./sign-in-dialog";
 
 export function AccountMenu() {
@@ -22,6 +23,7 @@ export function AccountMenu() {
   const [signInOpen, setSignInOpen] = useState(false);
   const user = session.data;
   const signedIn = Boolean(user && !user.anonymous);
+  useEffect(() => onSignInRequest(() => setSignInOpen(true)), []);
 
   const signOut = async () => {
     try {

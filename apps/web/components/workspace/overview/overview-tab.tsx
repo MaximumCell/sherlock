@@ -53,7 +53,7 @@ export function OverviewTab({ caseId }: { caseId: string }) {
         stats={stats}
         loading={findings.isPending || correlations.isPending}
       />
-      {c.data.exposure ? <ExposureCard exposure={c.data.exposure} /> : null}
+      <ExposureCard caseId={caseId} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <TargetsCard c={c.data} jobs={jobs.data ?? []} entities={entities.data ?? []} />
         <PivotsCard caseId={caseId} entities={entities.data ?? []} jobs={jobs.data ?? []} loading={entities.isPending} />

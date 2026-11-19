@@ -14,7 +14,12 @@ import {
   type CorrelationStatus,
   type Entity,
   type EvidenceItem,
+  type Candidate,
+  type CandidateHandle,
+  EXPOSURE_BANDS,
   type Exposure,
+  type ExposureBand,
+  type ExposureFactor,
   type Finding,
   type FindingMetadata,
   type FindingStatus,
@@ -73,29 +78,73 @@ export function toIdentifier(value: unknown): Identifier | null {
   return { type: oneOf<TargetType>(TARGET_TYPES, value.type, "username"), value: v };
 }
 
-export function toExposure(value: unknown): Exposure | null {
-  if (!isRecord(value) || typeof value.score !== "number") return null;
-  const score = Math.max(0, Math.min(100, Math.round(value.score)));
-  const factors = Array.isArray(value.factors)
-    ? value.factors.filter(isRecord).map((f) => ({
-        label: str(f.label),
+export function toExposure(value: unknown): Exposure {
+  const r = isRecord(value) ? value : {};
+  const score = Math.max(0, Math.min(100, Math.round(num(r.score))));
+  const factors = Array.isArray(r.factors)
+    ? r.factors.filter(isRecord).map<ExposureFactor>((f) => ({
+        key: str(f.key, str(f.label)),
+        label: str(f.label, str(f.key)),
+        points: Math.max(0, num(f.points)),
+        max_points: Math.max(0, num(f.max_points)),
         detail: str(f.detail),
-        weight: num(f.weight),
+        evidence_finding_ids: strArray(f.evidence_finding_ids),
+        remediation: strArray(f.remediation),
       }))
     : [];
+  factors.sort((x, y) => y.points - x.points);
+  const from = isRecord(r.computed_from) ? r.computed_from : {};
   return {
     score,
-    level: oneOf(["low", "moderate", "high", "critical"] as const, value.level, levelFor(score)),
+    band: oneOf(EXPOSURE_BANDS, r.band, bandFor(score)),
     factors,
-    computed_at: strOrNull(value.computed_at),
+    computed_from: {
+      findings: num(from.findings),
+      approved_correlations: num(from.approved_correlations),
+    },
+    method: str(r.method),
   };
 }
 
-function levelFor(score: number): Exposure["level"] {
-  if (score >= 80) return "critical";
-  if (score >= 60) return "high";
-  if (score >= 30) return "moderate";
-  return "low";
+/** Mirrors `sherlock_core.scoring.BANDS`. */
+export function bandFor(score: number): ExposureBand {
+  if (score < 20) return "low";
+  if (score < 45) return "moderate";
+  if (score < 70) return "high";
+  return "severe";
+}
+
+function toCandidateHandle(value: unknown): CandidateHandle | null {
+  if (typeof value === "string") return value.trim() ? { platform: null, handle: value.trim(), url: null } : null;
+  if (!isRecord(value)) return null;
+  const handle = str(value.handle, str(value.username, str(value.value))).trim();
+  if (!handle) return null;
+  return { platform: strOrNull(value.platform), handle, url: strOrNull(value.url) };
+}
+
+export function toCandidate(row: unknown): Candidate | null {
+  if (!isRecord(row)) return null;
+  const id = str(row.candidate_id, str(row.id));
+  if (!id) return null;
+  const attrs = isRecord(row.attributes) ? row.attributes : {};
+  const list = (v: unknown) => (typeof v === "string" ? [v] : strArray(v)).filter(Boolean);
+  return {
+    candidate_id: id,
+    label: str(row.label, "Unnamed candidate"),
+    score: Math.max(0, Math.min(1, num(row.score))),
+    evidence: list(row.evidence),
+    finding_ids: strArray(row.finding_ids),
+    confirmed: bool(row.confirmed),
+    attributes: {
+      employers: list(attrs.employers),
+      locations: list(attrs.locations),
+      handles: Array.isArray(attrs.handles)
+        ? attrs.handles.map(toCandidateHandle).filter((h): h is CandidateHandle => h !== null)
+        : [],
+      links: list(attrs.links),
+      sources: list(attrs.sources),
+    },
+  };
 }
 
 export function toCase(row: unknown): Case {
@@ -115,7 +164,6 @@ export function toCase(row: unknown): Case {
     created_at: str(r.created_at),
     updated_at: strOrNull(r.updated_at),
     archived_at: strOrNull(r.archived_at),
-    exposure: toExposure(r.exposure),
   };
 }
 

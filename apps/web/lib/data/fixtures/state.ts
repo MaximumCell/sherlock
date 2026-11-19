@@ -1,5 +1,6 @@
 import type {
   AuditEntry,
+  Candidate,
   Case,
   Correlation,
   CorrelationStatus,
@@ -23,6 +24,7 @@ import {
   demoFindings,
   fid,
 } from "./demo-case";
+import { NAME_CASE_ID, PERSON_NAME, nameCandidates, nameCase, nameFindings } from "./people";
 
 export const INFRA_CASE_ID = "c0ffee00-0000-4000-8000-000000000002";
 export const REVIEW_CASE_ID = "c0ffee00-0000-4000-8000-000000000003";
@@ -36,6 +38,8 @@ export interface FixtureState {
   jobs: Job[];
   entities: Entity[];
   audit: AuditEntry[];
+  /** Name-search candidates per case. */
+  candidates: Record<string, Candidate[]>;
 }
 
 const iso = (now: number, minutesAgo: number) => new Date(now - minutesAgo * 60_000).toISOString();
@@ -469,17 +473,6 @@ export function createFixtureState(now: number = Date.now()): FixtureState {
       ],
       created_at: iso(now, 196),
       updated_at: iso(now, 4),
-      exposure: {
-        score: 64,
-        level: "high",
-        computed_at: iso(now, 30),
-        factors: [
-          { label: "Handle reuse", detail: "Same handle on 25 platforms", weight: 24 },
-          { label: "Breach exposure", detail: "Mailbox in 3 breaches, one with phone numbers", weight: 22 },
-          { label: "Cross-linked profiles", detail: "Profiles link to each other and to the personal domain", weight: 12 },
-          { label: "Self-hosted services", detail: "4 open ports on the personal server", weight: 6 },
-        ],
-      },
     },
     {
       ...baseCase,
@@ -513,13 +506,28 @@ export function createFixtureState(now: number = Date.now()): FixtureState {
       archived_at: iso(now, 40000),
     },
   ];
+  cases.splice(1, 0, nameCase(now, FIXTURE_USER_ID));
   const others = otherCases(now);
   return {
     cases,
-    findings: [...demoFindings(DEMO_CASE_ID, now), ...others.findings],
+    findings: [...demoFindings(DEMO_CASE_ID, now), ...nameFindings(now), ...others.findings],
     correlations: [...demoCorrelations(now), ...others.correlations],
     jobs: [...demoJobs(now), ...others.jobs],
-    entities: demoEntities(now),
+    entities: [
+      ...demoEntities(now),
+      {
+        id: uid("e5", 1),
+        case_id: NAME_CASE_ID,
+        kind: "name",
+        value: PERSON_NAME,
+        platform: null,
+        source_finding_id: null,
+        is_seed: true,
+        scanned: true,
+        first_seen: iso(now, 95),
+      },
+    ],
     audit: demoAudit(now),
+    candidates: { [NAME_CASE_ID]: nameCandidates() },
   };
 }

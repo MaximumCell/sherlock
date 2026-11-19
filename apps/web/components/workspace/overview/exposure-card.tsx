@@ -1,57 +1,112 @@
-import { ShieldAlert } from "lucide-react";
-import { ProgressBar } from "@/components/common/bits";
+"use client";
+
+import { RefreshCw, ShieldAlert } from "lucide-react";
+import { useMemo, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { timeAgo } from "@/lib/format";
-import type { Exposure } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { describeError } from "@/lib/data/gateway";
+import { useExposure, useFindings } from "@/lib/query/hooks";
+import { BAND_META, ExposureDial } from "./exposure-dial";
+import { ExposureFactorRow } from "./exposure-factor-row";
 
-const LEVELS: Record<
-  Exposure["level"],
-  { label: string; badge: "success" | "warning" | "danger"; tone: "success" | "warning" | "danger" }
-> = {
-  low: { label: "Low", badge: "success", tone: "success" },
-  moderate: { label: "Moderate", badge: "warning", tone: "warning" },
-  high: { label: "High", badge: "danger", tone: "danger" },
-  critical: { label: "Critical", badge: "danger", tone: "danger" },
-};
+function Header({ badge }: { badge?: ReactNode }) {
+  return (
+    <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+      <div className="space-y-1">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ShieldAlert className="h-4 w-4 text-muted-foreground" aria-hidden />
+          Exposure score
+        </CardTitle>
+        <CardDescription>How much a stranger can piece together from what was found</CardDescription>
+      </div>
+      {badge}
+    </CardHeader>
+  );
+}
 
-/** Rendered only when the case carries an `exposure` object (scoring ships later). */
-export function ExposureCard({ exposure }: { exposure: Exposure }) {
-  const level = LEVELS[exposure.level];
+/** `GET /cases/{id}/exposure`, fetched through the gateway (cold-start retries included). */
+export function ExposureCard({ caseId }: { caseId: string }) {
+  const exposure = useExposure(caseId);
+  const findings = useFindings(caseId);
+  const byId = useMemo(() => new Map((findings.data ?? []).map((f) => [f.id, f])), [findings.data]);
+
+  if (exposure.isPending) {
+    return (
+      <Card aria-busy="true">
+        <Header />
+        <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-[180px_1fr]">
+          <Skeleton className="mx-auto h-36 w-36 rounded-full" />
+          <div className="space-y-4">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} className="h-9 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (exposure.isError) {
+    return (
+      <Card>
+        <Header />
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p className="text-muted-foreground">
+            Could not compute the score. {describeError(exposure.error)}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => void exposure.refetch()}>
+            <RefreshCw aria-hidden />
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const data = exposure.data;
+  const meta = BAND_META[data.band];
+  const scored = data.factors.filter((f) => f.points > 0);
+  const zero = data.factors.filter((f) => f.points <= 0);
+
   return (
     <Card>
-      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
-        <div className="space-y-1">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ShieldAlert className="h-4 w-4 text-muted-foreground" aria-hidden />
-            Exposure summary
-          </CardTitle>
-          <CardDescription>
-            How much a stranger can piece together from public sources
-            {exposure.computed_at ? ` · scored ${timeAgo(exposure.computed_at)}` : ""}
-          </CardDescription>
+      <Header badge={<Badge variant={meta.badge}>{meta.label}</Badge>} />
+      <CardContent className="space-y-5">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-[180px_1fr]">
+          <div className="space-y-2 text-center">
+            <ExposureDial score={data.score} band={data.band} />
+            <p className="text-xs text-muted-foreground">
+              From {data.computed_from.findings} found row
+              {data.computed_from.findings === 1 ? "" : "s"} and{" "}
+              {data.computed_from.approved_correlations} approved link
+              {data.computed_from.approved_correlations === 1 ? "" : "s"}
+            </p>
+          </div>
+          {scored.length ? (
+            <ul className="divide-y divide-border">
+              {scored.map((factor) => (
+                <ExposureFactorRow key={factor.key} factor={factor} findings={byId} barClass={meta.bar} />
+              ))}
+            </ul>
+          ) : (
+            <p className="self-center text-sm text-muted-foreground">
+              Nothing scores yet. Run a scan, then approve the links you trust in Review.
+            </p>
+          )}
         </div>
-        <Badge variant={level.badge}>{level.label}</Badge>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 gap-5 md:grid-cols-[200px_1fr]">
-        <div className="space-y-2">
-          <p className="font-mono text-3xl font-semibold tabular-nums">
-            {exposure.score}
-            <span className="text-base font-normal text-muted-foreground"> / 100</span>
+        {zero.length ? (
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Not contributing:</span>{" "}
+            {zero.map((f) => f.label).join(", ")}.
           </p>
-          <ProgressBar value={exposure.score} tone={level.tone} label="Exposure score" className="h-2" />
-        </div>
-        <ul className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-          {exposure.factors.map((factor) => (
-            <li key={factor.label} className="flex items-start justify-between gap-3 text-sm">
-              <span className="min-w-0">
-                <span className="font-medium">{factor.label}</span>
-                <span className="block text-xs text-muted-foreground">{factor.detail}</span>
-              </span>
-              <span className="shrink-0 font-mono text-xs text-muted-foreground">+{factor.weight}</span>
-            </li>
-          ))}
-        </ul>
+        ) : null}
+        {data.method ? (
+          <p className="border-t border-border pt-3 text-2xs leading-relaxed text-muted-foreground">
+            <span className="font-medium">How this is scored.</span> {data.method}
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );

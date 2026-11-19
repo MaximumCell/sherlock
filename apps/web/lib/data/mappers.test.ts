@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   toAuditEntry,
+  toCandidate,
   toCase,
   toCorrelation,
   toEntity,
+  toExposure,
   toFinding,
   toJob,
   toList,
@@ -27,22 +29,11 @@ describe("toCase", () => {
       owner_id: null,
       is_demo: false,
       archived_at: null,
-      exposure: null,
     });
     expect(c.identifiers).toEqual([
       { type: "username", value: "ada" },
       { type: "username", value: "x" },
     ]);
-  });
-
-  it("keeps a valid exposure object and derives a missing level", () => {
-    const c = toCase({ id: "c", exposure: { score: 71.6, factors: [{ label: "a", detail: "b", weight: 3 }] } });
-    expect(c.exposure).toEqual({
-      score: 72,
-      level: "high",
-      factors: [{ label: "a", detail: "b", weight: 3 }],
-      computed_at: null,
-    });
   });
 
   it("never throws on junk", () => {
@@ -139,5 +130,49 @@ describe("other mappers", () => {
   it("toList tolerates non-arrays", () => {
     expect(toList(null, toJob)).toEqual([]);
     expect(toList([{ id: "a" }], toJob)).toHaveLength(1);
+  });
+});
+
+describe("toExposure", () => {
+  it("clamps the score, derives a missing band and sorts factors", () => {
+    const e = toExposure({
+      score: 71.6,
+      factors: [
+        { key: "a", label: "A", points: 2, max_points: 10, detail: "d", remediation: ["x"] },
+        { key: "b", label: "B", points: 9.5, max_points: 30, evidence_finding_ids: ["f1"] },
+      ],
+      computed_from: { findings: 4, approved_correlations: 1 },
+      method: "m",
+    });
+    expect(e.score).toBe(72);
+    expect(e.band).toBe("severe");
+    expect(e.factors.map((f) => f.key)).toEqual(["b", "a"]);
+    expect(e.factors[0]?.evidence_finding_ids).toEqual(["f1"]);
+    expect(e.factors[1]?.remediation).toEqual(["x"]);
+    expect(e.computed_from).toEqual({ findings: 4, approved_correlations: 1 });
+  });
+
+  it("keeps a valid band and survives junk", () => {
+    expect(toExposure({ score: 10, band: "high" }).band).toBe("high");
+    expect(toExposure(null)).toMatchObject({ score: 0, band: "low", factors: [] });
+  });
+});
+
+describe("toCandidate", () => {
+  it("tolerates missing attributes and string handles", () => {
+    const c = toCandidate({
+      candidate_id: "k1",
+      label: "M. Quince",
+      score: 1.4,
+      evidence: "same city",
+      attributes: { handles: ["mquince", { platform: "GitHub", handle: "mq" }, 3] },
+    });
+    expect(c).toMatchObject({ candidate_id: "k1", score: 1, evidence: ["same city"], finding_ids: [] });
+    expect(c?.attributes.handles).toEqual([
+      { platform: null, handle: "mquince", url: null },
+      { platform: "GitHub", handle: "mq", url: null },
+    ]);
+    expect(c?.attributes.employers).toEqual([]);
+    expect(toCandidate({ label: "no id" })).toBeNull();
   });
 });

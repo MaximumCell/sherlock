@@ -12,6 +12,8 @@ export const keys = {
   jobs: (mode: DataMode, id: string) => [mode, "case", id, "jobs"] as const,
   entities: (mode: DataMode, id: string) => [mode, "case", id, "entities"] as const,
   report: (mode: DataMode, id: string) => [mode, "case", id, "report"] as const,
+  exposure: (mode: DataMode, id: string) => [mode, "case", id, "exposure"] as const,
+  candidates: (mode: DataMode, id: string) => [mode, "case", id, "candidates"] as const,
   audit: (mode: DataMode, caseId: string | null) => [mode, "audit", caseId ?? "all"] as const,
   modules: (mode: DataMode) => [mode, "modules"] as const,
 };
@@ -65,9 +67,8 @@ export function applyChangeEvent(
         client.setQueryData<Case | null>(keys.case(mode, caseId), null);
       } else if (event.row) {
         const row = event.row;
-        // Realtime rows may omit web-only extensions; keep what we already had.
         client.setQueryData<Case | null>(keys.case(mode, caseId), (old) =>
-          old ? { ...old, ...row, exposure: row.exposure ?? old.exposure } : row,
+          old ? { ...old, ...row } : row,
         );
       }
       break;

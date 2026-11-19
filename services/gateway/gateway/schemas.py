@@ -1,69 +1,87 @@
-"""Pydantic models for the API surface. Kept thin — db rows map 1:1."""
-from typing import Literal, Optional
-from pydantic import BaseModel
+"""Request bodies and gateway-only response envelopes.
+
+Row shapes (Case, Job, Finding, Correlation, ModuleInfo) live in `sherlock_core.models`.
+"""
+from __future__ import annotations
+
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
+from sherlock_core.models import Case, Identifier, Job, TargetType
 
 
-class IdentifierIn(BaseModel):
-    type: Literal["username", "email", "domain"]
-    value: str
-
-
+# ----------------------------------------------------------------------------- requests
 class CaseCreate(BaseModel):
-    identifiers: list[IdentifierIn]
+    title: str | None = Field(default=None, max_length=200)
+    tags: list[str] = Field(default_factory=list, max_length=20)
+    identifiers: list[Identifier] = Field(min_length=1, max_length=10)
+    scan: bool = True
 
 
-class CaseOut(BaseModel):
-    id: str
-    identifiers: list[IdentifierIn]
-    status: str
-    created_at: str
+class CasePatch(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+    notes: str | None = Field(default=None, max_length=20000)
+    tags: list[str] | None = Field(default=None, max_length=20)
+    archived: bool | None = None
 
 
-class FindingOut(BaseModel):
-    id: str
-    case_id: str
-    identifier_type: str
-    identifier_value: str
-    source_tool: str
-    platform: str
-    status: str
-    extra_metadata: dict
-    collected_at: str
-    curated: bool = False
+class ScanRequest(BaseModel):
+    type: TargetType
+    value: str = Field(min_length=1, max_length=2048)
+    modules: list[str] | None = Field(default=None, max_length=50)
 
 
-class CorrelationOut(BaseModel):
-    id: str
-    case_id: str
-    type: str
-    entities_involved: list
-    confidence: float
-    evidence: list
-    priority: float
-    reviewed: bool
-    review_note: Optional[str] = None
-    created_at: str
+class CurateRequest(BaseModel):
+    curated: bool
 
 
-class ReviewIn(BaseModel):
-    decision: Literal["approve", "reject"]
-    note: Optional[str] = None
+class ManualLinkRequest(BaseModel):
+    finding_ids: list[str] = Field(min_length=2, max_length=50)
+    note: str | None = Field(default=None, max_length=2000)
 
 
-class AuditOut(BaseModel):
-    id: int
-    case_id: Optional[str] = None
-    action: str
-    actor: str
-    detail: dict
-    created_at: str
+class ReviewRequest(BaseModel):
+    decision: Literal["approve", "reject", "reset"]
+    note: str | None = Field(default=None, max_length=2000)
 
 
-class ChatIn(BaseModel):
-    message: str
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+
+
+# ----------------------------------------------------------------------------- responses
+class Health(BaseModel):
+    ok: bool
+    service: str
+
+
+class CaseCreated(BaseModel):
+    case: Case
+    jobs: list[Job]
+
+
+class ScanAccepted(BaseModel):
+    batch_id: str
+    jobs: list[Job]
+
+
+class WakeResult(BaseModel):
+    queues: list[str]
+
+
+class CorrelateResult(BaseModel):
+    correlations: int
+
+
+class VariationsOut(BaseModel):
+    variations: list[str]
 
 
 class ChatOut(BaseModel):
     text: str
     iterations: int
-    tool_calls_made: list[dict]
+    tool_calls_made: list[dict[str, Any]]
+
+
+class ErrorOut(BaseModel):
+    detail: str

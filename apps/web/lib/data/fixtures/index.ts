@@ -443,7 +443,10 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
 
     async listCandidates(caseId) {
       const c = requireCase(caseId);
-      if (!c.identifiers.some((i) => i.type === "name")) return respond([]);
+      const named =
+        c.identifiers.some((i) => i.type === "name") ||
+        state.jobs.some((j) => j.case_id === caseId && j.target_type === "name");
+      if (!named) return respond([]);
       return respond([...(state.candidates[caseId] ?? [])].sort((a, b) => b.score - a.score));
     },
 

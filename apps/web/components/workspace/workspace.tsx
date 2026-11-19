@@ -64,9 +64,11 @@ function TabPanel({ tab, caseId }: { tab: WorkspaceTab; caseId: string }) {
 export function Workspace({ caseId }: { caseId: string }) {
   const { params } = useUrlState();
   const caseQuery = useCase(caseId);
-  const hasPeople = caseQuery.data?.identifiers.some((i) => i.type === "name") ?? false;
-  const tab = parseTab(params.get("tab"), hasPeople);
   const jobs = useJobs(caseId);
+  const hasPeople =
+    (caseQuery.data?.identifiers.some((i) => i.type === "name") ?? false) ||
+    (jobs.data?.some((j) => j.target_type === "name") ?? false);
+  const tab = parseTab(params.get("tab"), hasPeople);
   useCaseRealtime(caseId);
   useWakeStuckJobs(caseId, jobs.data);
 

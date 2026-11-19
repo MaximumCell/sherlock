@@ -16,7 +16,12 @@ export function PeopleTab({ caseId }: { caseId: string }) {
   const jobs = useJobs(caseId);
   const candidates = useCandidates(caseId);
   const confirm = useConfirmCandidate(caseId);
-  const names = c.data?.identifiers.filter((i) => i.type === "name").map((i) => i.value) ?? [];
+  const names = [
+    ...new Set([
+      ...(c.data?.identifiers.filter((i) => i.type === "name").map((i) => i.value) ?? []),
+      ...(jobs.data ?? []).filter((j) => j.target_type === "name").map((j) => j.target_value),
+    ]),
+  ];
   const searching = (jobs.data ?? []).some(
     (j) => j.target_type === "name" && (j.status === "queued" || j.status === "running"),
   );

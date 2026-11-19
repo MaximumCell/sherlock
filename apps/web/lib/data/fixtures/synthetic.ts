@@ -90,11 +90,13 @@ function drafts(job: Job): Draft[] {
           url: `https://dns.example/query?name=${v}`,
           meta: {
             category: "dns",
-            dns: {
+            records: {
               A: [`203.0.113.${1 + (seed % 250)}`],
               MX: [`10 mail.${v}`],
               NS: ["ns1.example.net", "ns2.example.net"],
             },
+            has_spf: seed % 2 === 0,
+            has_dmarc: seed % 3 === 0,
           },
         },
       ];
@@ -122,7 +124,12 @@ function drafts(job: Job): Draft[] {
         {
           platform: "internetdb",
           url: `https://internetdb.example/${v}`,
-          meta: { category: "network", ports: seed % 2 ? [80, 443] : [22, 443, 8080], vulns: [] },
+          meta: {
+            category: "network",
+            ports: seed % 2 ? [80, 443] : [22, 443, 8080],
+            hostnames: job.target_type === "domain" ? [v] : [],
+            vulns: seed % 3 === 0 ? ["CVE-2099-0101"] : [],
+          },
         },
       ];
     case "wayback":
@@ -135,6 +142,7 @@ function drafts(job: Job): Draft[] {
         },
       ];
     case "avatar_phash":
+    case "reverse_image_links":
       return [
         {
           platform: "avatar",
@@ -143,15 +151,48 @@ function drafts(job: Job): Draft[] {
           meta: { category: "media" },
         },
       ];
-    case "exif":
+    case "image_meta":
       return [
         {
-          platform: "exif",
+          platform: "image",
           url: v,
-          extra: { camera: "ExampleCam X100", software: "DemoPhoto 4.2", gps: "removed" },
-          meta: { category: "media" },
+          extra: { avatar_phash: seed.toString(16).padStart(16, "c3d4e1f0") },
+          meta: {
+            category: "media",
+            format: "JPEG",
+            width: 1200,
+            height: 900,
+            size_bytes: 180_000 + (seed % 90_000),
+            exif: { camera_make: "ExampleCam", camera_model: "X100", software: "DemoPhoto 4.2" },
+            gps_present: seed % 2 === 0,
+          },
         },
       ];
+    case "wallet":
+      return [
+        {
+          platform: "wallet",
+          url: `https://explorer.example/address/${v}`,
+          meta: v.startsWith("0x")
+            ? { category: "wallet", chain: "ethereum", address: v, balance_eth: "0.0", tx_count: seed % 40 }
+            : {
+                category: "wallet",
+                chain: "bitcoin",
+                address: v,
+                balance_btc: "0.0012",
+                tx_count: seed % 40,
+                first_seen: "2021-04-02T00:00:00Z",
+                last_seen: "2024-09-11T00:00:00Z",
+              },
+        },
+      ];
+    case "name_search":
+      return ["GitHub", "Personal site"].map((platform, i) => ({
+        platform,
+        url: `https://${host(platform)}.example/${encodeURIComponent(v.toLowerCase().replace(/\s+/g, "-"))}`,
+        extra: { fullname: v, bio: i === 0 ? "Synthetic demo profile." : "Synthetic personal page." },
+        meta: { category: "identity" },
+      }));
     case "phone_meta":
       return [
         {
@@ -161,14 +202,21 @@ function drafts(job: Job): Draft[] {
         },
       ];
     default:
-      return [
-        {
-          platform: job.module,
-          url: `https://search.example/?q=${encodeURIComponent(v)}`,
-          extra: { note: "Synthetic demo result." },
-          meta: { category: "other" },
-        },
-      ];
+      if (job.module.startsWith("profile_")) {
+        const platform = job.module.slice("profile_".length);
+        const found = seed % 3 !== 0;
+        return [
+          {
+            platform,
+            status: found ? "found" : "not_found",
+            url: found ? `https://${platform}.example/${v}` : null,
+            extra: found ? { fullname: v, bio: "Synthetic demo profile." } : {},
+            meta: { category: "social" },
+          },
+        ];
+      }
+      // other sources: a coverage row only, so a demo scan does not invent detail
+      return [{ platform: job.module, status: "not_found", meta: { category: "other" } }];
   }
 }
 

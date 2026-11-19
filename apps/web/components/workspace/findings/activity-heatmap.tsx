@@ -65,3 +65,43 @@ export function ActivityHeatmap({ matrix }: { matrix: number[][] }) {
     </figure>
   );
 }
+
+function Strip({ values, labels, label }: { values: number[]; labels: string[]; label: string }) {
+  const max = Math.max(1, ...values);
+  const peak = values.indexOf(Math.max(...values));
+  return (
+    <div className="space-y-1">
+      <div
+        role="img"
+        aria-label={`${label}: busiest at ${labels[peak] ?? "?"}`}
+        className="flex h-14 items-end gap-[2px]"
+      >
+        {values.map((v, i) => (
+          <div
+            key={i}
+            title={`${labels[i]}: ${v}`}
+            className={v === 0 ? "flex-1 rounded-sm bg-muted" : "flex-1 rounded-sm bg-accent"}
+            style={{ height: `${Math.max(6, (v / max) * 100)}%`, opacity: v === 0 ? 1 : 0.35 + 0.65 * (v / max) }}
+          />
+        ))}
+      </div>
+      <div className="flex justify-between font-mono text-[10px] text-muted-foreground" aria-hidden>
+        {labels.length === 24
+          ? ["00", "06", "12", "18", "23"].map((h) => <span key={h}>{h}</span>)
+          : labels.map((d) => <span key={d}>{d}</span>)}
+      </div>
+    </div>
+  );
+}
+
+/** Hour-of-day and weekday histograms, for sources that do not give a full 7 x 24 matrix. */
+export function ActivityStrips({ hours, weekdays }: { hours: number[] | null; weekdays: number[] | null }) {
+  return (
+    <div className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-[3fr_1fr]">
+      {hours ? (
+        <Strip values={hours} labels={hours.map((_, h) => `${String(h).padStart(2, "0")}:00 UTC`)} label="Activity by hour" />
+      ) : null}
+      {weekdays ? <Strip values={weekdays} labels={DAYS.map((d) => d.slice(0, 1) + d.slice(1, 2))} label="Activity by weekday" /> : null}
+    </div>
+  );
+}

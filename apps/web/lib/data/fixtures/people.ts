@@ -201,3 +201,39 @@ export function entitiesForCandidate(
     first_seen: new Date(now + i).toISOString(),
   }));
 }
+
+/** Candidates for a name search started inside fixture mode (two invented people). */
+export function syntheticCandidates(name: string, findingIds: string[], hints: JsonObject): Candidate[] {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const city = typeof hints.city === "string" && hints.city ? hints.city : "Example City";
+  const employer = typeof hints.employer === "string" && hints.employer ? hints.employer : "Example Labs";
+  return [
+    {
+      candidate_id: `syn-${slug}-1`,
+      label: `${name} (${city})`,
+      score: 0.72,
+      evidence: [
+        "Same full name on a code-hosting profile and a personal page",
+        `Both mention ${employer}`,
+      ],
+      finding_ids: findingIds,
+      confirmed: false,
+      attributes: {
+        employers: [employer],
+        locations: [city],
+        handles: [{ platform: "GitHub", handle: slug, url: `https://github.example/${slug}` }],
+        links: [`https://${slug}.example`],
+        sources: ["GitHub", "Personal site"],
+      },
+    },
+    {
+      candidate_id: `syn-${slug}-2`,
+      label: `${name} (unrelated namesake)`,
+      score: 0.22,
+      evidence: ["Only the name matches; no shared links, places or employers"],
+      finding_ids: [],
+      confirmed: false,
+      attributes: { employers: [], locations: [], handles: [], links: [], sources: ["Directory listing"] },
+    },
+  ];
+}

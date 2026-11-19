@@ -5,16 +5,14 @@ import { safeUrl, type FindingView } from "@/lib/findings";
 import { compactNumber, formatDate, formatDateTime, percent } from "@/lib/format";
 import { describeRule } from "@/lib/rules";
 import type { Correlation, Finding } from "@/lib/types";
-import { ActivityHeatmap } from "./activity-heatmap";
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="space-y-2">
-      <h3 className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
-      {children}
-    </section>
-  );
-}
+import {
+  ActivitySection,
+  DnsSection,
+  ImageSection,
+  NetworkSection,
+  Section,
+  WalletSection,
+} from "./finding-sections";
 
 function Fact({ icon: Icon, children }: { icon: typeof Mail; children: ReactNode }) {
   return (
@@ -75,48 +73,6 @@ function ProfileSection({ view }: { view: FindingView }) {
   );
 }
 
-function InfraSection({ view }: { view: FindingView }) {
-  if (!view.dns && view.ports.length === 0) return null;
-  return (
-    <>
-      {view.dns ? (
-        <Section title="DNS records">
-          <dl className="overflow-hidden rounded-md border border-border text-sm">
-            {Object.entries(view.dns).map(([type, values]) => (
-              <div key={type} className="flex gap-3 border-b border-border px-3 py-1.5 last:border-0">
-                <dt className="w-12 shrink-0 font-mono text-xs font-semibold text-muted-foreground">
-                  {type}
-                </dt>
-                <dd className="min-w-0 space-y-0.5 break-all font-mono text-xs">
-                  {values.map((value) => (
-                    <p key={value}>{value}</p>
-                  ))}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </Section>
-      ) : null}
-      {view.ports.length > 0 ? (
-        <Section title="Open ports">
-          <ul className="flex flex-wrap gap-1.5">
-            {view.ports.map((port) => (
-              <li key={port}>
-                <Badge variant="outline" className="font-mono">
-                  {port}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-          <p className="text-xs text-muted-foreground">
-            From a passive scan index. Sherlock did not probe this host.
-          </p>
-        </Section>
-      ) : null}
-    </>
-  );
-}
-
 export function FindingDetail({
   finding,
   view,
@@ -156,12 +112,11 @@ export function FindingDetail({
         </Section>
       ) : null}
       <ProfileSection view={view} />
-      <InfraSection view={view} />
-      {view.activity ? (
-        <Section title="Public activity by weekday and hour (UTC)">
-          <ActivityHeatmap matrix={view.activity} />
-        </Section>
-      ) : null}
+      {view.dns ? <DnsSection dns={view.dns} /> : null}
+      {view.network ? <NetworkSection network={view.network} /> : null}
+      {view.wallet ? <WalletSection wallet={view.wallet} /> : null}
+      {view.image ? <ImageSection image={view.image} /> : null}
+      {view.activity ? <ActivitySection activity={view.activity} /> : null}
       {view.other.length > 0 ? (
         <Section title="Other fields">
           <dl className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-x-3 gap-y-1.5 text-sm">

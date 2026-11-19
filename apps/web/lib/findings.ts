@@ -1,3 +1,18 @@
+import {
+  STRUCTURED_EXTRA,
+  STRUCTURED_META,
+  flattenEntries,
+  parseActivity,
+  parseDns,
+  parseImage,
+  parseNetwork,
+  parseWallet,
+  type ActivityInfo,
+  type DnsInfo,
+  type ImageInfo,
+  type NetworkInfo,
+  type WalletInfo,
+} from "./finding-extras";
 import type { Finding, FindingStatus, JsonObject, JsonValue } from "./types";
 
 export interface BreachInfo {
@@ -19,10 +34,11 @@ export interface FindingView {
   followers: number | null;
   following: number | null;
   breach: BreachInfo | null;
-  dns: Record<string, string[]> | null;
-  ports: number[];
-  /** 7 x 24 matrix: weekday (Mon first) by hour. */
-  activity: number[][] | null;
+  dns: DnsInfo | null;
+  network: NetworkInfo | null;
+  wallet: WalletInfo | null;
+  image: ImageInfo | null;
+  activity: ActivityInfo | null;
   error: string | null;
   /** Remaining scalar fields, for the generic key/value table. */
   other: [key: string, value: string][];
@@ -62,25 +78,6 @@ export function safeImageUrl(value: string | null | undefined): string | null {
   return safeUrl(value);
 }
 
-function toMatrix(v: JsonValue | undefined): number[][] | null {
-  const raw = typeof v === "object" && v !== null && !Array.isArray(v) ? v.weekday_hour : v;
-  if (!Array.isArray(raw) || raw.length !== 7) return null;
-  const rows = raw.map((row) =>
-    Array.isArray(row) ? row.map((x) => (typeof x === "number" && x > 0 ? x : 0)) : [],
-  );
-  return rows.every((r) => r.length === 24) ? rows : null;
-}
-
-function toDns(v: JsonValue | undefined): Record<string, string[]> | null {
-  if (typeof v !== "object" || v === null || Array.isArray(v)) return null;
-  const out: Record<string, string[]> = {};
-  for (const [type, values] of Object.entries(v)) {
-    const list = splitList(values);
-    if (list.length) out[type.toUpperCase()] = list;
-  }
-  return Object.keys(out).length ? out : null;
-}
-
 const KNOWN_EXTRA = new Set([
   "fullname",
   "bio",
@@ -100,20 +97,10 @@ const KNOWN_META = new Set([
   "breach_name",
   "breach_date",
   "data_classes",
-  "dns",
-  "ports",
-  "activity",
   "error",
   "curated",
+  "summary",
 ]);
-
-function scalar(v: JsonValue | undefined): string | null {
-  if (v === null || v === undefined) return null;
-  if (typeof v === "string") return v.trim() || null;
-  if (typeof v === "number" || typeof v === "boolean") return String(v);
-  if (Array.isArray(v)) return v.length ? v.map((x) => scalar(x) ?? "").join(", ") : null;
-  return JSON.stringify(v);
-}
 
 export const humanizeKey = (key: string): string => key.replace(/_/g, " ");
 
@@ -124,14 +111,20 @@ export function parseFinding(f: Finding): FindingView {
   const emails = [...new Set([...splitList(extra.email), ...splitList(extra.emails)])];
   const other: [string, string][] = [];
   for (const [k, v] of Object.entries(extra)) {
-    if (KNOWN_EXTRA.has(k)) continue;
-    const text = scalar(v);
-    if (text) other.push([humanizeKey(k), text]);
+    if (KNOWN_EXTRA.has(k) || STRUCTURED_EXTRA.has(k)) continue;
+    flattenEntries(humanizeKey(k), v, other);
   }
+  // FindingMetadata only differs from JsonObject by allowing undefined values
+  const m = meta as JsonObject;
+  const dns = parseDns(m);
+  const network = parseNetwork(m, extra);
+  const wallet = parseWallet(m, extra);
+  const image = parseImage(m, extra);
+  const activity = parseActivity(m);
+  const owned = dns || network || wallet || image || activity;
   for (const [k, v] of Object.entries(meta)) {
-    if (KNOWN_META.has(k)) continue;
-    const text = scalar(v);
-    if (text) other.push([humanizeKey(k), text]);
+    if (KNOWN_META.has(k) || (owned && STRUCTURED_META.has(k))) continue;
+    flattenEntries(humanizeKey(k), v, other);
   }
   const breachName = str(meta.breach_name);
   return {
@@ -154,11 +147,11 @@ export function parseFinding(f: Finding): FindingView {
             dataClasses: splitList(meta.data_classes),
           }
         : null,
-    dns: toDns(meta.dns),
-    ports: Array.isArray(meta.ports)
-      ? meta.ports.filter((p): p is number => typeof p === "number").sort((a, b) => a - b)
-      : [],
-    activity: toMatrix(meta.activity),
+    dns,
+    network,
+    wallet,
+    image,
+    activity,
     error: str(meta.error),
     other,
   };

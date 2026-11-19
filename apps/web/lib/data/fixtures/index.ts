@@ -10,6 +10,7 @@ import type {
   Finding,
   Job,
   JsonObject,
+  NameHints,
   ReviewDecision,
 } from "../../types";
 import { GatewayError } from "../gateway";
@@ -24,7 +25,7 @@ import type {
 } from "../types";
 import { FIXTURE_MODULES, modulesFor } from "./catalogue";
 import { scoreFixtureCase } from "./exposure";
-import { entitiesForCandidate } from "./people";
+import { entitiesForCandidate, syntheticCandidates } from "./people";
 import { renderFixtureReport } from "./report";
 import { FIXTURE_USER_ID, createFixtureState, type FixtureState } from "./state";
 import { progressNote, syntheticFindings } from "./synthetic";
@@ -50,6 +51,13 @@ const DECISION_STATUS: Record<ReviewDecision, CorrelationStatus> = {
 };
 
 const clone = <T>(value: T): T => structuredClone(value);
+
+function toHints(hints: NameHints | undefined): JsonObject | undefined {
+  if (!hints) return undefined;
+  const out: JsonObject = {};
+  for (const [k, v] of Object.entries(hints)) if (typeof v === "string" && v) out[k] = v;
+  return Object.keys(out).length ? out : undefined;
+}
 
 export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDataSource {
   const now = options.now ?? Date.now;
@@ -107,8 +115,16 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
     emit("cases", "UPDATE", c.id, c.id, c);
   }
 
-  function enqueue(caseId: string, type: string, value: string, only?: string[]): Job[] {
+  function enqueue(
+    caseId: string,
+    type: string,
+    value: string,
+    only?: string[],
+    hints?: JsonObject,
+  ): Job[] {
     const batch = newId("ba");
+    const baseParams: JsonObject = { synthetic: true };
+    if (hints) baseParams.hints = hints;
     const modules = modulesFor(type).filter((m) => !only || only.includes(m.name));
     const jobs = modules.map<Job>((m) => ({
       id: newId("b2"),
@@ -118,7 +134,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       module: m.name,
       target_type: type,
       target_value: value,
-      params: { synthetic: true },
+      params: { ...baseParams },
       status: "queued",
       progress: 0,
       progress_note: null,
@@ -149,6 +165,17 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
         ? { findings: produced.length, found: produced.filter((f) => f.status === "found").length }
         : { findings: 1, found: 1 };
     job.progress_note = null;
+    if (job.module === "name_search" && !state.candidates[job.case_id]?.length) {
+      const hints =
+        typeof job.params.hints === "object" && job.params.hints && !Array.isArray(job.params.hints)
+          ? job.params.hints
+          : {};
+      state.candidates[job.case_id] = syntheticCandidates(
+        job.target_value,
+        fresh.map((f) => f.id),
+        hints,
+      );
+    }
     for (const entity of state.entities) {
       if (entity.case_id === job.case_id && entity.value === job.target_value && !entity.scanned) {
         entity.scanned = true;
@@ -183,7 +210,9 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
         emit("jobs", "UPDATE", caseId, job.id, job);
       }
       const stillRunning = running.filter((j) => j.status === "running").length;
-      const queued = jobs.filter((j) => j.status === "queued").slice(0, Math.max(0, 2 - stillRunning));
+      const queued = jobs
+        .filter((j) => j.status === "queued")
+        .slice(0, Math.max(0, 2 - stillRunning));
       for (const job of queued) {
         job.status = "running";
         job.attempts += 1;
@@ -309,7 +338,17 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       );
       audit(c.id, "case_created", "investigator", { identifiers: body.identifiers.length });
       const jobs =
-        body.scan === false ? [] : body.identifiers.flatMap((i) => enqueue(c.id, i.type, i.value));
+        body.scan === false
+          ? []
+          : body.identifiers.flatMap((i) =>
+              enqueue(
+                c.id,
+                i.type,
+                i.value,
+                undefined,
+                i.type === "name" ? toHints(body.hints) : undefined,
+              ),
+            );
       listListeners.forEach((l) => l());
       return respond({ case: c, jobs });
     },
@@ -340,7 +379,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       if (body.type === "name" && session.anonymous) {
         throw new GatewayError(403, "Name search requires a signed-in account.");
       }
-      const jobs = enqueue(caseId, body.type, body.value, body.modules);
+      const jobs = enqueue(caseId, body.type, body.value, body.modules, toHints(body.hints));
       if (jobs.length === 0) {
         throw new GatewayError(422, `No available module accepts a ${body.type} target.`);
       }
@@ -376,7 +415,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       if (!corr) throw new GatewayError(404, "Correlation not found");
       corr.status = DECISION_STATUS[decision];
       corr.reviewed = corr.status === "approved";
-      corr.review_note = decision === "reset" ? null : (note?.trim() || corr.review_note);
+      corr.review_note = decision === "reset" ? null : note?.trim() || corr.review_note;
       corr.reviewed_at = decision === "reset" ? null : nowIso();
       audit(corr.case_id, "review", "investigator", { rule: corr.type, decision });
       emit("correlations", "UPDATE", corr.case_id, corr.id, corr);
@@ -397,7 +436,9 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
 
     async getExposure(caseId) {
       requireCase(caseId);
-      return respond(scoreFixtureCase(byCase(state.findings, caseId), byCase(state.correlations, caseId)));
+      return respond(
+        scoreFixtureCase(byCase(state.findings, caseId), byCase(state.correlations, caseId)),
+      );
     },
 
     async listCandidates(caseId) {

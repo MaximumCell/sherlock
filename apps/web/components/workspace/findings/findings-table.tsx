@@ -54,6 +54,21 @@ function summaryLine(finding: Finding): string {
   const view = parseFinding(finding);
   if (view.breach) return view.breach.dataClasses.join(", ") || "Breach exposure";
   if (view.error) return view.error;
+  if (view.wallet) {
+    return [view.wallet.balance ? `${view.wallet.balance} ${view.wallet.unit}` : null, view.wallet.txCount !== null ? `${view.wallet.txCount} transactions` : null]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  if (view.network) {
+    return `${view.network.ports.length} open port${view.network.ports.length === 1 ? "" : "s"}${view.network.vulns.length ? ` · ${view.network.vulns.length} CVEs` : ""}`;
+  }
+  if (view.dns) return Object.keys(view.dns.records).join(", ") + " records";
+  if (view.activity?.offsetLabel) return `Activity suggests ${view.activity.offsetLabel}`;
+  if (view.image) {
+    return [view.image.camera, view.image.width && view.image.height ? `${view.image.width}×${view.image.height}` : null, view.image.gpsPresent ? "GPS present" : null]
+      .filter(Boolean)
+      .join(" · ");
+  }
   return (
     view.fullname ?? view.bio ?? view.other.slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(" · ")
   );

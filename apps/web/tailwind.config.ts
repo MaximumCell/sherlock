@@ -1,73 +1,37 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
+
+const withAlpha = (name: string) => `hsl(var(--${name}) / <alpha-value>)`;
 
 const config: Config = {
   darkMode: ["class"],
-  content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./lib/**/*.{ts,tsx}",
-  ],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
-    container: {
-      center: true,
-      padding: "1.5rem",
-      screens: {
-        "2xl": "1180px",
-      },
-    },
+    container: { center: true, padding: "1rem", screens: { "2xl": "1280px" } },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
+        border: withAlpha("border"),
+        input: withAlpha("input"),
+        ring: withAlpha("ring"),
+        background: withAlpha("background"),
+        foreground: withAlpha("foreground"),
+        surface: withAlpha("surface"),
+        primary: { DEFAULT: withAlpha("primary"), foreground: withAlpha("primary-foreground") },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: withAlpha("secondary"),
+          foreground: withAlpha("secondary-foreground"),
         },
-        tertiary: "hsl(var(--tertiary))",
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: withAlpha("destructive"),
+          foreground: withAlpha("destructive-foreground"),
         },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        cyan: {
-          DEFAULT: "hsl(var(--cyan))",
-          foreground: "hsl(var(--cyan-foreground))",
-        },
-        // Status (OSINT-specific semantic colors)
-        "status-found": "hsl(var(--status-found))",
-        "status-found-bg": "hsl(var(--status-found-bg))",
-        "status-found-border": "hsl(var(--status-found-border))",
-        "status-error": "hsl(var(--status-error))",
-        "status-error-bg": "hsl(var(--status-error-bg))",
-        "status-error-border": "hsl(var(--status-error-border))",
-        "status-warning": "hsl(var(--status-warning))",
-        "status-warning-bg": "hsl(var(--status-warning-bg))",
-        "status-warning-border": "hsl(var(--status-warning-border))",
-        "status-info": "hsl(var(--status-info))",
-        "status-info-bg": "hsl(var(--status-info-bg))",
-        "status-info-border": "hsl(var(--status-info-border))",
+        muted: { DEFAULT: withAlpha("muted"), foreground: withAlpha("muted-foreground") },
+        accent: { DEFAULT: withAlpha("accent"), foreground: withAlpha("accent-foreground") },
+        popover: { DEFAULT: withAlpha("popover"), foreground: withAlpha("popover-foreground") },
+        card: { DEFAULT: withAlpha("card"), foreground: withAlpha("card-foreground") },
+        success: withAlpha("success"),
+        warning: withAlpha("warning"),
+        danger: withAlpha("danger"),
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -75,56 +39,39 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-fira-sans)", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
-        mono: ["var(--font-fira-code)", "ui-monospace", "SFMono-Regular", "SF Mono", "Menlo", "monospace"],
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       fontSize: {
-        "2xs": "0.6875rem", // 11px
-        xs: "0.75rem",      // 12px
-        sm: "0.8125rem",    // 13px
-        base: "0.875rem",   // 14px
-        lg: "1rem",         // 16px
-        xl: "1.125rem",     // 18px
-        "2xl": "1.375rem",  // 22px
-        "3xl": "1.625rem",  // 26px
-        "4xl": "1.75rem",   // 28px
+        "2xs": ["0.6875rem", { lineHeight: "1rem" }],
+        xs: ["0.75rem", { lineHeight: "1.125rem" }],
+        sm: ["0.8125rem", { lineHeight: "1.25rem" }],
+        base: ["0.875rem", { lineHeight: "1.375rem" }],
+        lg: ["1rem", { lineHeight: "1.5rem" }],
+        xl: ["1.125rem", { lineHeight: "1.625rem" }],
+        "2xl": ["1.375rem", { lineHeight: "1.75rem" }],
+        "3xl": ["1.75rem", { lineHeight: "2.125rem" }],
       },
       boxShadow: {
-        glow: "0 0 24px -4px hsl(var(--accent) / 0.35)",
-        inset: "inset 0 1px 0 rgba(255, 255, 255, 0.04)",
+        panel: "0 1px 0 0 hsl(var(--shadow) / 0.04), 0 8px 24px -12px hsl(var(--shadow) / 0.35)",
       },
       keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-        "pulse-accent": {
-          "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--accent) / 0.4)" },
-          "50%": { boxShadow: "0 0 0 8px hsl(var(--accent) / 0)" },
-        },
         "fade-in": {
           from: { opacity: "0", transform: "translateY(4px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
-        "scale-in": {
-          from: { opacity: "0", transform: "scale(0.96)" },
-          to: { opacity: "1", transform: "scale(1)" },
+        indeterminate: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(350%)" },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-accent": "pulse-accent 2s ease-in-out infinite",
-        "fade-in": "fade-in 200ms ease-out",
-        "scale-in": "scale-in 150ms ease-out",
+        "fade-in": "fade-in 180ms ease-out",
+        indeterminate: "indeterminate 1.4s ease-in-out infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [animate],
 };
 
 export default config;

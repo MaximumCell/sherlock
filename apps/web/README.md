@@ -40,8 +40,35 @@ Every screen then works with no backend. The data layer has one interface, `Data
 with timers and emits the same change events as Supabase Realtime, so the UI code path is identical.
 The `/demo` route always uses it, whatever the environment.
 
-All fixture data is fictional: the handle `ada-fixture`, reserved `.example` domains, RFC 5737
-addresses.
+All fixture data is fictional: the handle `ada-fixture`, the name-search subject "Marlow Quince",
+reserved `.example` domains, RFC 5737 addresses. Fixture mode also scores exposure locally
+(`lib/data/fixtures/exposure.ts`) so the Overview card reacts to scans and review decisions.
+
+## Screenshots
+
+| Cases | Overview |
+|---|---|
+| ![Cases](docs/screenshots/home.png) | ![Overview](docs/screenshots/overview.png) |
+| **Graph** | **Review** |
+| ![Graph](docs/screenshots/graph.png) | ![Review](docs/screenshots/review.png) |
+| **People (name search)** | |
+| ![People](docs/screenshots/people.png) | |
+
+## Gateway calls
+
+All from the browser with `Authorization: Bearer <Supabase access token>`, retried with backoff
+while the service wakes (a "Waking the scan service…" notice appears after 3 s).
+
+| Call | Used by |
+|---|---|
+| `GET /modules` | Modules page (falls back to the bundled catalogue) |
+| `POST /cases`, `PATCH /cases/{id}`, `DELETE /cases/{id}` | New investigation, case menu |
+| `POST /cases/{id}/scan` (`hints` for `type: "name"`) | Targets, pivots, scan form |
+| `POST /cases/{id}/jobs/{job}/cancel`, `POST /cases/{id}/wake` | Jobs panel, stuck-job wake (every 20 s at most) |
+| `POST /cases/{id}/findings/{fid}/curate`, `POST /correlations/{id}/review` | Findings star, Review |
+| `GET /cases/{id}/report` | Report tab |
+| `GET /cases/{id}/exposure` | Exposure card on Overview |
+| `GET /cases/{id}/candidates`, `POST /cases/{id}/candidates/{cid}/confirm` | People tab (404 shows "not available yet") |
 
 ## Layout
 
@@ -50,9 +77,12 @@ app/                  routes (thin server shells) + error / not-found / loading
 components/ui         shadcn/Radix primitives
 components/shell      app shell, command palette, account menu, banners
 components/cases      cases list and the New investigation dialog
-components/workspace  case workspace: overview, findings, graph, timeline, review, report, jobs
+components/workspace  case workspace: overview (exposure), people, findings, graph, timeline,
+                      review, report, jobs
 lib/types.ts          mirrors packages/core/sherlock_core/models.py
 lib/data              DataSource interface, Supabase and fixture implementations, gateway client
 lib/query             TanStack Query hooks, mutations and Realtime cache patching
 lib/graph             graph model + deterministic radial layout
+lib/finding-extras.ts parsers for module-specific finding shapes (DNS, services, wallet, image,
+                      activity); unknown keys fall back to a generic key/value view
 ```

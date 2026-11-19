@@ -45,15 +45,19 @@ const config: Config = {
       fontSize: {
         "2xs": ["0.6875rem", { lineHeight: "1rem" }],
         xs: ["0.75rem", { lineHeight: "1.125rem" }],
-        sm: ["0.8125rem", { lineHeight: "1.25rem" }],
-        base: ["0.875rem", { lineHeight: "1.375rem" }],
-        lg: ["1rem", { lineHeight: "1.5rem" }],
-        xl: ["1.125rem", { lineHeight: "1.625rem" }],
-        "2xl": ["1.375rem", { lineHeight: "1.75rem" }],
-        "3xl": ["1.75rem", { lineHeight: "2.125rem" }],
+        sm: ["0.875rem", { lineHeight: "1.375rem" }],
+        base: ["0.9375rem", { lineHeight: "1.5rem" }],
+        lg: ["1.0625rem", { lineHeight: "1.625rem" }],
+        xl: ["1.1875rem", { lineHeight: "1.75rem" }],
+        "2xl": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.01em" }],
+        "3xl": ["1.875rem", { lineHeight: "2.375rem", letterSpacing: "-0.015em" }],
+        "4xl": ["2.375rem", { lineHeight: "2.875rem", letterSpacing: "-0.02em" }],
+        "5xl": ["3rem", { lineHeight: "3.5rem", letterSpacing: "-0.025em" }],
       },
       boxShadow: {
         panel: "0 1px 0 0 hsl(var(--shadow) / 0.04), 0 8px 24px -12px hsl(var(--shadow) / 0.35)",
+        soft: "0 1px 2px 0 hsl(var(--shadow) / 0.05), 0 1px 1px 0 hsl(var(--shadow) / 0.03)",
+        lift: "0 1px 2px 0 hsl(var(--shadow) / 0.06), 0 12px 32px -16px hsl(var(--shadow) / 0.3)",
       },
       keyframes: {
         "fade-in": {
@@ -64,10 +68,20 @@ const config: Config = {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(350%)" },
         },
+        "tick-in": {
+          from: { opacity: "0", transform: "scale(0.6)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "rise-in": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 180ms ease-out",
         indeterminate: "indeterminate 1.4s ease-in-out infinite",
+        "tick-in": "tick-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1.2)",
+        "rise-in": "rise-in 260ms ease-out",
       },
     },
   },

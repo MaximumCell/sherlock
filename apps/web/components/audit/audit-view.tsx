@@ -23,7 +23,9 @@ import {
 } from "@/components/ui/table";
 import { caseDisplayTitle } from "@/lib/case-status";
 import { formatDateTime } from "@/lib/format";
+import { useAdvanced } from "@/lib/preferences";
 import { useAudit, useCaseSummaries } from "@/lib/query/hooks";
+import { describeAudit } from "@/lib/timeline";
 import type { AuditEntry } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
 
@@ -45,19 +47,20 @@ export function AuditView() {
     [cases.data],
   );
   const entries = audit.data ?? [];
+  const [advanced] = useAdvanced();
 
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Audit log"
-        description="Every scan, correlation run, review decision and report is recorded. Entries are append-only."
+        title="Activity log"
+        description="Every search, link check, decision and report is recorded here, newest first. Entries can never be edited or removed."
         actions={
           <Select value={caseId ?? ALL} onValueChange={(v) => set({ case: v === ALL ? null : v })}>
-            <SelectTrigger className="w-64 max-w-full" aria-label="Filter by case">
-              <SelectValue placeholder="All cases" />
+            <SelectTrigger className="w-64 max-w-full" aria-label="Filter by investigation">
+              <SelectValue placeholder="All investigations" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All cases</SelectItem>
+              <SelectItem value={ALL}>All investigations</SelectItem>
               {(cases.data ?? []).map((s) => (
                 <SelectItem key={s.case.id} value={s.case.id}>
                   {caseDisplayTitle(s.case)}
@@ -76,8 +79,8 @@ export function AuditView() {
       ) : audit.isError ? (
         <ErrorState error={audit.error} onRetry={() => void audit.refetch()} />
       ) : entries.length === 0 ? (
-        <EmptyState icon={ScrollText} title="No audit entries">
-          {caseId ? "Nothing has been recorded for this case yet." : "Activity is logged here as soon as you run a scan."}
+        <EmptyState icon={ScrollText} title="Nothing recorded yet">
+          {caseId ? "Nothing has happened in this investigation yet." : "Activity is recorded here as soon as you run a search."}
         </EmptyState>
       ) : (
         <>
@@ -86,24 +89,29 @@ export function AuditView() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead>Time</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Actor</TableHead>
-                  <TableHead>Case</TableHead>
+                  <TableHead>What happened</TableHead>
+                  <TableHead>By</TableHead>
+                  <TableHead>Investigation</TableHead>
                   <TableHead>Detail</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
-                    <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+                    <TableCell className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
                       {formatDateTime(entry.created_at)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={entry.action.includes("fail") ? "danger" : "outline"} className="font-mono">
-                        {entry.action}
-                      </Badge>
+                      <span className={entry.action.includes("fail") ? "text-danger" : undefined}>
+                        {describeAudit(entry).title}
+                      </span>
+                      {advanced ? (
+                        <Badge variant="outline" className="ml-2 font-mono">
+                          {entry.action}
+                        </Badge>
+                      ) : null}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{entry.actor}</TableCell>
+                    <TableCell className="text-sm">{describeAudit(entry).by}</TableCell>
                     <TableCell className="max-w-48 truncate">
                       {entry.case_id ? (
                         <Link
@@ -116,8 +124,9 @@ export function AuditView() {
                         "—"
                       )}
                     </TableCell>
-                    <TableCell className="max-w-md break-words font-mono text-xs text-muted-foreground">
-                      {detailText(entry)}
+                    <TableCell className="max-w-md break-words text-sm text-muted-foreground">
+                      {describeAudit(entry).detail ?? "—"}
+                      {advanced ? <span className="block font-mono text-xs">{detailText(entry)}</span> : null}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -128,26 +137,27 @@ export function AuditView() {
             {entries.map((entry) => (
               <li key={entry.id} className="space-y-1.5 rounded-lg border border-border bg-card p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <Badge variant={entry.action.includes("fail") ? "danger" : "outline"} className="font-mono">
-                    {entry.action}
-                  </Badge>
-                  <span className="font-mono text-2xs text-muted-foreground">
+                  <span className={entry.action.includes("fail") ? "font-medium text-danger" : "font-medium"}>
+                    {describeAudit(entry).title}
+                  </span>
+                  <span className="text-2xs text-muted-foreground">
                     {formatDateTime(entry.created_at)}
                   </span>
                 </div>
                 <p className="text-sm">
-                  <span className="font-mono text-xs">{entry.actor}</span>
+                  <span>{describeAudit(entry).by}</span>
                   {entry.case_id ? (
                     <span className="text-muted-foreground"> · {titles.get(entry.case_id) ?? entry.case_id.slice(0, 8)}</span>
                   ) : null}
                 </p>
-                <p className="break-words font-mono text-xs text-muted-foreground">{detailText(entry)}</p>
+                <p className="break-words text-sm text-muted-foreground">{describeAudit(entry).detail}</p>
+                {advanced ? <p className="break-words font-mono text-xs text-muted-foreground">{entry.action} · {detailText(entry)}</p> : null}
               </li>
             ))}
           </ul>
           <p className="text-xs text-muted-foreground" aria-live="polite">
-            {entries.length} entr{entries.length === 1 ? "y" : "ies"}
-            {caseId ? ` for ${titles.get(caseId) ?? "this case"}` : ""}
+            {entries.length} event{entries.length === 1 ? "" : "s"}
+            {caseId ? ` for ${titles.get(caseId) ?? "this investigation"}` : ""}
           </p>
         </>
       )}

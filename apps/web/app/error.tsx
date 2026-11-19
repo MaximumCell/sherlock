@@ -22,9 +22,9 @@ export default function RouteError({
         <TriangleAlert className="h-5 w-5" aria-hidden />
       </span>
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">This view crashed</h1>
+        <h1 className="text-xl font-semibold">This page ran into a problem</h1>
         <p className="text-sm text-muted-foreground">
-          Something went wrong while rendering. Your data is safe; nothing was changed.
+          Something went wrong while showing it. Your data is safe and nothing was changed. Try again, or go back to the start.
         </p>
         {error.digest ? (
           <p className="font-mono text-xs text-muted-foreground">ref {error.digest}</p>
@@ -33,7 +33,7 @@ export default function RouteError({
       <div className="flex gap-2">
         <Button onClick={() => retry()}>Try again</Button>
         <Button variant="outline" asChild>
-          <Link href="/">Back to cases</Link>
+          <Link href="/">Back to the start</Link>
         </Button>
       </div>
     </div>

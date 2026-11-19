@@ -15,12 +15,12 @@ export default function NotFound() {
         <p className="font-mono text-xs text-muted-foreground">404</p>
         <h1 className="text-xl font-semibold">No trace of that page</h1>
         <p className="text-sm text-muted-foreground">
-          The link may be old, or the page may have moved into the case workspace.
+          The link may be old, or the page may have moved. Start a new search or open the demo.
         </p>
       </div>
       <div className="flex gap-2">
         <Button asChild>
-          <Link href="/">Back to cases</Link>
+          <Link href="/">Back to the start</Link>
         </Button>
         <Button variant="outline" asChild>
           <Link href="/demo">Open the demo</Link>

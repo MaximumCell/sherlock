@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { AuditView } from "@/components/audit/audit-view";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const metadata: Metadata = { title: "Audit log" };
+export const metadata: Metadata = { title: "Activity log" };
 
 export default function AuditPage() {
   return (

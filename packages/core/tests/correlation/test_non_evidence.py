@@ -15,3 +15,12 @@ def test_summary_and_search_link_rows_are_ignored():
         _row(2, source_tool="reverse_image_links", platform="search-links", extra={"links": link}),
     ]
     assert correlate("c", rows) == []
+
+
+def test_name_search_rows_do_not_correlate_on_the_searched_name():
+    rows = []
+    for i, platform in enumerate(("openalex", "orcid", "wikidata", "web")):
+        f = make_finding(case_id="c", identifier_type="name", identifier_value="Ada Fixture",
+                         source_tool=f"person_{platform}", platform=platform, extra={"fullname": "Ada Fixture"})
+        rows.append({**f, "id": f"n{i}"})
+    assert [c for c in correlate("c", rows) if c["type"] == "shared_display_name"] == []

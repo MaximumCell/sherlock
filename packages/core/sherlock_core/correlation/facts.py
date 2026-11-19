@@ -356,6 +356,11 @@ def facts_for(finding: dict) -> FindingFacts | None:
             _read_spiderfoot(b, meta)
         else:
             _read_profile(b, meta)
+    if itype == "name":
+        # A name search returns rows BECAUSE they carry the searched name, so the name
+        # itself is not evidence that two of them are the same person. Telling people
+        # apart is the job of sherlock_core.resolve, which uses stronger keys.
+        ff.facts = [f for f in ff.facts if f.kind != "display_name"]
     return ff
 
 

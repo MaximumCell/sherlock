@@ -110,6 +110,8 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 | `PATCH /cases/{id}` | `{title?, notes?, tags?, archived?}` | `Case` |
 | `DELETE /cases/{id}` | | 204 |
 | `POST /cases/{id}/scan` | `{type, value, modules?: string[]}` | `{batch_id, jobs: Job[]}` (202) |
+| `GET /cases/{id}/candidates?name=` | | `{name, hints, candidates: Candidate[], unassigned_finding_ids}` (name search; see `sherlock_core.resolve`) |
+| `POST /cases/{id}/candidates/{candidate_id}/confirm?name=` | | `{candidate, entities: Entity[]}`; adds pivot suggestions, starts no scan |
 | `POST /cases/{id}/jobs/{job_id}/cancel` | | `Job` |
 | `POST /cases/{id}/wake` | | 202; re-pokes workers that have queued jobs for this case |
 | `POST /cases/{id}/correlate` | | `{correlations: number}` |
@@ -122,6 +124,7 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 | `POST /cases/{id}/chat` | `{message}` | `{text, iterations, tool_calls_made}` |
 
 Rules:
+- `POST /cases` and `POST /cases/{id}/scan` accept optional `hints: {city?, employer?, school?, keywords?: string[]}` for `type = "name"` only.
 - `type = "name"` requires a non-anonymous session (403 otherwise) and is limited by `NAME_SEARCHES_PER_USER_PER_DAY`.
 - Scans are limited by `SCANS_PER_SESSION_PER_DAY` and `SCANS_GLOBAL_PER_DAY` (429 with a clear message).
 - `POST /cases` and manual links return 201. A case owned by someone else is 403; a missing case is 404. Validation errors are 422 with a string `detail`.

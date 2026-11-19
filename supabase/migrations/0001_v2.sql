@@ -281,3 +281,13 @@ begin
   on conflict (id) do nothing;
 exception when undefined_table or invalid_schema_name then null;  -- plain Postgres
 end $$;
+
+-- ---------------------------------------------------------------- backend role
+-- The gateway and workers use the service key; make sure it can call the queue functions.
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    grant execute on function claim_job(text, text, int) to service_role;
+    grant execute on function hit_rate_limit(text, int, int) to service_role;
+  end if;
+end $$;

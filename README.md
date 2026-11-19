@@ -85,7 +85,7 @@ Modules that need a missing key report themselves unavailable and are skipped. `
 Requirements: [uv](https://docs.astral.sh/uv/), Node 22, Docker (optional), a Supabase project.
 
 ```bash
-# 1. Database: run supabase/migrations/0001_v2.sql in the Supabase SQL editor,
+# 1. Database: run supabase/setup.sql in the Supabase SQL editor (existing v1 database: run only supabase/migrations/0001_v2.sql),
 #    then enable Anonymous sign-ins under Authentication.
 
 # 2. Backend

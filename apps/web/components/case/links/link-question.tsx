@@ -1,19 +1,27 @@
 "use client";
 
 import { Check, CornerUpLeft, SkipForward, X } from "lucide-react";
-import { useState } from "react";
+import { m, useMotionValue, useTransform, type PanInfo } from "motion/react";
+import { useRef, useState } from "react";
 import { Kbd } from "@/components/common/bits";
+import { useTouchDevice } from "@/components/motion/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { accountsInLink, type AccountIndex } from "@/lib/accounts";
 import { describeRule } from "@/lib/rules";
 import type { Correlation, EvidenceRef, ReviewDecision } from "@/lib/types";
+import { swipeDecision } from "@/lib/ui/swipe";
+import { cn } from "@/lib/utils";
 import { AccountSide } from "./account-side";
+import { AccountSideWithConnector, Connector } from "./link-connector";
 import { ConfidenceMeter } from "./confidence-meter";
 
 const PICTURE_RULES = new Set(["avatar_match", "shared_avatar"]);
 
-/** One link as a yes / no question: the items side by side, the reason in plain words. */
+/**
+ * One link as a yes / no question: the accounts face each other, the shared evidence sits on
+ * the line between them. Buttons, keys (Y, N, J, U) or, on touch screens, a swipe right/left.
+ */
 export function LinkQuestion({
   correlation: c,
   index,
@@ -41,6 +49,11 @@ export function LinkQuestion({
 }) {
   const [note, setNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
+  const touch = useTouchDevice();
+  const cardRef = useRef<HTMLElement>(null);
+  const x = useMotionValue(0);
+  const yesHint = useTransform(x, [0, 110], [0, 1]);
+  const noHint = useTransform(x, [-110, 0], [1, 0]);
   const rule = describeRule(c.type);
   const linked = accountsInLink(c, index);
   const missing = c.entities_involved.filter((id) => !index.byFinding.has(id)).length;
@@ -48,19 +61,62 @@ export function LinkQuestion({
   const notes = c.evidence.filter((e): e is string => typeof e === "string");
   const pictureMatch = PICTURE_RULES.has(c.type);
   const decide = (d: ReviewDecision) => onDecide(d, note.trim() || undefined);
+  const pair = linked.length === 2;
+
+  const onDragEnd = (_: unknown, info: PanInfo) => {
+    const width = cardRef.current?.offsetWidth ?? 360;
+    const decision = swipeDecision(info.offset.x, info.velocity.x, width);
+    if (decision && !pending) decide(decision);
+  };
 
   return (
-    <article
+    <m.article
+      ref={cardRef}
       aria-labelledby={`q-${c.id}`}
       data-tour="link-question"
-      className="animate-rise-in space-y-5 rounded-2xl border border-border bg-card p-5 shadow-lift sm:p-6"
+      drag={touch ? "x" : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      dragSnapToOrigin
+      onDragEnd={onDragEnd}
+      style={{ x }}
+      className="panel relative space-y-6 overflow-hidden p-5 shadow-lift sm:p-7"
     >
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground" aria-live="polite">
+      {touch ? (
+        <>
+          <m.span
+            aria-hidden
+            style={{ opacity: yesHint }}
+            className="pointer-events-none absolute inset-0 rounded-xl border-2 border-success bg-success/5"
+          />
+          <m.span
+            aria-hidden
+            style={{ opacity: noHint }}
+            className="pointer-events-none absolute inset-0 rounded-xl border-2 border-danger bg-danger/5"
+          />
+        </>
+      ) : null}
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <p className="eyebrow" aria-live="polite">
             Link {position} of {total}
           </p>
-          <h3 id={`q-${c.id}`} className="text-xl font-semibold tracking-tight sm:text-2xl">
+          <ol aria-hidden className="flex gap-1">
+            {Array.from({ length: Math.min(total, 24) }, (_, i) => (
+              <li
+                key={i}
+                className={cn(
+                  "h-1 w-5 rounded-full transition-colors duration-3",
+                  i < position - 1
+                    ? "bg-accent"
+                    : i === position - 1
+                      ? "bg-foreground"
+                      : "bg-muted",
+                )}
+              />
+            ))}
+          </ol>
+          <h3 id={`q-${c.id}`} className="font-display text-3xl tracking-tight sm:text-4xl">
             {rule.question}
           </h3>
         </div>
@@ -68,17 +124,26 @@ export function LinkQuestion({
       </header>
 
       <ul
-        className={linked.length > 2 ? "grid gap-3 md:grid-cols-3" : "grid gap-3 md:grid-cols-2"}
+        className={cn(
+          "grid gap-3",
+          pair
+            ? "md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
+            : linked.length > 2
+              ? "md:grid-cols-3"
+              : "md:grid-cols-2",
+        )}
         aria-label="Accounts in this link"
       >
-        {linked.map((acc) => (
-          <AccountSide
-            key={acc.key}
-            account={acc}
-            refs={refs}
-            onOpen={() => onOpenFinding(acc.primary.id)}
-            pictureMatch={pictureMatch}
-          />
+        {linked.map((acc, i) => (
+          <AccountSideWithConnector key={acc.key} showConnector={pair && i === 1}>
+            <Connector value={c.matched_value ?? null} rule={rule.title} />
+            <AccountSide
+              account={acc}
+              refs={refs}
+              onOpen={() => onOpenFinding(acc.primary.id)}
+              pictureMatch={pictureMatch}
+            />
+          </AccountSideWithConnector>
         ))}
       </ul>
       {pictureMatch ? (
@@ -94,7 +159,7 @@ export function LinkQuestion({
         </p>
       ) : null}
 
-      <div className="rounded-xl bg-muted/50 p-4">
+      <div className="rounded-lg border border-border bg-surface/70 p-4">
         <p className="text-sm font-medium">Why we think so: {rule.title.toLowerCase()}</p>
         <p className="text-sm text-muted-foreground">{rule.summary}</p>
         {c.matched_value ? (
@@ -136,19 +201,31 @@ export function LinkQuestion({
           >
             <Check aria-hidden />
             Yes, same
+            <kbd className="ml-1 hidden rounded border border-background/30 px-1 font-mono text-2xs lg:inline">
+              Y
+            </kbd>
           </Button>
           <Button size="lg" variant="outline" disabled={pending} onClick={() => decide("reject")}>
             <X aria-hidden />
             No
+            <kbd className="ml-1 hidden rounded border border-border px-1 font-mono text-2xs text-muted-foreground lg:inline">
+              N
+            </kbd>
           </Button>
           <Button size="lg" variant="ghost" onClick={onSkip}>
             <SkipForward aria-hidden />
             Skip
+            <kbd className="ml-1 hidden rounded border border-border px-1 font-mono text-2xs lg:inline">
+              J
+            </kbd>
           </Button>
           {canUndo ? (
             <Button size="lg" variant="ghost" onClick={onUndo} disabled={pending}>
               <CornerUpLeft aria-hidden />
               Undo
+              <kbd className="ml-1 hidden rounded border border-border px-1 font-mono text-2xs lg:inline">
+                U
+              </kbd>
             </Button>
           ) : null}
         </div>
@@ -162,11 +239,15 @@ export function LinkQuestion({
               Add a note
             </button>
           ) : null}
-          <p className="hidden items-center gap-1 text-xs text-muted-foreground lg:flex">
-            <Kbd>Y</Kbd> yes <Kbd>N</Kbd> no <Kbd>J</Kbd> skip <Kbd>U</Kbd> undo
-          </p>
+          {touch ? (
+            <p className="text-xs text-muted-foreground">Swipe right for yes, left for no</p>
+          ) : (
+            <p className="hidden items-center gap-1 text-xs text-muted-foreground lg:flex">
+              <Kbd>K</Kbd> previous
+            </p>
+          )}
         </div>
       </footer>
-    </article>
+    </m.article>
   );
 }

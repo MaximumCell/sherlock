@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { SignInOutcome } from "@/lib/data/types";
 import { validateTarget } from "@/lib/validation";
+import { BrandMark } from "./nav";
 
 function GitHubMark() {
   return (
@@ -83,6 +84,7 @@ export function SignInDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
+          <BrandMark className="mb-2 h-8 w-8 text-foreground" />
           <DialogTitle>Sign in</DialogTitle>
           <DialogDescription>
             A guest session is enough for most scans. Signing in upgrades this session, keeps your
@@ -90,7 +92,7 @@ export function SignInDialog({
           </DialogDescription>
         </DialogHeader>
         {sent ? (
-          <p role="status" className="rounded-md border border-success/30 bg-success/10 p-3 text-sm">
+          <p role="status" className="animate-fade-in rounded-md border border-success/30 bg-success/10 p-3 text-sm">
             Check your inbox: we sent a sign-in link to <span className="font-mono">{email}</span>.
           </p>
         ) : (

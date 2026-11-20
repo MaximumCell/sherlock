@@ -39,7 +39,7 @@ function TitleEditor({ c, onDone }: { c: Case; onDone: () => void }) {
         placeholder={caseDisplayTitle({ title: null, identifiers: c.identifiers })}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === "Escape" && onDone()}
-        className="h-10 text-xl font-semibold"
+        className="h-12 font-display text-3xl"
       />
       <Button type="submit" size="icon" aria-label="Save title" disabled={update.isPending}>
         <Check aria-hidden />
@@ -87,7 +87,7 @@ export function CaseHeader({ c }: { c: Case }) {
             <TitleEditor c={c} onDone={() => setEditing(false)} />
           ) : (
             <div className="flex min-w-0 items-center gap-1.5">
-              <h1 className="min-w-0 break-words text-3xl font-semibold tracking-tight">
+              <h1 className="min-w-0 break-words font-display text-4xl tracking-tight sm:text-5xl">
                 {caseDisplayTitle(c)}
               </h1>
               <Button
@@ -116,7 +116,7 @@ export function CaseHeader({ c }: { c: Case }) {
             ))}
             <TagEditor c={c} />
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="font-mono text-2xs uppercase tracking-[0.12em] text-muted-foreground">
             <span title={formatDateTime(c.created_at)}>Started {timeAgo(c.created_at)}</span>
             {c.updated_at ? (
               <span title={formatDateTime(c.updated_at)}> · updated {timeAgo(c.updated_at)}</span>

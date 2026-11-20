@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { CountUp } from "@/components/motion/count-up";
 import { Skeleton } from "@/components/ui/skeleton";
 import { sourceProgress } from "@/lib/case-progress";
 import { buildSummarySentence } from "@/lib/case-summary";
@@ -30,14 +31,17 @@ function KeyNumber({
   target: string;
 }) {
   return (
-    <li>
+    <li className="min-w-0">
       <button
         type="button"
         onClick={() => goToSection(target)}
-        className="block h-full w-full rounded-xl border border-border bg-card p-4 text-left shadow-soft transition-colors hover:border-input"
+        className="group block h-full w-full p-4 text-left transition-colors duration-1 hover:bg-muted/50"
       >
-        <span className="block text-3xl font-semibold tabular-nums tracking-tight">{value}</span>
-        <span className="mt-1 block text-sm font-medium">{label}</span>
+        <CountUp
+          value={value}
+          className="block font-display text-5xl leading-none tracking-tight"
+        />
+        <span className="mt-2 block text-sm font-medium">{label}</span>
         <span className="block text-xs text-muted-foreground">{hint}</span>
       </button>
     </li>
@@ -83,25 +87,27 @@ export function SummarySection({
 
   return (
     <CaseSection id="summary" title="Summary">
-      <div className="space-y-5" data-tour="summary">
+      <div className="space-y-6" data-tour="summary">
         {loading ? (
-          <Skeleton className="h-8 w-full max-w-3xl" />
+          <Skeleton className="h-9 w-full max-w-3xl" />
         ) : (
           <p
-            className="max-w-3xl text-xl leading-relaxed text-foreground sm:text-2xl sm:leading-snug"
+            className="max-w-4xl text-xl leading-relaxed text-foreground sm:text-[1.625rem] sm:leading-snug"
             aria-live="polite"
           >
             {sentence}
           </p>
         )}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,15rem)_1fr]">
-          <ScoreCard
-            exposure={exposure.data}
-            pending={exposure.isPending}
-            error={exposure.isError ? exposure.error : null}
-            onRetry={() => void exposure.refetch()}
-          />
-          <ul className="grid grid-cols-2 gap-3 self-start">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+          <div className="xl:col-span-4 xl:row-span-2">
+            <ScoreCard
+              exposure={exposure.data}
+              pending={exposure.isPending}
+              error={exposure.isError ? exposure.error : null}
+              onRetry={() => void exposure.refetch()}
+            />
+          </div>
+          <ul className="panel grid grid-cols-2 divide-x divide-y divide-border overflow-hidden xl:col-span-5 [&>li:nth-child(2)]:border-t-0 [&>li:nth-child(3)]:border-l-0">
             <KeyNumber
               label="Accounts found"
               value={accounts}
@@ -131,19 +137,26 @@ export function SummarySection({
               target="links"
             />
           </ul>
+          <div className="md:col-span-2 xl:col-span-3">
+            <FacesStrip findings={findings} correlations={correlations} />
+          </div>
+          <div className="space-y-3 md:col-span-2 xl:col-span-8">
+            <h3 className="eyebrow">What to do</h3>
+            {exposure.isPending ? (
+              <div className="grid gap-3 md:grid-cols-3">
+                {Array.from({ length: 3 }, (_, i) => (
+                  <Skeleton key={i} className="h-28 rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <RemediationList
+                steps={steps}
+                columns={3}
+                emptyText="Nothing to fix yet. Steps appear here once results raise the score."
+              />
+            )}
+          </div>
         </div>
-      </div>
-      <FacesStrip findings={findings} correlations={correlations} />
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold">What to do</h3>
-        {exposure.isPending ? (
-          <Skeleton className="h-24 w-full" />
-        ) : (
-          <RemediationList
-            steps={steps}
-            emptyText="Nothing to fix yet. Steps appear here once results raise the score."
-          />
-        )}
       </div>
       {exposure.data ? <ScoreDetails exposure={exposure.data} findings={findings} /> : null}
     </CaseSection>

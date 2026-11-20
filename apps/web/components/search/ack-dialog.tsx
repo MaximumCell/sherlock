@@ -31,7 +31,7 @@ export function AckDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <span className="mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
+          <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-accent/40 text-accent">
             <ShieldCheck className="h-5 w-5" aria-hidden />
           </span>
           <DialogTitle>Before your first search</DialogTitle>
@@ -41,7 +41,7 @@ export function AckDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
-          <div className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3">
+          <div className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3.5 transition-colors has-[[data-state=checked]]:border-accent/50">
             <Checkbox
               id="authorised"
               className="mt-0.5"
@@ -64,7 +64,7 @@ export function AckDialog({
               .
             </Label>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="border-l-2 border-border pl-3 text-xs text-muted-foreground">
             Searches are logged with an anonymised origin and reviewed by the operator to prevent
             misuse. The log is kept for 90 days.
           </p>

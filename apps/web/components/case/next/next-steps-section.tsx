@@ -49,7 +49,7 @@ export function NextStepsSection({
       }
     >
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold">Suggested next searches</h3>
+        <h3 className="eyebrow">Suggested next searches</h3>
         <SuggestedSearches
           caseId={c.id}
           entities={entities}
@@ -61,11 +61,11 @@ export function NextStepsSection({
         />
       </div>
       <div id="targets" className="scroll-mt-36 space-y-3">
-        <h3 className="text-lg font-semibold">What you searched</h3>
+        <h3 className="eyebrow">What you searched</h3>
         <TargetList c={c} jobs={jobs} entities={entities} findings={findings} accounts={accounts} />
       </div>
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold">More things to fix</h3>
+        <h3 className="eyebrow">More things to fix</h3>
         <RemediationList
           steps={steps}
           start={3}

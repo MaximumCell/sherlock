@@ -35,7 +35,7 @@ export function SearchOptions({
     });
 
   return (
-    <div className="space-y-5 rounded-xl border border-border bg-surface/60 p-4 text-left">
+    <div className="space-y-5 rounded-lg border border-border bg-popover/80 p-4 text-left backdrop-blur">
       {showCaseFields ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">

@@ -41,7 +41,7 @@ export function TargetChip({
     <span
       title={`${type}: ${value}`}
       className={cn(
-        "inline-flex max-w-full items-center gap-1.5 rounded-md border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-xs",
+        "inline-flex max-w-full items-center gap-1.5 rounded-[5px] border border-border bg-surface px-1.5 py-0.5 font-mono text-xs",
         className,
       )}
     >
@@ -81,13 +81,13 @@ export function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={indeterminate ? undefined : clamped}
-      className={cn("h-1.5 w-full overflow-hidden rounded-full bg-muted", className)}
+      className={cn("h-1 w-full overflow-hidden rounded-full bg-muted", className)}
     >
       {indeterminate ? (
         <div className={cn("h-full w-1/3 animate-indeterminate rounded-full", TONES[tone])} />
       ) : (
         <div
-          className={cn("h-full rounded-full transition-[width] duration-500", TONES[tone])}
+          className={cn("h-full rounded-full transition-[width] duration-4 ease-out", TONES[tone])}
           style={{ width: `${clamped}%` }}
         />
       )}
@@ -97,7 +97,7 @@ export function ProgressBar({
 
 export function Kbd({ children }: { children: string }) {
   return (
-    <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
+    <kbd className="inline-flex min-w-[1.25rem] items-center justify-center rounded-[4px] border border-border border-b-input bg-surface px-1 py-px font-mono text-2xs text-muted-foreground">
       {children}
     </kbd>
   );

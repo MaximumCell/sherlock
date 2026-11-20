@@ -20,87 +20,109 @@ import { cn } from "@/lib/utils";
 
 export type EntityFlowNode = Node<{ node: GraphNode }, "entity">;
 
+/** Kind of thing on the map: its name in the filters, its icon, and the ring colour. */
 export const KIND_META: Record<
   GraphNodeKind,
-  { label: string; icon: LucideIcon; className: string }
+  { label: string; icon: LucideIcon; ring: string; dot: string }
 > = {
   seed: {
     label: "What you searched",
     icon: Crosshair,
-    className: "border-accent bg-accent/15 text-foreground",
+    ring: "border-accent shadow-glow",
+    dot: "bg-accent",
   },
-  account: { label: "Accounts", icon: UserRound, className: "border-border bg-card" },
-  email: { label: "Emails", icon: Mail, className: "border-success/40 bg-success/10" },
-  infra: { label: "Websites and IPs", icon: Server, className: "border-warning/40 bg-warning/10" },
-  breach: { label: "Breaches", icon: ShieldAlert, className: "border-danger/50 bg-danger/10" },
-  handle: { label: "Other identifiers", icon: AtSign, className: "border-border bg-muted" },
+  account: { label: "Accounts", icon: UserRound, ring: "border-input", dot: "bg-muted-foreground" },
+  email: { label: "Emails", icon: Mail, ring: "border-success/70", dot: "bg-success" },
+  infra: { label: "Websites and IPs", icon: Server, ring: "border-warning/70", dot: "bg-warning" },
+  breach: { label: "Breaches", icon: ShieldAlert, ring: "border-danger/70", dot: "bg-danger" },
+  handle: {
+    label: "Other identifiers",
+    icon: AtSign,
+    ring: "border-input",
+    dot: "bg-muted-foreground",
+  },
   cluster: {
     label: "Grouped accounts",
     icon: Layers,
-    className: "border-dashed border-muted-foreground/50 bg-surface",
+    ring: "border-dashed border-muted-foreground/60",
+    dot: "bg-muted-foreground/60",
   },
 };
 
 const HANDLE =
   "!left-1/2 !top-1/2 !h-px !min-h-0 !w-px !min-w-0 !-translate-x-1/2 !-translate-y-1/2 !border-0 !bg-transparent !opacity-0";
 
-/** One compact pill per entity. Both handles sit at the centre so edges run centre to centre. */
+/**
+ * One entity as a round node: a picture or icon in a ring coloured by kind, the label
+ * underneath. Both handles sit at the centre so edges run centre to centre.
+ */
 export const EntityNode = memo(function EntityNode({ data, selected }: NodeProps<EntityFlowNode>) {
   const { node } = data;
   const meta = KIND_META[node.kind];
   const Icon = meta.icon;
+  const seed = node.kind === "seed";
+  const mono = seed || node.kind === "email" || node.kind === "handle";
   return (
-    <div
-      className={cn(
-        "flex max-w-44 cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 shadow-sm transition-shadow",
-        meta.className,
-        node.kind === "seed" && "max-w-56 px-3 py-2",
-        selected && "ring-2 ring-ring",
-      )}
-    >
+    <div className="group flex w-32 cursor-pointer flex-col items-center gap-1.5">
       <Handle type="target" position={Position.Top} isConnectable={false} className={HANDLE} />
       <Handle type="source" position={Position.Top} isConnectable={false} className={HANDLE} />
-      {node.kind === "account" && node.avatarUrl ? (
-        <ProfileAvatar
-          src={node.avatarUrl}
-          name={node.sublabel ?? node.label}
-          platform={node.platform}
-          size="xs"
-          decorative
-        />
-      ) : node.kind === "account" && node.platform ? (
-        <PlatformIcon platform={node.platform} size="md" />
-      ) : (
-        <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-      )}
-      <span className="min-w-0">
+      <span
+        className={cn(
+          "relative flex items-center justify-center rounded-full border-2 bg-card transition-[box-shadow,transform] duration-2 ease-out group-hover:scale-105",
+          seed ? "h-14 w-14" : "h-11 w-11",
+          meta.ring,
+          selected && "ring-2 ring-ring ring-offset-2 ring-offset-background",
+        )}
+      >
+        {node.kind === "account" && node.avatarUrl ? (
+          <ProfileAvatar
+            src={node.avatarUrl}
+            name={node.sublabel ?? node.label}
+            platform={node.platform}
+            size="sm"
+            decorative
+            className="[&>span:first-child]:rounded-full [&>span:first-child]:border-0"
+          />
+        ) : node.kind === "account" && node.platform ? (
+          <PlatformIcon platform={node.platform} size="md" className="rounded-full" />
+        ) : (
+          <Icon
+            className={cn(
+              "shrink-0",
+              seed ? "h-6 w-6 text-accent" : "h-4 w-4 text-muted-foreground",
+            )}
+            aria-hidden
+          />
+        )}
+        {node.sources > 1 ? (
+          <span
+            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-success px-1 font-mono text-[9px] font-medium text-background"
+            title={`One account, confirmed by ${node.sources} sources`}
+            aria-label={`${node.sources} sources`}
+          >
+            {node.sources}
+          </span>
+        ) : null}
+        {node.curated ? (
+          <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-popover">
+            <Pin className="h-2.5 w-2.5 fill-current text-accent" aria-label="pinned" />
+          </span>
+        ) : null}
+      </span>
+      <span className="max-w-full rounded bg-background/80 px-1 text-center leading-tight">
         <span
           className={cn(
-            "block truncate text-xs font-medium leading-tight",
-            (node.kind === "seed" || node.kind === "email" || node.kind === "handle") &&
-              "font-mono",
+            "block truncate text-[11px] font-medium",
+            mono && "font-mono",
+            seed && "text-xs text-foreground",
           )}
         >
           {node.label}
         </span>
         {node.sublabel ? (
-          <span className="block truncate text-[10px] leading-tight text-muted-foreground">
-            {node.sublabel}
-          </span>
+          <span className="block truncate text-[10px] text-muted-foreground">{node.sublabel}</span>
         ) : null}
       </span>
-      {node.sources > 1 ? (
-        <span
-          className="shrink-0 rounded-full bg-success/15 px-1.5 text-[10px] font-semibold tabular-nums text-success"
-          title={`One account, confirmed by ${node.sources} sources`}
-          aria-label={`${node.sources} sources`}
-        >
-          {node.sources}
-        </span>
-      ) : null}
-      {node.curated ? (
-        <Pin className="h-3 w-3 shrink-0 fill-current text-accent" aria-label="pinned" />
-      ) : null}
     </div>
   );
 });

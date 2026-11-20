@@ -35,10 +35,24 @@ export function PauseControl({ paused, disabled }: { paused: boolean; disabled?:
     <>
       <div
         className={cn(
-          "flex items-center gap-3 rounded-lg border px-3 py-2",
-          paused ? "border-warning/40 bg-warning/10" : "border-border bg-card",
+          "flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors duration-3",
+          paused ? "border-warning/50 bg-warning/10" : "border-success/40 bg-success/[0.06]",
         )}
       >
+        <span className="flex min-w-0 flex-col">
+          <span
+            className={cn(
+              "flex items-center gap-1.5 font-mono text-2xs uppercase tracking-[0.12em]",
+              paused ? "text-warning" : "text-success",
+            )}
+          >
+            <span
+              className={cn("h-1.5 w-1.5 rounded-full", paused ? "bg-warning" : "bg-success motion-safe:animate-pulse")}
+              aria-hidden
+            />
+            {paused ? "Paused" : "Searches live"}
+          </span>
+        </span>
         <Switch
           id="pause-searches"
           checked={paused}

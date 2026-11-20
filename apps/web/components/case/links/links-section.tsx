@@ -14,8 +14,14 @@ import type { Correlation, CorrelationStatus, Finding, ReviewDecision } from "@/
 import { useUrlState } from "@/lib/use-url-state";
 import { CaseSection } from "../section";
 import { LinkList } from "./link-list";
-import { LinkQuestion } from "./link-question";
+import dynamic from "next/dynamic";
 import { useLinkKeys } from "./use-link-keys";
+
+// the link flow carries the motion library: loaded on demand, with a card-shaped placeholder
+const LinkFlow = dynamic(() => import("./link-flow"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-96 w-full rounded-xl" />,
+});
 
 const UNDO: Record<CorrelationStatus, ReviewDecision> = {
   pending: "reset",
@@ -69,6 +75,8 @@ export function LinksSection({
   const [index, setIndex] = useState(0);
   const [decided, setDecided] = useState(0);
   const [history, setHistory] = useState<{ id: string; previous: CorrelationStatus }[]>([]);
+  // which way the answered card leaves: right for yes, left for no, up for skip
+  const [leaving, setLeaving] = useState<-1 | 0 | 1>(0);
 
   // automatic same_account merges are never questions and never count as "to check"
   const links = useMemo(() => linkRows(correlations), [correlations]);
@@ -84,6 +92,7 @@ export function LinksSection({
   const dialogOpen = Boolean(params.get("finding"));
 
   const decide = (c: Correlation, decision: ReviewDecision, note?: string) => {
+    setLeaving(decision === "approve" ? 1 : decision === "reject" ? -1 : 0);
     setHistory((h) => [...h, { id: c.id, previous: c.status }]);
     if (c.status === "pending" && decision !== "reset") setDecided((d) => d + 1);
     review.mutate({ id: c.id, decision, note });
@@ -95,7 +104,11 @@ export function LinksSection({
     if (last.previous === "pending") setDecided((d) => Math.max(0, d - 1));
     review.mutate({ id: last.id, decision: UNDO[last.previous] });
   };
-  const move = (delta: number) =>
+  const move = (delta: number) => {
+    setLeaving(0);
+    stepIndex(delta);
+  };
+  const stepIndex = (delta: number) =>
     setIndex((i) => (queue.length ? (i + delta + queue.length) % queue.length : 0));
 
   useLinkKeys({
@@ -130,7 +143,7 @@ export function LinksSection({
       {error ? (
         <ErrorState title="Could not load the links" error={error} onRetry={onRetry} />
       ) : loading ? (
-        <Skeleton className="h-72 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-xl" />
       ) : links.length === 0 && !listMode ? (
         <EmptyState icon={Link2} title={scanning ? "Looking for links" : "No possible links yet"}>
           {scanning
@@ -156,8 +169,8 @@ export function LinksSection({
           pendingId={review.isPending ? review.variables?.id : undefined}
         />
       ) : current ? (
-        <LinkQuestion
-          key={current.id}
+        <LinkFlow
+          leaving={leaving}
           correlation={current}
           index={accounts}
           position={decided + (index % queue.length) + 1}

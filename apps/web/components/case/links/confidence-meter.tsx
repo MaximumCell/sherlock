@@ -1,4 +1,7 @@
+"use client";
+
 import { InfoHint } from "@/components/common/info-hint";
+import { useEffect, useState } from "react";
 import { confidenceBand } from "@/lib/rules";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +32,12 @@ export function ConfidenceMeter({
   className?: string;
 }) {
   const pct = Math.round(confidence * 100);
+  // the bar fills from empty once shown (a CSS transition; instant with reduced motion)
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setShown(pct));
+    return () => cancelAnimationFrame(frame);
+  }, [pct]);
   const band = BAND[confidenceBand(confidence)];
   return (
     <div className={cn("w-full space-y-1.5 sm:w-48", className)}>
@@ -37,7 +46,7 @@ export function ConfidenceMeter({
           How sure we are
           <ConfidenceHint />
         </span>
-        <span className={cn("font-medium tabular-nums", band.text)}>{pct}%</span>
+        <span className={cn("font-mono tabular-nums", band.text)}>{pct}%</span>
       </div>
       <div
         role="meter"
@@ -49,8 +58,11 @@ export function ConfidenceMeter({
         className="h-1.5 overflow-hidden rounded-full bg-muted"
       >
         <div
-          className={cn("h-full rounded-full", band.bar)}
-          style={{ width: `${Math.max(pct, 3)}%` }}
+          className={cn(
+            "h-full rounded-full transition-[width] duration-[600ms] ease-out",
+            band.bar,
+          )}
+          style={{ width: `${shown ? Math.max(shown, 3) : 0}%` }}
         />
       </div>
       <p className={cn("text-xs", band.text)}>{band.label}</p>

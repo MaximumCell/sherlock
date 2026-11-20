@@ -53,18 +53,22 @@ function SheetBody({
   }
   return (
     <>
-      <SheetHeader className="pr-8 text-left">
+      <SheetHeader className="-mx-5 -mt-5 border-b border-border bg-surface/70 px-5 pb-5 pt-7 pr-12 text-left">
         <div className="flex items-start gap-4">
           <ProfileAvatar
             src={view.avatarUrl}
             name={view.fullname ?? findingTitle(finding)}
             platform={platformKnown ? platform : null}
             url={view.url}
-            size={view.avatarUrl || view.fullname ? "lg" : "md"}
+            size={view.avatarUrl || view.fullname ? "xl" : "md"}
           />
           <div className="min-w-0 flex-1 space-y-1">
-            <SheetTitle className="break-words">{view.fullname ?? findingTitle(finding)}</SheetTitle>
-            {view.fullname ? <p className="text-sm text-muted-foreground">{findingTitle(finding)}</p> : null}
+            <SheetTitle className="break-words">
+              {view.fullname ?? findingTitle(finding)}
+            </SheetTitle>
+            {view.fullname ? (
+              <p className="text-sm text-muted-foreground">{findingTitle(finding)}</p>
+            ) : null}
             <SheetDescription className="break-all font-mono text-xs">
               {finding.identifier_type}: {finding.identifier_value}
             </SheetDescription>

@@ -3,69 +3,90 @@
 @tailwind utilities;
 
 /*
- * Sherlock design tokens. One system: HSL triplets consumed by tailwind.config.ts.
- * :root is the light theme, .dark the default "investigation console".
+ * Sherlock design tokens: one system, consumed by tailwind.config.ts.
+ *
+ * Dark ("night console") is the hero theme and the default; light ("case file") is its own
+ * design: warm paper, ink-blue type, the same single accent darkened for contrast.
+ * Colour carries meaning only: one cyan accent for "the thing to act on", and the three
+ * status colours (confirmed green, pending amber, risk red). Everything else is neutral.
  */
 @layer base {
-  /*
-   * Light theme. Soft neutral surfaces, one indigo accent used sparingly,
-   * colour otherwise reserved for status (exposure band, confirmed / pending / rejected).
-   */
   :root {
-    --background: 220 20% 98.5%;
-    --surface: 220 18% 96.5%;
-    --foreground: 224 26% 11%;
+    /* light: case file */
+    --background: 40 20% 97%;
+    --surface: 40 16% 94.5%;
+    --foreground: 232 32% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 224 26% 11%;
+    --card-foreground: 232 32% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 26% 11%;
-    --primary: 224 26% 13%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 16% 94%;
-    --secondary-foreground: 224 26% 13%;
-    --muted: 220 16% 94.5%;
-    --muted-foreground: 222 10% 38%;
-    --accent: 234 72% 55%;
+    --popover-foreground: 232 32% 12%;
+    --primary: 232 32% 14%;
+    --primary-foreground: 40 30% 98%;
+    --secondary: 40 12% 91%;
+    --secondary-foreground: 232 32% 14%;
+    --muted: 40 12% 92%;
+    --muted-foreground: 232 10% 36%;
+    --accent: 193 92% 28%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 70% 45%;
+    --destructive: 2 68% 44%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 14% 89%;
-    --input: 220 12% 80%;
-    --ring: 234 72% 55%;
-    --success: 152 64% 28%;
-    --warning: 30 92% 34%;
-    --danger: 0 70% 45%;
-    --shadow: 224 30% 20%;
+    --border: 36 10% 85%;
+    --input: 36 8% 74%;
+    --ring: 193 92% 32%;
+    --success: 152 66% 26%;
+    --warning: 30 92% 32%;
+    --danger: 2 68% 44%;
+    --shadow: 232 30% 20%;
+    --grid-line: 232 30% 20% / 0.045;
+    --glow: 193 92% 40%;
+    --backdrop-glow: 193 60% 70% / 0.18;
     --radius: 0.625rem;
     color-scheme: light;
   }
 
   .dark {
-    --background: 228 14% 6.5%;
-    --surface: 228 13% 8.5%;
-    --foreground: 220 16% 93%;
-    --card: 228 12% 9.5%;
-    --card-foreground: 220 16% 93%;
-    --popover: 228 12% 11%;
-    --popover-foreground: 220 16% 93%;
-    --primary: 220 16% 94%;
-    --primary-foreground: 228 18% 9%;
-    --secondary: 228 10% 15%;
-    --secondary-foreground: 220 16% 93%;
-    --muted: 228 10% 13.5%;
-    --muted-foreground: 222 9% 65%;
-    --accent: 232 92% 74%;
-    --accent-foreground: 228 30% 10%;
-    --destructive: 0 80% 64%;
-    --destructive-foreground: 228 30% 8%;
-    --border: 228 10% 17%;
-    --input: 228 9% 27%;
-    --ring: 232 92% 74%;
-    --success: 150 55% 54%;
+    /* dark: night console, deep blue-violet black */
+    --background: 240 24% 4.5%;
+    --surface: 240 20% 6.5%;
+    --foreground: 228 30% 94%;
+    --card: 240 18% 8%;
+    --card-foreground: 228 30% 94%;
+    --popover: 240 18% 9.5%;
+    --popover-foreground: 228 30% 94%;
+    --primary: 228 30% 94%;
+    --primary-foreground: 240 24% 6%;
+    --secondary: 240 14% 13%;
+    --secondary-foreground: 228 30% 94%;
+    --muted: 240 14% 12%;
+    --muted-foreground: 232 12% 66%;
+    --accent: 187 90% 58%;
+    --accent-foreground: 240 30% 6%;
+    --destructive: 2 86% 66%;
+    --destructive-foreground: 240 30% 6%;
+    --border: 238 14% 15.5%;
+    --input: 238 12% 25%;
+    --ring: 187 90% 58%;
+    --success: 152 58% 52%;
     --warning: 38 92% 60%;
-    --danger: 0 86% 70%;
-    --shadow: 228 60% 2%;
+    --danger: 2 86% 68%;
+    --shadow: 240 60% 1%;
+    --grid-line: 230 40% 80% / 0.035;
+    --glow: 187 90% 58%;
+    --backdrop-glow: 222 80% 40% / 0.16;
     color-scheme: dark;
+  }
+
+  :root {
+    /* motion: one curve set, four durations */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+    --dur-1: 150ms;
+    --dur-2: 240ms;
+    --dur-3: 360ms;
+    --dur-4: 450ms;
+    /* layout */
+    --topbar-h: 3.5rem;
   }
 
   * {
@@ -78,7 +99,7 @@
 
   body {
     @apply bg-background font-sans text-base text-foreground antialiased;
-    font-feature-settings: "cv11", "ss01";
+    font-feature-settings: "ss02", "cv01";
     text-rendering: optimizeLegibility;
   }
 
@@ -93,7 +114,104 @@
   }
 
   ::selection {
-    background: hsl(var(--accent) / 0.3);
+    background: hsl(var(--accent) / 0.28);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  /* The page backdrop: a faint evidence-board grid that fades out, and a vignette. */
+  .app-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 70% at 50% -10%, hsl(var(--backdrop-glow)), transparent 60%),
+      radial-gradient(140% 100% at 50% 50%, transparent 55%, hsl(var(--shadow) / 0.35) 100%);
+  }
+  .app-backdrop::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(hsl(var(--grid-line)) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-line)) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: -1px -1px;
+    mask-image: linear-gradient(to bottom, black, transparent 70%);
+  }
+
+  /* Panels: hairline border with a faint top light, no heavy shadow. */
+  .panel {
+    @apply rounded-xl border border-border bg-card;
+    box-shadow:
+      inset 0 1px 0 0 hsl(var(--foreground) / 0.04),
+      0 1px 2px 0 hsl(var(--shadow) / 0.12);
+  }
+
+  /* Glass is reserved for floating chrome (top bar, sticky rail, map controls, search). */
+  .glass {
+    @apply backdrop-blur-[14px] backdrop-saturate-150;
+    background: hsl(var(--background) / 0.82);
+  }
+
+  /* A small mono label above headings: "01 · SUMMARY". */
+  .eyebrow {
+    @apply font-mono text-2xs font-medium uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  /* Cards that lean a little towards the pointer (see components/motion/tilt.ts). */
+  .tilt {
+    transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+      translateY(var(--lift, 0px));
+    transition:
+      transform var(--dur-2) var(--ease-out),
+      border-color var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out);
+  }
+  .tilt:hover {
+    --lift: -2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tilt,
+    .tilt:hover {
+      transform: none;
+    }
+  }
+
+  /* Quick actions that appear on hover or keyboard focus, and always on touch screens. */
+  .reveal {
+    opacity: 0;
+    transition: opacity var(--dur-1) var(--ease-out);
+  }
+  .group:hover .reveal,
+  .group:focus-within .reveal,
+  .reveal[data-on] {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .reveal {
+      opacity: 1;
+    }
+  }
+
+  /* Shimmering placeholder (skeletons). */
+  .shimmer {
+    background: linear-gradient(
+        100deg,
+        transparent 20%,
+        hsl(var(--foreground) / 0.05) 40%,
+        transparent 60%
+      )
+      hsl(var(--muted) / 0.7);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
   }
 }
 
@@ -108,26 +226,54 @@
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
   }
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
 }
 
 /* React Flow follows the token system instead of its own palette. */
 .react-flow {
   --xy-background-color: transparent;
   --xy-edge-stroke: hsl(var(--muted-foreground) / 0.45);
-  --xy-edge-label-background-color: hsl(var(--card));
+  --xy-edge-label-background-color: hsl(var(--popover));
   --xy-edge-label-color: hsl(var(--muted-foreground));
-  --xy-minimap-background-color: hsl(var(--card));
+  --xy-minimap-background-color: hsl(var(--card) / 0.9);
   --xy-minimap-mask-background-color: hsl(var(--background) / 0.7);
-  --xy-controls-button-background-color: hsl(var(--card));
+  --xy-controls-button-background-color: hsl(var(--popover));
   --xy-controls-button-background-color-hover: hsl(var(--muted));
   --xy-controls-button-color: hsl(var(--foreground));
   --xy-controls-button-border-color: hsl(var(--border));
   --xy-attribution-background-color: transparent;
 }
+.react-flow__controls {
+  @apply overflow-hidden rounded-lg border border-border;
+}
+.react-flow__controls-button {
+  width: 32px;
+  height: 32px;
+}
+.react-flow__attribution a {
+  color: hsl(var(--muted-foreground));
+}
 
+.react-flow__edge-path {
+  fill: none;
+  transition:
+    opacity var(--dur-2) var(--ease-out),
+    stroke var(--dur-2) var(--ease-out);
+}
 .react-flow__edge-path.edge-found,
 .edge-found .react-flow__edge-path {
-  stroke: hsl(var(--muted-foreground) / 0.35);
+  stroke: hsl(var(--muted-foreground) / 0.32);
   stroke-width: 1;
 }
 .react-flow__edge-path.edge-mentions,
@@ -140,12 +286,14 @@
 .edge-approved .react-flow__edge-path {
   stroke: hsl(var(--success));
   stroke-width: 2;
+  stroke-dasharray: 10 6;
+  filter: drop-shadow(0 0 3px hsl(var(--success) / 0.6));
 }
 .react-flow__edge-path.edge-pending,
 .edge-pending .react-flow__edge-path {
   stroke: hsl(var(--warning));
   stroke-width: 1.75;
-  stroke-dasharray: 6 5;
+  stroke-dasharray: 5 5;
 }
 .react-flow__edge-path.edge-rejected,
 .edge-rejected .react-flow__edge-path {
@@ -156,8 +304,50 @@
 .react-flow__edge-text {
   font-size: 10px;
 }
-.react-flow__edge-path {
-  fill: none;
+/* Focus mode: everything outside the picked node's neighbourhood steps back. */
+.react-flow__edge.is-dimmed .react-flow__edge-path,
+.react-flow__edge.is-dimmed .react-flow__edge-textwrapper {
+  opacity: 0.08;
+}
+.react-flow__node.is-dimmed {
+  opacity: 0.18;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.react-flow__node {
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+/* plain "found on" / "mentions" labels appear for the focused neighbourhood only */
+.edge-found .react-flow__edge-textwrapper,
+.edge-mentions .react-flow__edge-textwrapper {
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.edge-found.is-lit .react-flow__edge-textwrapper,
+.edge-mentions.is-lit .react-flow__edge-textwrapper {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* confirmed links carry a slow flow; links to check breathe */
+  .edge-approved .react-flow__edge-path {
+    animation: edge-flow 1.6s linear infinite;
+  }
+  .edge-pending .react-flow__edge-path {
+    animation: edge-breathe 2.4s var(--ease-in-out) infinite;
+  }
+  html[data-hidden] .react-flow__edge-path {
+    animation-play-state: paused;
+  }
+}
+@keyframes edge-flow {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+@keyframes edge-breathe {
+  50% {
+    opacity: 0.45;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -172,7 +362,8 @@
 }
 
 @media print {
-  [data-print="hide"] {
+  [data-print="hide"],
+  .app-backdrop {
     display: none !important;
   }
   body[data-printing="report"] [data-print-unless-report],

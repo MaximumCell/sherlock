@@ -46,7 +46,7 @@ export function MergeCard({
   return (
     <article
       aria-label={`${label} ${handle}, ${split ? "split by you" : "merged automatically"}`}
-      className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-soft"
+      className="panel space-y-3 p-4"
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">

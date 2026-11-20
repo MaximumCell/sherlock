@@ -34,7 +34,7 @@ function Panel({
   return (
     <section aria-labelledby={id} className="min-w-0 space-y-3">
       <div className="space-y-0.5">
-        <h2 id={id} className="text-lg font-semibold tracking-tight">
+        <h2 id={id} className="text-xl font-semibold tracking-tight">
           {title}
         </h2>
         {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
@@ -82,6 +82,7 @@ export function AdminPanel({ email }: { email: string }) {
     <div className="space-y-8">
       <div className="space-y-4">
         <PageHeader
+          eyebrow="Operator"
           title="Operator panel"
           description={
             <>
@@ -124,7 +125,7 @@ export function AdminPanel({ email }: { email: string }) {
         title="Searches per day"
         description={`Last ${o.days} days (UTC), every attempt by outcome.`}
       >
-        <div className="rounded-lg border border-border bg-card p-4 shadow-soft">
+        <div className="panel p-4">
           <SearchesChart series={o.series} />
         </div>
       </Panel>
@@ -147,7 +148,7 @@ export function AdminPanel({ email }: { email: string }) {
               No repeated targets in this period.
             </p>
           ) : (
-            <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+            <ul className="panel divide-y divide-border">
               {o.top_targets.map((t) => (
                 <li
                   key={`${t.target_type}:${t.target_value}`}

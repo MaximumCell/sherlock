@@ -58,7 +58,7 @@ export function ReviewCard({
       onClick={onSelect}
       onFocus={onSelect}
       className={cn(
-        "space-y-3 rounded-xl border bg-card p-4 shadow-soft transition-colors",
+        "space-y-3 rounded-xl border bg-card p-4 transition-colors duration-2",
         selected ? "border-accent ring-1 ring-accent/30" : "border-border",
       )}
     >

@@ -174,7 +174,7 @@ export function CoachMark({
       {box ? (
         <div
           aria-hidden
-          className="absolute rounded-xl shadow-[0_0_0_9999px_rgb(0_0_0/0.55)] ring-2 ring-accent transition-all duration-300 motion-reduce:transition-none"
+          className="absolute rounded-xl shadow-[0_0_0_9999px_hsl(var(--shadow)/0.68),0_0_32px_-4px_hsl(var(--glow)/0.6)] ring-1 ring-accent transition-all duration-3 ease-out motion-reduce:transition-none"
           style={{
             top: box.top - PAD,
             left: box.left - PAD,
@@ -183,7 +183,7 @@ export function CoachMark({
           }}
         />
       ) : (
-        <div aria-hidden className="absolute inset-0 bg-black/55" />
+        <div aria-hidden className="absolute inset-0 bg-[hsl(var(--shadow)/0.68)]" />
       )}
       <div
         ref={cardRef}
@@ -192,13 +192,23 @@ export function CoachMark({
         aria-labelledby="tour-title"
         aria-describedby="tour-body"
         tabIndex={-1}
-        className="pointer-events-auto absolute space-y-3 rounded-2xl border border-border bg-popover p-5 text-popover-foreground shadow-lift outline-none"
+        className="pointer-events-auto absolute animate-fade-in space-y-3 rounded-xl border border-border bg-popover p-5 text-popover-foreground shadow-lift outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-[top,left] duration-3 ease-out motion-reduce:transition-none"
         style={{ top, left, width }}
       >
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-medium text-accent">
-            Step {index + 1} of {total}
-          </p>
+          <div className="space-y-2">
+            <p className="eyebrow text-accent">
+              Step {index + 1} of {total}
+            </p>
+            <ol aria-hidden className="flex gap-1">
+              {Array.from({ length: total }, (_, i) => (
+                <li
+                  key={i}
+                  className={`h-1 w-5 rounded-full ${i <= index ? "bg-accent" : "bg-muted"}`}
+                />
+              ))}
+            </ol>
+          </div>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -209,7 +219,7 @@ export function CoachMark({
             <X aria-hidden />
           </Button>
         </div>
-        <h2 id="tour-title" className="text-lg font-semibold tracking-tight">
+        <h2 id="tour-title" className="font-display text-2xl tracking-tight">
           {step.title}
         </h2>
         <p id="tour-body" className="text-sm text-muted-foreground">

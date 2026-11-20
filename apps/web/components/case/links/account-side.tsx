@@ -104,7 +104,9 @@ export function AccountSide({
         </p>
       ) : null}
       {!compact && (view.bio ?? view.headline) ? (
-        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{view.bio ?? view.headline}</p>
+        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
+          {view.bio ?? view.headline}
+        </p>
       ) : null}
       {evidence.length > 0 ? (
         <dl

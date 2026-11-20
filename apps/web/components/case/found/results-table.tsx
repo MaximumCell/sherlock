@@ -121,7 +121,7 @@ interface Props {
 export function ResultsTable({ rows, notes, onOpen, onCurate, sourceLabel, advanced }: Props) {
   return (
     <>
-      <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
+      <div className="panel hidden overflow-hidden md:block">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -200,10 +200,7 @@ export function ResultsTable({ rows, notes, onOpen, onCurate, sourceLabel, advan
         {rows.map((f) => {
           const view = parseFinding(f);
           return (
-            <li
-              key={f.id}
-              className="relative flex items-start gap-3 rounded-xl border border-border bg-card p-3"
-            >
+            <li key={f.id} className="panel relative flex animate-rise-in items-start gap-3 p-3">
               <RowAvatar finding={f} avatarUrl={view.avatarUrl} />
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center justify-between gap-2">

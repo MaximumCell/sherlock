@@ -14,7 +14,7 @@ import { ActivityHeatmap, ActivityStrips } from "./activity-heatmap";
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-2">
-      <h3 className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <h3 className="eyebrow flex items-center gap-2 after:h-px after:flex-1 after:bg-border">
         {title}
       </h3>
       {children}

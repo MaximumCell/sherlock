@@ -16,13 +16,13 @@ export function ScoreDetails({ exposure, findings }: { exposure: Exposure; findi
   const { findings: rows, approved_correlations: links } = exposure.computed_from;
 
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-soft">
+    <div className="panel">
       <button
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-3 rounded-2xl px-5 py-4 text-left text-base font-medium hover:bg-muted/40"
+        className="flex w-full items-center justify-between gap-3 rounded-xl px-5 py-4 text-left text-base font-medium transition-colors duration-1 hover:bg-muted/40"
       >
         How this score is calculated
         <ChevronDown

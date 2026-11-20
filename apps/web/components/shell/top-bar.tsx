@@ -42,7 +42,7 @@ export function TopBar() {
   return (
     <header
       data-print="hide"
-      className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70"
+      className="glass sticky top-0 z-40 border-b border-border"
     >
       <div className="mx-auto flex h-14 max-w-[1320px] items-center gap-2 px-4 sm:px-6">
         <Button
@@ -55,7 +55,7 @@ export function TopBar() {
           <Menu aria-hidden />
         </Button>
         <Brand />
-        <nav aria-label="Main" className="ml-4 hidden items-center gap-1 md:flex">
+        <nav aria-label="Main" className="ml-6 hidden items-center gap-1 md:flex">
           <NavLinks />
           <AdminNavLink />
         </nav>
@@ -65,10 +65,10 @@ export function TopBar() {
           <button
             type="button"
             onClick={openCommandPalette}
-            className="hidden h-9 w-56 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm text-muted-foreground shadow-soft transition-colors hover:border-input hover:text-foreground lg:flex"
+            className="hidden h-9 w-60 items-center gap-2 rounded-md border border-border bg-background/50 px-3 text-sm text-muted-foreground transition-colors duration-1 hover:border-input hover:text-foreground lg:flex"
           >
             <Search className="h-4 w-4" aria-hidden />
-            <span className="flex-1 text-left">Jump to…</span>
+            <span className="flex-1 text-left">Jump to anything…</span>
             <Kbd>⌘K</Kbd>
           </button>
           <Button

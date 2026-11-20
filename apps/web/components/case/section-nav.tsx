@@ -24,8 +24,8 @@ function Count({ value, tone }: { value: number | undefined; tone: "muted" | "wa
   return (
     <span
       className={cn(
-        "rounded-full px-1.5 text-2xs font-medium tabular-nums",
-        tone === "warning" ? "bg-warning/15 text-warning" : "bg-muted text-muted-foreground",
+        "rounded-[4px] px-1 font-mono text-2xs tabular-nums",
+        tone === "warning" ? "bg-warning/15 text-warning" : "text-muted-foreground",
       )}
     >
       {value}
@@ -67,8 +67,8 @@ export function SectionNav({
         ref={listRef}
         className={cn(
           vertical
-            ? "space-y-0.5"
-            : "scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 sm:-mx-6 sm:px-6",
+            ? "relative space-y-0.5 before:absolute before:bottom-3 before:left-[5px] before:top-3 before:w-px before:bg-border"
+            : "scrollbar-none -mx-4 flex gap-1 overflow-x-auto px-4 sm:-mx-6 sm:px-6",
         )}
       >
         {sections.map((id) => {
@@ -84,23 +84,32 @@ export function SectionNav({
                   goToSection(id);
                 }}
                 className={cn(
-                  "flex items-center justify-between gap-2 text-sm font-medium transition-colors",
+                  "flex items-center justify-between gap-2 text-sm font-medium transition-colors duration-1",
                   vertical
                     ? cn(
-                        "relative rounded-md px-3 py-1.5",
-                        current
-                          ? "bg-muted text-foreground before:absolute before:inset-y-1.5 before:-left-px before:w-0.5 before:rounded-full before:bg-accent"
-                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                        "relative rounded-md py-1.5 pl-6 pr-2",
+                        current ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                       )
                     : cn(
-                        "rounded-full border px-3 py-1",
+                        "rounded-md px-3 py-1.5",
                         current
-                          ? "border-foreground/20 bg-foreground text-background"
-                          : "border-border bg-card text-muted-foreground hover:text-foreground",
+                          ? "bg-secondary text-foreground shadow-[inset_0_0_0_1px_hsl(var(--input))]"
+                          : "text-muted-foreground hover:text-foreground",
                       ),
                 )}
               >
-                {SECTION_LABEL[id]}
+                {vertical ? (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute left-0 top-1/2 h-[11px] w-[11px] -translate-y-1/2 rounded-full border transition-[background-color,border-color,box-shadow] duration-2",
+                      current
+                        ? "border-accent bg-accent shadow-glow"
+                        : "border-muted-foreground/50 bg-background",
+                    )}
+                  />
+                ) : null}
+                <span className="truncate">{SECTION_LABEL[id]}</span>
                 <Count value={counts[id]} tone={id === "links" ? "warning" : "muted"} />
               </a>
             </li>

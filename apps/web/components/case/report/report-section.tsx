@@ -14,7 +14,7 @@ import { CaseSection } from "../section";
 /** Typography for rendered markdown, built from the same tokens as the rest of the app. */
 const PROSE = [
   "max-w-3xl text-base leading-relaxed",
-  "[&_h1]:mb-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-tight",
+  "[&_h1]:mb-3 [&_h1]:font-display [&_h1]:text-4xl [&_h1]:font-normal [&_h1]:tracking-tight",
   "[&_h2]:mb-2 [&_h2]:mt-7 [&_h2]:border-b [&_h2]:border-border [&_h2]:pb-1.5 [&_h2]:text-lg [&_h2]:font-semibold",
   "[&_h3]:mb-1 [&_h3]:mt-5 [&_h3]:font-semibold",
   "[&_p]:my-2 [&_em]:text-muted-foreground",
@@ -100,7 +100,7 @@ export function ReportSection({ caseId, visible }: { caseId: string; visible: bo
           onRetry={() => void report.refetch()}
         />
       ) : (
-        <article className="rounded-2xl border border-border bg-card p-5 shadow-soft sm:p-10 print:border-0 print:p-0 print:shadow-none">
+        <article className="panel p-5 sm:p-10 print:border-0 print:p-0 print:shadow-none">
           <div className={PROSE}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}

@@ -21,8 +21,8 @@ function Tile({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1 rounded-lg border border-border bg-card p-4 shadow-soft">
-      <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+    <div className="flex min-w-0 flex-col gap-1 bg-card p-4">
+      <p className="eyebrow flex items-center gap-1.5">
         <Icon
           className={cn(
             "h-3.5 w-3.5",
@@ -32,7 +32,7 @@ function Tile({
         />
         {label}
       </p>
-      <p className="text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
+      <p className="font-display text-4xl leading-tight tracking-tight">{value}</p>
       <p className="truncate text-xs text-muted-foreground">{hint}</p>
       {children}
     </div>
@@ -45,7 +45,10 @@ export function StatTiles({ overview }: { overview: Overview }) {
   const { totals, quota, days } = overview;
   const used = quotaPercent(quota.global_used_today, quota.global_limit);
   return (
-    <section aria-label="Totals" className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <section
+      aria-label="Totals"
+      className="panel grid grid-cols-2 gap-px overflow-hidden bg-border lg:grid-cols-5"
+    >
       <Tile
         icon={Activity}
         label="Searches"

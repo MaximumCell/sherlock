@@ -100,7 +100,11 @@ function Chart({ series, W }: { series: DayPoint[]; W: number }) {
                   width={barW}
                   height={Math.max(0, s.height)}
                   rx={2}
-                  className={OUTCOME_FILLS[s.outcome]}
+                  className={cn(
+                    OUTCOME_FILLS[s.outcome],
+                    "origin-bottom [transform-box:fill-box] motion-safe:animate-[grow-y_500ms_var(--ease-out)_both]",
+                  )}
+                  style={{ animationDelay: `${i * 18}ms` }}
                 />
               ))}
               {i % labelEvery === 0 || i === model.bars.length - 1 ? (

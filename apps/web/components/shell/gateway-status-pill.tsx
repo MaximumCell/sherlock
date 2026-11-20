@@ -20,7 +20,7 @@ export function GatewayStatusPill() {
       role="status"
       aria-live="polite"
       data-print="hide"
-      className="fixed bottom-4 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 animate-fade-in items-center gap-2.5 rounded-full border border-border bg-card px-4 py-2 text-sm shadow-panel"
+      className="fixed bottom-4 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 animate-fade-in items-center gap-2.5 rounded-lg border border-border bg-popover px-4 py-2 text-sm shadow-lift"
     >
       <LoaderCircle className="h-4 w-4 shrink-0 animate-spin text-accent" aria-hidden />
       <span>

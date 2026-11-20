@@ -38,13 +38,13 @@ export function ScoreCard({
   onRetry: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-6 text-center shadow-soft">
-      <p className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+    <div className="panel relative flex h-full flex-col items-center justify-center gap-3 overflow-hidden p-6 text-center">
+      <p className="eyebrow flex items-center gap-1">
         Exposure score
         <ScoreHint />
       </p>
       {pending ? (
-        <Skeleton className="h-36 w-36 rounded-full" />
+        <Skeleton className="h-48 w-48 rounded-full" />
       ) : error || !exposure ? (
         <div className="space-y-3 py-4 text-sm">
           <p className="text-muted-foreground">
@@ -58,10 +58,10 @@ export function ScoreCard({
       ) : (
         <>
           <ExposureDial score={exposure.score} band={exposure.band} />
-          <p className={cn("text-sm font-semibold", BAND_META[exposure.band].text)}>
+          <p className={cn("font-medium", BAND_META[exposure.band].text)}>
             {BAND_META[exposure.band].label} exposure
           </p>
-          <p className="max-w-56 text-sm text-muted-foreground">{BAND_MEANING[exposure.band]}</p>
+          <p className="max-w-60 text-sm text-muted-foreground">{BAND_MEANING[exposure.band]}</p>
         </>
       )}
     </div>

@@ -277,7 +277,7 @@ def test_correlate_syncs_engine_output(client, make_case, store, as_anon, monkey
     cid = make_case(scan=False)["case"]["id"]
     a, b = _finding(store, cid, "github"), _finding(store, cid, "gitlab")
 
-    def engine(case_id, findings):
+    def engine(case_id, findings, split_keys=None):
         return [{"type": "shared_handle", "corr_key": "handle:octocat", "matched_value": "octocat",
                  "entities_involved": [f["id"] for f in findings], "confidence": 0.6,
                  "evidence": ["same handle"], "priority": 0.4}]
@@ -330,6 +330,31 @@ def test_review_approve_reject_reset_persist(client, make_case, store, as_anon):
     r = client.post(f"/correlations/{corr_id}/review", headers=as_anon, json={"decision": "reset"})
     assert r.json()["status"] == "pending" and r.json()["reviewed_at"] is None
     assert client.post(f"/correlations/{corr_id}/review", headers=as_anon, json={"decision": "maybe"}).status_code == 422
+
+
+def test_review_split_and_merge_again_same_account(client, make_case, store, as_anon):
+    cid = make_case(scan=False)["case"]["id"]
+    rows = [make_finding(case_id=cid, identifier_type="username", identifier_value="edith", source_tool=t,
+                         platform=p, url="https://github.com/edith", extra=x)
+            for t, p, x in (("github", "github", {"email": "edith@acme.io"}), ("whatsmyname", "GitHub", {}))]
+    rows.append(make_finding(case_id=cid, identifier_type="username", identifier_value="efinch",
+                             source_tool="profile_gitlab", platform="gitlab", extra={"email": "edith@acme.io"}))
+    ids = [f["id"] for f in store.upsert_findings(rows, cid)]
+    assert client.post(f"/cases/{cid}/correlate", headers=as_anon).status_code == 200
+    merge = next(c for c in store.list_correlations(cid) if c["type"] == "same_account")
+    link = next(c for c in store.list_correlations(cid) if c["type"] == "shared_email")
+    assert merge["status"] == "approved" and link["entities_involved"] == sorted(ids)
+
+    r = client.post(f"/correlations/{merge['id']}/review", headers=as_anon, json={"decision": "reject"})
+    assert r.status_code == 200 and r.json()["status"] == "rejected"
+    # re-correlated with the split: the link now names only the finding that publishes the email
+    link = store.get_correlation(link["id"])
+    assert link["entities_involved"] == sorted([ids[0], ids[2]])
+    assert store.get_correlation(merge["id"])["status"] == "rejected"
+
+    r = client.post(f"/correlations/{merge['id']}/review", headers=as_anon, json={"decision": "reset"})
+    assert r.status_code == 200 and r.json()["status"] == "approved"      # merged again, not "pending"
+    assert store.get_correlation(link["id"])["entities_involved"] == sorted(ids)
 
 
 def test_review_checks_ownership(client, make_case, store, as_anon, as_other):

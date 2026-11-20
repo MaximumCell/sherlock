@@ -201,10 +201,17 @@ def test_extract_entities(S):
     ]
     ents = extract_entities(rows)
     got = {(e["kind"], e["value"], e["platform"]) for e in ents}
+    # edith.dev was scraped (scanned) already, and seed@acme.io was searched: neither is suggested
     assert got == {
-        ("email", "edith@acme.io", None), ("domain", "acme.io", None), ("url", "edith.dev", None),
+        ("email", "edith@acme.io", None), ("domain", "acme.io", None),
         ("domain", "edith.dev", None), ("username", "edith_tw", "twitter"), ("email", "e.finch@gmail.com", None),
     }
     assert len(ents) == len({(e["kind"], e["value"]) for e in ents})          # store key is (kind, value)
     assert all(set(e) == {"kind", "value", "platform", "source_finding_id"} for e in ents)
+    assert next(e for e in ents if e["kind"] == "username")["source_finding_id"] == rows[0]["id"]
+    # without the scrape row the link is new again, with its provenance
+    ents = extract_entities([rows[0]])
     assert next(e for e in ents if e["kind"] == "url")["source_finding_id"] == rows[0]["id"]
+    # a username that was itself scanned (even with no hit) is never suggested back
+    probe = S.site("edith_tw", "X", {}, status="not_found")
+    assert ("username", "edith_tw") not in {(e["kind"], e["value"]) for e in extract_entities([rows[0], probe])}

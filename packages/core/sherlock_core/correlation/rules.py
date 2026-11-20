@@ -43,8 +43,11 @@ class Match:
 class Context:
     """Facts for one case, indexed once and shared by all rules."""
 
-    def __init__(self, findings: list[FindingFacts]) -> None:
+    def __init__(self, findings: list[FindingFacts], unit_of: dict[str, str] | None = None) -> None:
         self.findings = findings
+        # finding id -> account key (see correlation.accounts); a finding outside any
+        # account is its own unit
+        self.unit_of = unit_of or {}
         self._by_value: dict[str, dict[str, list[tuple[FindingFacts, Fact]]]] = defaultdict(lambda: defaultdict(list))
         self.by_email: dict[str, list[FindingFacts]] = defaultdict(list)       # looked up BY this email
         self.by_account: dict[tuple[str, str], list[FindingFacts]] = defaultdict(list)  # found accounts
@@ -55,6 +58,9 @@ class Context:
                 self.by_email[ff.email].append(ff)
             if ff.kind == "account" and ff.handle:
                 self.by_account[(ff.platform, ff.handle)].append(ff)
+
+    def unit(self, ff: FindingFacts) -> str:
+        return self.unit_of.get(ff.finding_id) or f"finding:{ff.finding_id}"
 
     def by_value(self, kind: str) -> dict[str, list[tuple[FindingFacts, Fact]]]:
         return self._by_value.get(kind, {})
@@ -106,6 +112,18 @@ class Rule:
         raise NotImplementedError
 
 
+# ----------------------------------------------------------------------------- circular evidence
+def restates_lookup(ff: FindingFacts, email: str) -> bool:
+    """True when `ff` only restates the email it was LOOKED UP BY and adds nothing independent.
+
+    "E is registered on Spotify" exists only because E was searched, and E was usually
+    discovered on another profile; pairing the two would cite one fact twice. A finding
+    looked up by E that carries its own profile data (the Gravatar profile of E: name,
+    bio, links) is independent evidence and is NOT a restatement.
+    """
+    return ff.email == email and not (ff.kind == "account" and ff.is_rich)
+
+
 # ----------------------------------------------------------------------------- shared_email
 class SharedEmail(Rule):
     """The same email is published by profiles on 2+ platforms.
@@ -122,11 +140,11 @@ class SharedEmail(Rule):
         for email, pairs in ctx.by_value("email").items():
             ev: dict[str, tuple[FindingFacts, str, Any]] = {}
             for ff, fact in pairs:
-                if ff.email == email and not (ff.kind == "account" and ff.is_rich):
+                if restates_lookup(ff, email):
                     continue
                 ev.setdefault(ff.finding_id, (ff, fact.field, fact.raw))
             for ff in ctx.by_email.get(email, ()):
-                if ff.kind == "account" and ff.is_rich:
+                if not restates_lookup(ff, email):
                     ev.setdefault(ff.finding_id, (ff, "identifier_value", ff.identifier_value))
             members = _unique(e[0] for e in ev.values())
             if not any(m.email != email for m in members):
@@ -136,39 +154,6 @@ class SharedEmail(Rule):
                 continue
             yield Match(self.name, email, email, self.confidence,
                         f"Email {email} appears on {len(plats)} platforms: {_labels(members)}",
-                        members, list(ev.values()))
-
-
-# ----------------------------------------------------------------------------- shared_email_platform
-class SharedEmailPlatform(Rule):
-    """A username's profile on platform P itself publishes email E, and E was
-    independently found registered on the same platform P. (A username and an
-    email both merely existing on a site is NOT a link.)"""
-
-    name = "shared_email_platform"
-    confidence = 0.75
-
-    def matches(self, ctx):
-        groups: dict[tuple[str, str], dict[str, tuple[FindingFacts, str, Any]]] = defaultdict(dict)
-        for email, pairs in ctx.by_value("email").items():
-            for ff, fact in pairs:
-                if ff.kind != "account" or not ff.handle:
-                    continue
-                targets = [t for t in ctx.by_email.get(email, ())
-                           if t.platform == ff.platform and t.kind == "account" and t.finding_id != ff.finding_id]
-                if not targets:
-                    continue
-                ev = groups[(email, ff.platform)]
-                ev.setdefault(ff.finding_id, (ff, fact.field, fact.raw))
-                for t in targets:
-                    ev.setdefault(t.finding_id, (t, "identifier_value", t.identifier_value))
-        for (email, _plat), ev in groups.items():
-            members = _unique(e[0] for e in ev.values())
-            users = sorted({m.handle for m in members if m.handle})
-            label = members[0].label
-            yield Match(self.name, f"{email}|{_plat}", f"{email} on {label}", self.confidence,
-                        f"{label} profile of {', '.join(users)} publishes {email}, "
-                        f"and that email is registered on {label}",
                         members, list(ev.values()))
 
 
@@ -342,15 +327,16 @@ class SharedBioText(Rule):
             for ff, fact in pairs:
                 ev.setdefault(ff.finding_id, (ff, fact.field, fact.raw))
             members = _unique(e[0] for e in ev.values())
-            if len({m.identity for m in members}) < 2:
+            if len({ctx.unit(m) for m in members}) < 2:
                 continue
             counts = Counter({texts[i]: len(by_text[texts[i]]) for i in group})
             rep = min(counts, key=lambda t: (-counts[t], t))
             conf = weakest[uf.find(group[0])]
             how = "identical" if len(group) == 1 else "near-identical"
             shown = str(by_text[rep][0][1].raw)
+            n_accounts = len({ctx.unit(m) for m in members})
             yield Match(self.name, rep, shown[:200], conf,
-                        f"Bio text is {how} on {len(members)} findings: {_labels(members)}",
+                        f"Bio text is {how} on {n_accounts} accounts: {_labels(members)}",
                         members, list(ev.values()))
 
     def _near_pairs(self, texts: list[str]) -> Iterator[tuple[int, int, float]]:
@@ -468,6 +454,5 @@ RULES: list[Rule] = [
     AvatarMatch(),
     SharedUrl(),
     SharedBioText(),
-    SharedEmailPlatform(),
     SharedDisplayName(),
 ]

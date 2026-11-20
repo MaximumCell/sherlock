@@ -163,13 +163,26 @@ def plan_scan(case_id: str, target_type: str, value: str, modules: list[str] | N
 
 
 # ----------------------------------------------------------------------------- correlation
+def split_account_keys(correlations: list[Row]) -> set[str]:
+    """Account keys of `same_account` rows the user rejected ("split these")."""
+    return {str(c.get("matched_value")) for c in correlations
+            if c.get("type") == "same_account" and c.get("status") == "rejected" and c.get("matched_value")}
+
+
 def recorrelate(case_id: str, store: Store) -> int:
-    """Re-run the correlation engine for a case and sync the result. Returns the stored row count."""
-    found = store.list_findings(case_id, status="found")
-    rows = store.sync_correlations(case_id, _correlation.correlate(case_id, found))
+    """Re-run the correlation engine for a case and sync the result. Returns the stored row count.
+
+    Accounts the user split (rejected `same_account` rows) are passed as `split_keys`,
+    so their findings stay separate and links that depend on the split are recomputed.
+    """
+    findings = store.list_findings(case_id)
+    found = [f for f in findings if f.get("status") == "found"]
+    split = split_account_keys(store.list_correlations(case_id, status="rejected"))
+    rows = store.sync_correlations(case_id, _correlation.correlate(case_id, found, split_keys=split))
     extract = getattr(_correlation, "extract_entities", None)  # lands with the engine
     if callable(extract):
-        entities: list[Row] = list(extract(found) or [])  # type: ignore[arg-type]
+        # all rows (not only found ones): every identifier already scanned is left out
+        entities: list[Row] = list(extract(findings) or [])  # type: ignore[arg-type]
         if entities:
             store.upsert_entities(case_id, entities)
     return len(rows)

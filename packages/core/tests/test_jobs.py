@@ -217,7 +217,7 @@ async def test_run_job_recorrelates_and_stores_extracted_entities(store, monkeyp
     cid = _case(store)
     seen = {}
 
-    def fake_correlate(case_id, findings):
+    def fake_correlate(case_id, findings, split_keys=None):
         seen["statuses"] = {f["status"] for f in findings}
         return [{"type": "shared_handle", "corr_key": "k1", "matched_value": "octocat",
                  "entities_involved": [f["id"] for f in findings], "confidence": 0.7,
@@ -238,7 +238,7 @@ async def test_run_job_recorrelates_and_stores_extracted_entities(store, monkeyp
 async def test_correlation_failure_does_not_lose_the_scan(store, monkeypatch):
     cid = _case(store)
 
-    def broken(case_id, findings):
+    def broken(case_id, findings, split_keys=None):
         raise RuntimeError("engine bug")
 
     monkeypatch.setattr(jobs._correlation, "correlate", broken)

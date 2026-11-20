@@ -62,11 +62,15 @@ class Store:
     def sync_correlations(self, case_id: str, corrs: list[Row]) -> list[Row]:
         """Make the stored engine correlations match `corrs`, keyed by corr_key.
 
-        New keys are inserted as pending. Existing keys get fresh evidence,
-        confidence and members but KEEP status / review_note / reviewed_at.
-        Pending rows the engine no longer produces are deleted; approved and
-        rejected rows are kept (a human decided on them). Manual links
-        (corr_key starting with 'manual:') are never touched. Returns all rows.
+        New keys are inserted as pending, or with the row's own `status` when the
+        engine supplies one (`same_account` rows arrive "approved": merged
+        automatically; `reviewed_at` is then set). Existing keys get fresh evidence,
+        confidence and members but KEEP status / review_note / reviewed_at, so a
+        supplied status never overrides a human decision. Pending rows the engine no
+        longer produces are deleted, and so are approved `same_account` rows (automatic
+        merges that no longer apply); other approved rows and every rejected row are
+        kept (a human decided on them; a rejected `same_account` row is a split).
+        Manual links (corr_key starting with 'manual:') are never touched. Returns all rows.
         """
         raise NotImplementedError
     def insert_correlation(self, corr: Row, case_id: str) -> Row: raise NotImplementedError
@@ -110,6 +114,19 @@ class Store:
 
 
 _CORR_ENGINE_FIELDS = ("type", "matched_value", "entities_involved", "confidence", "evidence", "priority")
+_STATUSES = ("pending", "approved", "rejected")
+
+
+def _initial_status(c: Row) -> Row:
+    """Review fields for a NEW engine row: its own status when valid, else pending."""
+    status = c.get("status") if c.get("status") in _STATUSES else "pending"
+    return {"status": status, "reviewed_at": None if status == "pending" else now_iso()}
+
+
+def _stale(key: str, row: Row, wanted: dict[str, Row]) -> bool:
+    if key in wanted or key.startswith("manual:"):
+        return False
+    return row.get("status") == "pending" or (row.get("type") == "same_account" and row.get("status") == "approved")
 
 
 class SupabaseStore(Store):
@@ -191,7 +208,7 @@ class SupabaseStore(Store):
         existing = {r["corr_key"]: r for r in self.list_correlations(case_id)}
         wanted = {c["corr_key"]: c for c in corrs}
         new_rows = [
-            {**{k: c.get(k) for k in _CORR_ENGINE_FIELDS}, "corr_key": k, "case_id": case_id}
+            {**{k: c.get(k) for k in _CORR_ENGINE_FIELDS}, **_initial_status(c), "corr_key": k, "case_id": case_id}
             for k, c in wanted.items() if k not in existing
         ]
         if new_rows:
@@ -200,10 +217,7 @@ class SupabaseStore(Store):
             old = existing.get(k)
             if old and any(old.get(f) != c.get(f) for f in _CORR_ENGINE_FIELDS):
                 self._t("correlations").update({f: c.get(f) for f in _CORR_ENGINE_FIELDS}).eq("id", old["id"]).execute()
-        stale = [
-            r["id"] for k, r in existing.items()
-            if k not in wanted and r["status"] == "pending" and not k.startswith("manual:")
-        ]
+        stale = [r["id"] for k, r in existing.items() if _stale(k, r, wanted)]
         for i in range(0, len(stale), 100):
             self._t("correlations").delete().in_("id", stale[i:i + 100]).execute()
         return self.list_correlations(case_id)
@@ -413,9 +427,9 @@ class MemoryStore(Store):
             if k in existing:
                 existing[k].update(fields)
             else:
-                self._new_corr({**fields, "corr_key": k}, case_id)
+                self._new_corr({**fields, **_initial_status(c), "corr_key": k}, case_id)
         for k, r in existing.items():
-            if k not in wanted and r["status"] == "pending" and not k.startswith("manual:"):
+            if _stale(k, r, wanted):
                 del self.correlations[r["id"]]
         return self.list_correlations(case_id)
 

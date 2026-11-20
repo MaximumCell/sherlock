@@ -75,15 +75,32 @@ class CrtSh(Module):
 ## Correlation (`sherlock_core.correlation`)
 
 ```python
-from sherlock_core.correlation import correlate, summarize
-corrs = correlate(case_id, findings)      # list of rows for store.sync_correlations
-stats = summarize(findings)               # case summary (handle reuse counts etc.), not review items
+from sherlock_core.correlation import correlate, group_accounts, summarize
+accounts = group_accounts(findings, split_keys=None)      # one Account per account, not per row
+corrs = correlate(case_id, findings, split_keys=None)     # list of rows for store.sync_correlations
+stats = summarize(findings, split_keys=None)              # case summary (accounts, handle reuse...), not review items
 ```
 
-`extract_entities(findings)` returns pivot candidates (emails, handles, urls, domains) for `store.upsert_entities`.
+`extract_entities(findings)` returns pivot candidates (emails, handles, urls, domains) for `store.upsert_entities`, each with `source_finding_id` (the finding that showed it). Pass every row of the case: an identifier that any row was looked up by (a scanned target, whatever the row's status) is never returned. Seeds that were never scanned are not visible to it; `entities.is_seed` covers those.
 
-Correlation row: `type` (rule name), `corr_key` (deterministic), `matched_value`, `entities_involved` (**finding ids**), `confidence` (0..1), `evidence` (list of human-readable strings or `{finding_id, platform, field, value}` dicts), `priority`.
-Review state lives in `status` (`pending | approved | rejected`) and is owned by `store.sync_correlations` / `set_correlation_status`. The engine never sets it.
+### Accounts (`correlation.accounts`)
+
+Several sources and lookups report the same account; the engine reasons over accounts, not rows. Found rows only; coverage summaries, non-evidence modules, breach, infostealer and crawler-event rows are never accounts.
+
+- `account_key = "<canonical platform>:<normalised handle>"` ("Github", "github", "GitHub" are one platform). All found account rows with the same (platform, handle) are one account, whatever module reported them.
+- A row looked up by another identifier whose own URL is a profile URL on the same platform joins that profile's account.
+- A registration hit without a handle (e.g. "email E is registered on P") joins account (P, h) when a row of that account publishes E. Ambiguous (two accounts on P publish E) or no match: it stays its own item, keyed `"<platform>:<identifier_type>:<normalised identifier>"`.
+- A scrape of an account's own profile URL belongs to that account.
+- `Account`: `account_key, platform, label, handle, url, finding_ids, sources (modules), primary_finding_id, profile {fullname, bio, location, avatar_url, created_at: {value, finding_id}; emails, links: [{value, finding_id}]}, joined_by (plain-English reasons for non-trivial merges)`.
+- `split_keys`: account keys the user split. Their findings come back one item each (`"<account_key>#<finding_id>"`).
+
+Correlation row: `type` (rule name), `corr_key` (deterministic), `matched_value`, `entities_involved` (**finding ids**), `confidence` (0..1), `evidence` (list of human-readable strings or `{finding_id, platform, field, value, account_key}` dicts), `priority`.
+
+- A reviewable correlation always links 2+ DIFFERENT accounts; `entities_involved` lists every finding of the linked accounts. A finding that only restates the email it was looked up by (a registration hit) is never link evidence; a profile found by that email (e.g. Gravatar) is.
+- `same_account`: one row per account with 2+ findings. `matched_value = account_key`, `corr_key = sha256("same_account|" + account_key)`, `confidence = 1.0`, `priority = 0`, `entities_involved` = the account's findings, `evidence` = [summary, then `{finding_id, platform, field: "contributed", value, module, account_key}` per finding], and an initial `status: "approved"` (merged automatically). It is not a question for the reviewer. Rejecting it splits the account (`jobs.recorrelate` passes rejected `same_account` keys as `split_keys`); "reset" on it merges again (status back to `approved`). Either decision re-correlates the case.
+- `shared_email_platform` is retired: that situation is a `same_account` merge.
+
+Review state lives in `status` (`pending | approved | rejected`) and is owned by `store.sync_correlations` / `set_correlation_status`. The engine sets only the initial status of `same_account` rows; `sync_correlations` honours a supplied `status` only when it inserts a new key (and sets `reviewed_at` then), never on an existing row. Stale `same_account` rows that are still `approved` (automatic) are deleted like pending ones; rejected ones (splits) are kept.
 
 ## Jobs
 
@@ -118,7 +135,7 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 | `GET /cases/{id}/exposure` | | `{score, band, factors[], computed_from, method}` (see `sherlock_core.scoring`) |
 | `POST /cases/{id}/findings/{fid}/curate` | `{curated: bool}` | `Finding` |
 | `POST /cases/{id}/correlations` | `{finding_ids: string[], note?}` | `Correlation` (manual link) |
-| `POST /correlations/{id}/review` | `{decision: approve \| reject \| reset, note?}` | `Correlation` |
+| `POST /correlations/{id}/review` | `{decision: approve \| reject \| reset, note?}` | `Correlation` (for `same_account`: reject = split, reset = merge again, both re-correlate) |
 | `GET /cases/{id}/report` | | `text/markdown` |
 | `GET /cases/{id}/variations?type=&value=&count=` | | `{variations: string[]}` |
 | `POST /cases/{id}/chat` | `{message}` | `{text, iterations, tool_calls_made}` |

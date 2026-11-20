@@ -11,6 +11,11 @@ def _ids(*rows):
     return sorted(r["id"] for r in rows)
 
 
+def _review(corrs):
+    """Review items only: `same_account` rows are automatic merges, not questions."""
+    return [c for c in corrs if c["type"] != "same_account"]
+
+
 def _only(corrs, rule):
     matches = [c for c in corrs if c["type"] == rule]
     assert len(matches) == 1, [(c["type"], c["matched_value"]) for c in corrs]
@@ -28,7 +33,8 @@ def test_row_shape_and_contract(S):
     assert c["type"] == "shared_email" and c["matched_value"] == "edith@acme.io" and c["confidence"] == 0.9
     assert c["priority"] == round(0.9 * math.log(1 + 2), 4)
     assert isinstance(c["evidence"][0], str)
-    assert all(set(e) == {"finding_id", "platform", "field", "value"} for e in c["evidence"][1:])
+    assert all(set(e) == {"finding_id", "platform", "field", "value", "account_key"} for e in c["evidence"][1:])
+    assert {e["account_key"] for e in c["evidence"][1:]} == {"github:edith", "gitlab:edith_f"}
     assert {e["finding_id"] for e in c["evidence"][1:]} == set(_ids(a, b))
     assert len(c["corr_key"]) == 64
     assert correlate(CASE, [a, b]) == correlate(CASE, [b, a])    # deterministic
@@ -49,7 +55,7 @@ def test_shared_email_positive_from_firecrawl_emails_in_page(S):
     c = _only(correlate(CASE, [profile, page]), "shared_email")
     assert c["entities_involved"] == _ids(profile, page)
     assert {"finding_id": page["id"], "platform": "scraped:edith.dev", "field": "extra.emails_in_page",
-            "value": "Edith@Acme.io"} in c["evidence"]
+            "value": "Edith@Acme.io", "account_key": "edith.dev:url:edith.dev/contact"} in c["evidence"]
 
 
 def test_shared_email_negative(S):
@@ -57,7 +63,7 @@ def test_shared_email_negative(S):
     rows = [S.site("edith", "GitHub", {"email": "edith@acme.io"}),
             S.scrape("https://github.com/edith", emails="edith@acme.io"),
             S.site("other", "GitLab", {"email": "other@acme.io"})]
-    assert correlate(CASE, rows) == []
+    assert _review(correlate(CASE, rows)) == []
     # an email that is merely REGISTERED on many sites is the seed, not a discovery
     seed = [S.site("edith@acme.io", p, {}, itype="email") for p in ("Spotify", "Adobe", "Duolingo")]
     assert correlate(CASE, seed) == []
@@ -117,9 +123,10 @@ def test_external_handle_negative(S):
                             S.site("edith_tw", "X", {}, status="not_found"),
                             S.site("edith_tw", "Instagram", {})]) == []
     # a profile linking to itself, and bare @mentions on a scraped page
-    assert correlate(CASE, [S.site("edith", "GitHub", {"links": "https://github.com/edith"}),
-                            S.scrape("https://edith.dev", handles="@edith"),
-                            S.scrape("https://github.com/edith", urls="https://github.com/edith?tab=repositories")]) == []
+    assert _review(correlate(CASE, [S.site("edith", "GitHub", {"links": "https://github.com/edith"}),
+                                    S.scrape("https://edith.dev", handles="@edith"),
+                                    S.scrape("https://github.com/edith",
+                                             urls="https://github.com/edith?tab=repositories")])) == []
 
 
 def test_external_handle_from_scrape_only_is_weaker(S):
@@ -182,10 +189,10 @@ def test_shared_bio_negative(S):
 def test_profile_is_not_correlated_with_its_own_scrape(S):
     profile = S.site("edith", "GitHub", {"bio": BIO}, url="https://github.com/edith")
     scrape = S.scrape("https://github.com/edith/", description=BIO)
-    assert correlate(CASE, [profile, scrape]) == []
+    assert _review(correlate(CASE, [profile, scrape])) == []
     # same account even when the collector stored an API url
     api = S.site("edith", "GitHub", {"bio": BIO}, url="https://api.github.com/users/edith")
-    assert correlate(CASE, [api, scrape]) == []
+    assert _review(correlate(CASE, [api, scrape])) == []
     # a second, different account with that bio makes it a real cluster
     other = S.site("edith_tw", "X", {"bio": BIO})
     c = _only(correlate(CASE, [profile, scrape, other]), "shared_bio_text")
@@ -233,17 +240,20 @@ def test_hudson_rock_is_not_a_platform(S):
     assert correlate(CASE, rows) == []
 
 
-# ----------------------------------------------------------------------------- shared_email_platform
-def test_shared_email_platform_positive(S):
+# ----------------------------------------------------------------------------- email registered on the same platform
+def test_email_registered_where_the_profile_publishes_it_is_one_account(S):
+    # formerly the review item `shared_email_platform`: now an automatic merge, never a question
     user = S.site("edith", "GitHub", {"email": "Edith@Acme.io"})
     email = S.site("edith@acme.io", "github", {}, itype="email")
-    c = _only(correlate(CASE, [user, email]), "shared_email_platform")
-    assert c["confidence"] == 0.75 and c["entities_involved"] == _ids(user, email)
-    assert c["priority"] == round(0.75 * math.log(2), 4)
+    corrs = correlate(CASE, [user, email])
+    assert _review(corrs) == []
+    (merge,) = corrs
+    assert merge["type"] == "same_account" and merge["matched_value"] == "github:edith"
+    assert merge["entities_involved"] == _ids(user, email) and merge["status"] == "approved"
 
 
-def test_shared_email_platform_negative(S):
-    # legacy linked any username and any email that both exist on a site
+def test_email_registered_elsewhere_is_not_merged(S):
+    # a username and an email that both merely exist on a site are not one account
     assert correlate(CASE, [S.site("edith", "GitHub", {}),
                             S.site("edith@acme.io", "GitHub", {}, itype="email")]) == []
     # profile publishes a DIFFERENT email, or the email is registered elsewhere

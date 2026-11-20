@@ -1,9 +1,12 @@
 "use client";
 
 import { Layers } from "lucide-react";
-import { Avatar } from "@/components/common/bits";
+import { ProfileAvatar } from "@/components/common/profile-avatar";
+import { ProvenanceLabel } from "@/components/common/provenance-label";
 import type { CaseAccount } from "@/lib/accounts";
 import { findingTitle } from "@/lib/findings";
+import { accountPlatform, displayHandle } from "@/lib/profile";
+import { resolvePlatform } from "@/lib/platforms";
 import { evidenceLabel } from "@/lib/rules";
 import type { EvidenceRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -31,15 +34,29 @@ export function AccountSide({
   refs,
   onOpen,
   compact = false,
+  pictureMatch = false,
 }: {
   account: CaseAccount;
   refs: readonly EvidenceRef[];
   onOpen: () => void;
   compact?: boolean;
+  /** The link is about the profile pictures: show them big, side by side. */
+  pictureMatch?: boolean;
 }) {
   const { view } = account;
-  const title = account.findings.length > 1 ? account.label : findingTitle(account.primary);
-  const shown = account.handle ?? account.primary.identifier_value;
+  const platform = accountPlatform(account);
+  const info = resolvePlatform(platform, account.url);
+  const title = info.known
+    ? info.label
+    : account.findings.length > 1
+      ? account.label
+      : findingTitle(account.primary);
+  const shown = displayHandle(account);
+  const isImage = account.primary.identifier_type === "image";
+  const person = Boolean(view.fullname || view.avatarUrl);
+  // a person's name (or picture) leads; results with no profile (breaches, sites) keep their title
+  const name = view.fullname ?? (isImage ? `${title} profile picture` : person ? shown : title);
+  const sub = person && !isImage ? title : shown;
   const evidence = accountEvidence(account, refs);
   return (
     <li
@@ -51,30 +68,43 @@ export function AccountSide({
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full min-w-0 items-center gap-3 rounded-md text-left"
-        aria-label={`Open ${title} ${shown}`}
+        className={cn(
+          "flex w-full min-w-0 gap-3 rounded-md text-left",
+          pictureMatch && !compact ? "flex-col items-center text-center" : "items-center",
+        )}
+        aria-label={`Open ${title} ${shown}${view.fullname ? `, ${view.fullname}` : ""}`}
       >
-        <Avatar
+        <ProfileAvatar
           src={view.avatarUrl}
-          name={title}
-          className={compact ? "h-7 w-7" : "h-11 w-11 rounded-lg"}
+          name={name}
+          platform={info.known ? platform : null}
+          url={account.url}
+          size={compact ? "xs" : pictureMatch ? "xl" : "md"}
+          decorative
         />
-        <span className="min-w-0">
-          <span className={cn("block truncate font-medium", compact && "text-sm")}>{title}</span>
-          <span className="block truncate font-mono text-xs text-muted-foreground">{shown}</span>
+        <span className={cn("min-w-0", pictureMatch && !compact && "max-w-full")}>
+          <span className={cn("block truncate font-semibold", compact && "text-sm font-medium")}>
+            {name}
+          </span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {view.fullname && !isImage ? <span className="font-mono">{shown} · </span> : null}
+            <span className={cn((!person || isImage) && "font-mono")}>{sub}</span>
+          </span>
         </span>
       </button>
+      {!compact && view.preview ? (
+        <div className={cn("mt-2", pictureMatch && "text-center")}>
+          <ProvenanceLabel preview={view.preview} platform={platform} />
+        </div>
+      ) : null}
       {account.sources.length > 1 ? (
         <p className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
           <Layers className="h-3.5 w-3.5 text-success" aria-hidden />
           One account, confirmed by {account.sources.length} sources
         </p>
       ) : null}
-      {!compact && (view.fullname || view.bio) ? (
-        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-          {view.fullname ? <span className="text-foreground">{view.fullname}. </span> : null}
-          {view.bio}
-        </p>
+      {!compact && (view.bio ?? view.headline) ? (
+        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{view.bio ?? view.headline}</p>
       ) : null}
       {evidence.length > 0 ? (
         <dl

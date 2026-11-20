@@ -129,9 +129,10 @@ describe("platform labels", () => {
       "GitHub",
       "GitHub",
     ]);
-    expect(platformLabel("x")).toBe("X");
+    expect(platformLabel("x")).toBe("X (Twitter)");
     expect(platformLabel("Pixelfed")).toBe("Pixelfed");
-    expect(bestPlatformLabel(["pixelfed", "PixelFed"])).toBe("PixelFed");
+    expect(platformLabel("Fediforum")).toBe("Fediforum");
+    expect(bestPlatformLabel(["fediforum", "FediForum"])).toBe("FediForum");
   });
 });
 

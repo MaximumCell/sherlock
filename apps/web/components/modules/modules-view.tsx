@@ -2,21 +2,33 @@
 
 import { CircleCheck, ExternalLink, KeyRound } from "lucide-react";
 import { TargetIcon } from "@/components/common/bits";
+import { PlatformIcon } from "@/components/common/platform-icon";
 import { ErrorState, PageHeader } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { safeUrl } from "@/lib/findings";
 import { useAdvanced } from "@/lib/preferences";
+import { resolvePlatform } from "@/lib/platforms";
 import { useModules } from "@/lib/query/hooks";
 import { SOURCE_GROUPS } from "@/lib/sources";
 import type { ModuleInfo } from "@/lib/types";
 
+/** The platform a single-platform source reads ("profile_bluesky", "linkedin_search", "github"). */
+function sourcePlatform(name: string): string | null {
+  const p = resolvePlatform(name.replace(/^profile_/, "").replace(/_search$/, ""));
+  return p.known ? p.key : null;
+}
+
 function SourceCard({ module: m, advanced }: { module: ModuleInfo; advanced: boolean }) {
   const source = safeUrl(m.source_url);
+  const platform = sourcePlatform(m.name);
   return (
     <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-medium leading-snug">{m.title}</h3>
+        <h3 className="flex items-center gap-2 font-medium leading-snug">
+          {platform ? <PlatformIcon platform={platform} size="md" /> : null}
+          {m.title}
+        </h3>
         {m.available ? (
           <Badge variant="success">
             <CircleCheck className="h-3 w-3" aria-hidden />
@@ -106,6 +118,26 @@ export function ModulesView() {
               ? "This is the built-in list; the scan service was not asked."
               : "Live from the scan service."}
           </p>
+          <aside
+            aria-labelledby="profiles-note"
+            className="space-y-2 rounded-xl border border-border bg-muted/30 p-4 text-sm"
+          >
+            <h2 id="profiles-note" className="font-medium">
+              Profile pictures, previews and LinkedIn
+            </h2>
+            <p className="text-muted-foreground">
+              When an account is found, Sherlock also reads the preview its public profile page
+              shows anyone (name, picture, short bio), the same data a link preview uses. Results
+              based on it are labelled “From the public profile page”. Some sites do not show
+              profile details to visitors who are not signed in, so many accounts can only be
+              confirmed to exist.
+            </p>
+            <p className="text-muted-foreground">
+              LinkedIn does not allow direct lookups, so LinkedIn profiles come from public search
+              results (title, snippet and link) and are labelled “From search results”. linkedin.com
+              itself is never visited.
+            </p>
+          </aside>
           <nav aria-label="Jump to a kind of search" className="flex flex-wrap gap-1.5">
             {SOURCE_GROUPS.map((g) => (
               <a

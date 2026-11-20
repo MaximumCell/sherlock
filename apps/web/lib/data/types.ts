@@ -1,4 +1,5 @@
 import type { DataMode } from "../env";
+import type { PlatformEntry } from "../platforms";
 import type {
   AuditEntry,
   Candidate,
@@ -82,6 +83,8 @@ export interface DataSource {
 
   // commands (gateway)
   listModules(): Promise<ModuleInfo[]>;
+  /** `GET /platforms` (public): the platform registry behind labels and icons. */
+  listPlatforms(): Promise<PlatformEntry[]>;
   createCase(body: CreateCaseBody): Promise<CreateCaseResult>;
   updateCase(id: string, body: UpdateCaseBody): Promise<Case>;
   deleteCase(id: string): Promise<void>;

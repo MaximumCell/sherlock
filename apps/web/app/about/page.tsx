@@ -14,6 +14,8 @@ export const metadata: Metadata = {
 const DOES = [
   "Checks where a username, email, website, IP, image, phone number or wallet shows up in public sources.",
   "Reports breach exposure as metadata only: the breach name, its date and the kinds of data exposed.",
+  "Shows each account found with its profile picture, name and public details, when the site shows them to anyone. Some sites hide profiles from visitors who are not signed in; those accounts are listed as existing, without details.",
+  "Finds LinkedIn profiles through public search results only, because LinkedIn does not allow direct lookups. Those details can be out of date.",
   "Suggests links between results, each with a plain reason, a confidence level and the evidence behind it.",
   "Keeps a person in charge: a link only counts once you say yes.",
   "Records every search, decision and report in an activity log that cannot be edited.",
@@ -21,7 +23,8 @@ const DOES = [
 
 const DOES_NOT = [
   "No phone-number or national-ID to identity lookup.",
-  "No face recognition. Matching profile pictures uses a fingerprint of the image file.",
+  "No face recognition. Matching profile pictures uses a fingerprint of the image file: a match means the same image, never the same face.",
+  "No copies of profile pictures: they are shown straight from the site that hosts them, and never downloaded, proxied or stored.",
   "No home addresses, and no mapping of family members or relatives.",
   "No leaked records: passwords, messages and documents from breaches are never fetched or stored.",
   "No access to private accounts, no login attempts, no scraping behind a sign-in.",

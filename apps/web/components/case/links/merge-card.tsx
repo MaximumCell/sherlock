@@ -1,7 +1,7 @@
 "use client";
 
 import { Combine, Split } from "lucide-react";
-import { Avatar } from "@/components/common/bits";
+import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { mergeExplanation } from "@/lib/accounts";
@@ -50,7 +50,13 @@ export function MergeCard({
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Avatar src={avatar} name={label} className="h-9 w-9 rounded-lg" />
+          <ProfileAvatar
+            src={avatar}
+            name={label}
+            platform={members[0]?.platform ?? null}
+            size="sm"
+            decorative
+          />
           <div className="min-w-0">
             <h3 className="truncate text-base font-semibold">
               {label} <span className="font-mono text-sm font-normal">{handle}</span>

@@ -4,6 +4,7 @@
  */
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import type { AppEnv } from "../env";
+import { toPlatformEntries } from "../platforms";
 import type {
   Candidate,
   Case,
@@ -293,6 +294,11 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
 
     async listModules() {
       return toList(await gateway<unknown>("/modules"), toModuleInfo);
+    },
+
+    async listPlatforms() {
+      // public and cacheable: no session, no retries (the bundled snapshot covers a sleeping gateway)
+      return toPlatformEntries(await gateway<unknown>("/platforms", { retry: false }));
     },
 
     async createCase(body): Promise<CreateCaseResult> {

@@ -1,11 +1,13 @@
 "use client";
 
 import { Layers, MapPin, Pin } from "lucide-react";
-import { Avatar } from "@/components/common/bits";
+import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { sourcesLine, type CaseAccount } from "@/lib/accounts";
 import { findingTitle, type FindingView } from "@/lib/findings";
 import { compactNumber, formatDate } from "@/lib/format";
 import { sourceTitle } from "@/lib/sources";
+import { resolvePlatform } from "@/lib/platforms";
+import { findingPlatform } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 
 /** The two or three facts that make a result worth a look, by kind. */
@@ -56,7 +58,7 @@ export function sourceNames(sources: readonly string[]): string {
   return sources.map((s) => sourceTitle(s)).join(", ");
 }
 
-/** One card per ACCOUNT in the "What we found" highlights, however many sources reported it. */
+/** One card per result in the non-account groups (breaches, websites, images…), however many sources reported it. */
 export function ResultCard({
   account,
   onOpen,
@@ -76,7 +78,14 @@ export function ResultCard({
   return (
     <li className="group relative flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-soft transition-[border-color,box-shadow] hover:border-input hover:shadow-lift">
       <div className="flex items-start gap-3">
-        <Avatar src={view.avatarUrl} name={title} className="h-10 w-10 rounded-lg" />
+        <ProfileAvatar
+          src={view.avatarUrl}
+          name={view.fullname ?? title}
+          platform={resolvePlatform(findingPlatform(primary)).known ? findingPlatform(primary) : null}
+          url={account.url}
+          size="sm"
+          decorative
+        />
         <div className="min-w-0 flex-1">
           <button
             type="button"

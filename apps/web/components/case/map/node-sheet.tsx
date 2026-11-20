@@ -1,6 +1,7 @@
 "use client";
 
-import { Avatar } from "@/components/common/bits";
+import { ProfileAvatar } from "@/components/common/profile-avatar";
+import { findingPlatform } from "@/lib/profile";
 import {
   Sheet,
   SheetContent,
@@ -76,10 +77,12 @@ export function NodeSheet({
                         onClick={() => onOpenFinding(f.id)}
                         className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-muted"
                       >
-                        <Avatar
+                        <ProfileAvatar
                           src={parseFinding(f).avatarUrl}
                           name={findingTitle(f)}
-                          className="h-7 w-7"
+                          platform={findingPlatform(f)}
+                          size="xs"
+                          decorative
                         />
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-medium">

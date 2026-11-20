@@ -4,7 +4,7 @@
  * `.example` hosts.
  */
 import type { Candidate, Case, Entity, Finding, JsonObject } from "../../types";
-import { avatar } from "./demo-case";
+import { avatar, geoAvatar } from "./demo-case";
 
 export const NAME_CASE_ID = "c0ffee00-0000-4000-8000-000000000005";
 export const PERSON_NAME = "Marlow Quince";
@@ -83,6 +83,7 @@ export function nameFindings(now: number): Finding[] {
       fullname: "Marlow Q.",
       location: "Harrowgate",
       bio: "Teacher at Harrowgate Academy. Blitz only.",
+      avatar_url: geoAvatar(200, 2),
     }, 84),
     profile(6, now, "Alumni list", "https://alumni.example/harrowgate/2009", {
       fullname: PERSON_NAME,
@@ -91,7 +92,26 @@ export function nameFindings(now: number): Finding[] {
     profile(7, now, "Photography portfolio", "https://photos.example/marlowquince", {
       fullname: "Marlow Quince Studio",
       location: "Saltmere",
+      avatar_url: geoAvatar(48, 1),
     }, 83),
+    {
+      ...profile(8, now, "linkedin", "https://linkedin.example/in/marlow-quince-4b2", {
+        fullname: PERSON_NAME,
+        headline: "Firmware engineer at Example Robotics Ltd",
+        employer: "Example Robotics Ltd",
+        location: "Port Ellery",
+        snippet: "Firmware engineer at Example Robotics Ltd · Location: Port Ellery · 200+ connections",
+        preview: {
+          source: "search-snippet",
+          provider: "example-search",
+          query: `site:linkedin.com/in "${PERSON_NAME}"`,
+          fetched_at: "2026-11-20T08:20:00Z",
+          title: `${PERSON_NAME} - Firmware engineer at Example Robotics Ltd | LinkedIn`,
+        },
+      }, 82),
+      source_tool: "linkedin_search",
+      module: "linkedin_search",
+    },
   ];
 }
 
@@ -107,7 +127,7 @@ export function nameCandidates(): Candidate[] {
         "GitHub and Mastodon both link to mquince.example",
         "Matches your hint: employer \"Example Robotics\"",
       ],
-      finding_ids: [pid(1), pid(2), pid(3), pid(4)],
+      finding_ids: [pid(1), pid(2), pid(8), pid(3), pid(4)],
       confirmed: false,
       attributes: {
         employers: ["Example Robotics Ltd"],
@@ -115,9 +135,10 @@ export function nameCandidates(): Candidate[] {
         handles: [
           { platform: "GitHub", handle: "mquince", url: "https://code.example/mquince" },
           { platform: "Mastodon", handle: "marlowq", url: "https://social.example/@marlowq" },
+          { platform: "LinkedIn", handle: "marlow-quince-4b2", url: "https://linkedin.example/in/marlow-quince-4b2" },
         ],
         links: ["https://mquince.example"],
-        sources: ["GitHub", "Mastodon", "Personal site", "Conference speakers"],
+        sources: ["GitHub", "Mastodon", "LinkedIn", "Personal site", "Conference speakers"],
       },
     },
     {

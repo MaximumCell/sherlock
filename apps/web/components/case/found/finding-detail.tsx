@@ -1,12 +1,13 @@
 "use client";
 
-import { CalendarDays, Link2, Mail, MapPin, Users } from "lucide-react";
+import { Briefcase, CalendarDays, GraduationCap, Link2, Mail, MapPin, Users } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useAdvanced } from "@/lib/preferences";
 import { sourceTitle } from "@/lib/sources";
 import { Badge } from "@/components/ui/badge";
 import { safeUrl, type FindingView } from "@/lib/findings";
 import { compactNumber, formatDate, formatDateTime, percent } from "@/lib/format";
+import { findingPlatform, provenanceLabel } from "@/lib/profile";
 import { describeRule } from "@/lib/rules";
 import type { Correlation, Finding } from "@/lib/types";
 import {
@@ -44,6 +45,9 @@ function ExternalLinkText({ href }: { href: string }) {
 
 export function ProfileSection({ view, title = "Profile" }: { view: FindingView; title?: string }) {
   const hasFacts =
+    view.headline ||
+    view.employer ||
+    view.education ||
     view.location ||
     view.emails.length ||
     view.createdAt ||
@@ -56,7 +60,18 @@ export function ProfileSection({ view, title = "Profile" }: { view: FindingView;
       {view.bio ? (
         <p className="whitespace-pre-line text-sm text-muted-foreground">{view.bio}</p>
       ) : null}
+      {view.snippet && view.snippet !== view.bio ? (
+        <p className="text-sm text-muted-foreground">
+          <span className="text-xs font-medium">Search result snippet: </span>
+          {view.snippet}
+        </p>
+      ) : null}
       <ul className="space-y-1.5">
+        {view.headline && view.headline !== view.bio ? (
+          <Fact icon={Briefcase}>{view.headline}</Fact>
+        ) : null}
+        {view.employer ? <Fact icon={Briefcase}>Works at {view.employer}</Fact> : null}
+        {view.education ? <Fact icon={GraduationCap}>Studied at {view.education}</Fact> : null}
         {view.location ? <Fact icon={MapPin}>{view.location}</Fact> : null}
         {view.emails.map((email) => (
           <Fact key={email} icon={Mail}>
@@ -180,15 +195,16 @@ export function FindingDetail({
         </Section>
       ) : null}
       <RelatedLinks related={related} />
-      <Provenance finding={finding} />
+      <Provenance finding={finding} view={view} />
     </div>
   );
 }
 
-function Provenance({ finding }: { finding: Finding }) {
+function Provenance({ finding, view }: { finding: Finding; view: FindingView }) {
   const [advanced] = useAdvanced();
   const [raw, setRaw] = useState(false);
   const source = finding.module ?? finding.source_tool;
+  const how = provenanceLabel(view.preview, findingPlatform(finding));
   return (
     <Section title="Where this came from">
       <dl className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-x-3 gap-y-1.5 text-sm">
@@ -196,6 +212,15 @@ function Provenance({ finding }: { finding: Finding }) {
         <dd className="text-sm leading-5">{sourceTitle(source)}</dd>
         <dt className="text-muted-foreground">Collected</dt>
         <dd className="text-sm leading-5">{formatDateTime(finding.collected_at)}</dd>
+        {how ? (
+          <>
+            <dt className="text-muted-foreground">Profile details</dt>
+            <dd className="text-sm leading-5">
+              {how.label}
+              <span className="block text-xs text-muted-foreground">{how.tooltip}</span>
+            </dd>
+          </>
+        ) : null}
         {advanced ? (
           <>
             <dt className="text-muted-foreground">Module id</dt>
@@ -222,6 +247,14 @@ function Provenance({ finding }: { finding: Finding }) {
         >
           {raw ? "Hide raw data" : "Show raw data"}
         </button>
+      ) : null}
+      {advanced && view.preview ? (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">Preview record</p>
+          <pre className="scrollbar-thin max-h-48 overflow-auto rounded-lg border border-border bg-muted/50 p-3 font-mono text-xs leading-relaxed">
+            {JSON.stringify(view.preview.raw, null, 2)}
+          </pre>
+        </div>
       ) : null}
       {advanced && raw ? (
         <pre className="scrollbar-thin max-h-80 overflow-auto rounded-lg border border-border bg-muted/50 p-3 font-mono text-xs leading-relaxed">

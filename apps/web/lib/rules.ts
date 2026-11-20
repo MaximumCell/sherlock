@@ -11,7 +11,7 @@ export const DEFAULT_QUESTION = "Do these belong to the same person?";
 const AVATAR: RuleDescription = {
   title: "Same profile picture",
   summary:
-    "The profile pictures look the same according to a visual fingerprint (not face recognition).",
+    "The profile pictures are the same image according to a visual fingerprint (not face recognition).",
   question: "Is this the same profile picture?",
 };
 const BIO: RuleDescription = {

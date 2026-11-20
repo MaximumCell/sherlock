@@ -1,7 +1,8 @@
 "use client";
 
 import { ChevronRight, ExternalLink, Layers, Pin } from "lucide-react";
-import { Avatar } from "@/components/common/bits";
+import { ProfileAvatar } from "@/components/common/profile-avatar";
+import { ProvenanceLabel } from "@/components/common/provenance-label";
 import { Button } from "@/components/ui/button";
 import { SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { mergeExplanation, sourcesLine, type CaseAccount } from "@/lib/accounts";
@@ -9,6 +10,7 @@ import { parseFinding } from "@/lib/findings";
 import { useCurate } from "@/lib/query/mutations";
 import { sourceTitle } from "@/lib/sources";
 import type { Correlation } from "@/lib/types";
+import { accountPlatform, displayHandle } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 import { FindingDetail, ProfileSection, RelatedLinks } from "./finding-detail";
 import { Section } from "./finding-sections";
@@ -46,17 +48,20 @@ export function AccountSheetBody({
   return (
     <>
       <SheetHeader className="pr-8 text-left">
-        <div className="flex items-start gap-3">
-          <Avatar src={view.avatarUrl} name={account.label} className="h-12 w-12 text-sm" />
+        <div className="flex items-start gap-4">
+          <ProfileAvatar
+            src={view.avatarUrl}
+            name={view.fullname ?? displayHandle(account)}
+            platform={accountPlatform(account)}
+            url={account.url}
+            size="lg"
+          />
           <div className="min-w-0 flex-1 space-y-1">
-            <SheetTitle className="break-words">
+            <SheetTitle className="break-words">{view.fullname ?? account.label}</SheetTitle>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-mono text-xs">{displayHandle(account)}</span> ·{" "}
               {account.label}
-              {account.handle ? (
-                <span className="ml-2 font-mono text-sm font-normal text-muted-foreground">
-                  {account.handle}
-                </span>
-              ) : null}
-            </SheetTitle>
+            </p>
             <SheetDescription className="flex items-start gap-1.5 text-sm">
               <Layers className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />
               <span>
@@ -88,6 +93,8 @@ export function AccountSheetBody({
             </Button>
           ) : null}
         </div>
+        {/* after the buttons, so the sheet does not open with its tooltip focused */}
+        <ProvenanceLabel preview={view.preview} platform={accountPlatform(account)} />
       </SheetHeader>
       <div className="space-y-5">
         <ProfileSection view={view} title="Profile, all sources combined" />

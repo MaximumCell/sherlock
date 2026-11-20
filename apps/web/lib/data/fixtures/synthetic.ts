@@ -193,6 +193,21 @@ function drafts(job: Job): Draft[] {
         extra: { fullname: v, bio: i === 0 ? "Synthetic demo profile." : "Synthetic personal page." },
         meta: { category: "identity" },
       }));
+    case "linkedin_search":
+      return [
+        {
+          platform: "linkedin",
+          url: `https://linkedin.example/in/${encodeURIComponent(v.toLowerCase().replace(/\s+/g, "-"))}`,
+          extra: {
+            fullname: job.target_type === "name" ? v : "",
+            headline: "Synthetic demo profile",
+            snippet: "Synthetic demo profile · Location: Example City",
+            location: "Example City",
+            preview: { source: "search-snippet", fetched_at: new Date().toISOString(), title: `${v} | LinkedIn` },
+          },
+          meta: { category: "professional", result_kind: "profile" },
+        },
+      ];
     case "phone_meta":
       return [
         {

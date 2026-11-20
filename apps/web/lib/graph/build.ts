@@ -4,6 +4,7 @@
  */
 import { buildAccounts, isSameAccount, type CaseAccount } from "../accounts";
 import { findingCategory, findingTitle } from "../findings";
+import { accountPlatform } from "../profile";
 import { describeRule } from "../rules";
 import type { Case, Correlation, CorrelationStatus, Entity, Finding } from "../types";
 
@@ -30,6 +31,8 @@ export interface GraphNode {
   /** Account nodes: how many data sources reported the account (badge). */
   sources: number;
   avatarUrl: string | null;
+  /** Account nodes: the platform, for its icon. */
+  platform: string | null;
   curated: boolean;
 }
 
@@ -125,6 +128,7 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
       memberIds: [],
       sources: 0,
       avatarUrl: null,
+      platform: null,
       curated: false,
     });
   const edgeIds = new Set<string>();
@@ -198,6 +202,7 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
         memberIds: members.flatMap((m) => m.findings.map((f) => f.id)),
         sources: 0,
         avatarUrl: null,
+        platform: null,
         curated: false,
       });
       addEdge({
@@ -225,6 +230,7 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
       memberIds: acc.findings.map((f) => f.id),
       sources: acc.sources.length,
       avatarUrl: acc.view.avatarUrl,
+      platform: kind === "account" ? accountPlatform(acc) : null,
       curated: acc.findings.some((f) => f.curated),
     });
     // every identifier that found this account points at its ONE node

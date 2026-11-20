@@ -18,6 +18,7 @@ Sherlock is for **self-exposure checks, security research and authorised investi
 
 - Public data only. Breach results are exposure metadata (breach name, date, data categories), never records or passwords.
 - Searching a person by name requires a signed-in account, and every search is written to the audit log.
+- Every search is logged (what was searched, when, and an anonymised origin, never an IP address) and reviewed by the operator to prevent misuse. The log is kept for 90 days.
 - It does not look up who owns a phone number or national ID, does not do face recognition, and does not collect home addresses or family relationships. People-search and data-broker sites are excluded from results.
 - Correlations are confidence scores with evidence, never statements of fact, and nothing is treated as confirmed until a person approves it.
 
@@ -85,7 +86,7 @@ Modules that need a missing key report themselves unavailable and are skipped. `
 Requirements: [uv](https://docs.astral.sh/uv/), Node 22, Docker (optional), a Supabase project.
 
 ```bash
-# 1. Database: run supabase/setup.sql in the Supabase SQL editor (existing v1 database: run only supabase/migrations/0001_v2.sql),
+# 1. Database: run supabase/setup.sql in the Supabase SQL editor (existing database: run the migrations it does not have yet, e.g. supabase/migrations/0002_admin.sql),
 #    then enable Anonymous sign-ins under Authentication.
 
 # 2. Backend
@@ -107,7 +108,7 @@ cd apps/web && NEXT_PUBLIC_FIXTURES=1 npm run dev
 ## Tests
 
 ```bash
-uv sync && uv run pytest         # 383 backend tests, all offline (in-memory store, recorded responses)
+uv sync && uv run pytest         # 569 backend tests, all offline (in-memory store, recorded responses)
 uv run ruff check .
 cd apps/web && npm run lint && npm run typecheck && npm test
 ```
@@ -120,6 +121,24 @@ CI runs all of this on every pull request.
 - **Render:** New, then Blueprint, and select this repo. [`render.yaml`](render.yaml) creates the gateway and three workers with a shared generated secret. Enter the Supabase URL and service key when asked.
 - **Vercel:** root directory `apps/web`, with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_API_URL`.
 - **GitHub secrets** `SUPABASE_URL` and `SUPABASE_ANON_KEY` let the twice-weekly keepalive workflow stop the free Supabase project from pausing.
+
+## Operator panel
+
+`/admin` shows the person running a deployment what visitors search and where from: searches per day by outcome, a live feed (including refused searches), visitors with plain-English warning signs (bursts, many different targets, repeated limits, shared origins), and the controls to act: block or unblock a session, pause all searches, remove a case. Targets can be blurred with "Hide targets". Origins are stored as a keyed hash, never as an IP address; search records are deleted after 90 days. Findings are never shown in the panel.
+
+Preview it with invented data at `/demo/admin` (works in every mode), or run the web app with `NEXT_PUBLIC_FIXTURES=1` and open `/admin`.
+
+To use it for real:
+
+1. In the Supabase SQL editor run [`supabase/migrations/0002_admin.sql`](supabase/migrations/0002_admin.sql) (a new project can run `supabase/setup.sql`, which includes it).
+2. In Supabase, enable **Email** sign-in under Authentication, Sign In / Providers (keep email confirmation on: only a confirmed email counts).
+3. Set `ADMIN_EMAILS` on the gateway (Render: sherlock-gateway, Environment; locally `.env`) to your email, comma-separated for several.
+4. Sign in on the site with that email (magic link), then open the account menu: "Operator panel".
+
+| Variable | Where | Purpose |
+|---|---|---|
+| `ADMIN_EMAILS` | gateway | Comma-separated operator emails (confirmed sign-in). Empty: nobody can open `/admin`. |
+| `INTERNAL_SECRET` | gateway, workers | Also the key of the origin hash. |
 
 ## Known limits
 

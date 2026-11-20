@@ -9,7 +9,7 @@ apps/web                     Next.js app (Vercel)
 services/gateway/gateway     FastAPI: commands, auth, rate limits, agent, report
 services/worker/worker       Queue worker, deployed once per queue (WORKER_QUEUE)
 packages/core/sherlock_core  Shared: config, models, store, modules, correlation
-supabase/migrations          Versioned SQL (0001_v2.sql is the v2 schema)
+supabase/migrations          Versioned SQL (0001_v2.sql is the v2 schema, 0002_admin.sql the operator panel)
 ```
 
 Python packages: `sherlock_core`, `gateway`, `worker` (uv workspace, Python 3.11).
@@ -151,6 +151,47 @@ Rules:
 - Scans are limited by `SCANS_PER_SESSION_PER_DAY` and `SCANS_GLOBAL_PER_DAY` (429 with a clear message).
 - `POST /cases` and manual links return 201. A case owned by someone else is 403; a missing case is 404. Validation errors are 422 with a string `detail`.
 - Reads (lists of cases, findings, correlations, jobs, entities, audit) are **not** on the gateway; the web app reads them from Supabase.
+- A blocked session gets 403 `This session has been blocked from running searches.` and a paused app 503 `Searches are paused by the operator. Try again later.` on `POST /cases` (with `scan`) and `POST /cases/{id}/scan`, before anything is planned, counted or queued (blocked is checked first). Reads and other commands keep working. The web client shows a 503 that carries a JSON `detail` at once instead of retrying it as a cold start.
+- Every search attempt (those two routes and the agent's scan tools) writes ONE `search_log` row per target with its outcome: `accepted`, `rate_limited` (429), `blocked`, `paused`, `forbidden` (anonymous name search), `invalid` (400). Ownership errors (403/404 on someone else's or a missing case) and body validation (422) are not search attempts. Logging never changes the answer: a failed log write is only reported in the server log.
+
+## Operator panel
+
+Who and what: the owner of a deployment sees what visitors search and where from, to spot misuse and stop it.
+
+Tables (`0002_admin.sql`; RLS enabled with **no policies**, so only the service key can read or write them; never read them from the browser):
+
+| Table | Columns |
+|---|---|
+| `visitor_sessions` | `user_id` (pk), `is_anonymous`, `email` (verified only), `first_seen`, `last_seen`, `ip_hash`, `country`, `user_agent` (300 chars), `search_count`, `refused_count` (kept by the `trg_search_log_counts` trigger), `blocked`, `blocked_at`, `blocked_reason` |
+| `search_log` | `id` (identity), `created_at`, `user_id`, `case_id` (no FK: set to null by hand when the case is deleted), `target_type`, `target_value`, `modules[]`, `outcome`, `detail`, `ip_hash`, `country`, `is_anonymous` |
+| `app_settings` | `key` (pk), `value` jsonb, `updated_at`, `updated_by`; key `scans_paused` |
+
+Privacy rules (not negotiable):
+- No raw IP address is ever stored, logged or returned. `ip_hash` = first 16 hex chars of HMAC-SHA256(`INTERNAL_SECRET`, client IP); the client IP is the first hop of `X-Forwarded-For`, else the socket peer. It only says that two sessions share an origin (and a client can forge `X-Forwarded-For`, so treat it as a hint).
+- `country` only from the `CF-IPCountry` edge header (two letters, `XX` dropped). No geo-IP service is ever called with visitor IPs.
+- The user agent is stored truncated; the panel shows it as "Browser on OS" (the raw string under Advanced).
+- `search_log` rows are deleted after 90 days (`purge_old_search_log`, called by the gateway at most once a day). The responsible-use page and the first-search dialog say so.
+- The panel shows cases as metadata only (title, targets, counts). Findings are never part of it.
+
+Every authenticated gateway request touches the caller's `visitor_sessions` row (at most once a minute per session, in-process throttle). `Principal` carries `email` and `email_verified` from the verified Supabase user.
+
+Admin API. Guard: a non-anonymous principal whose **verified** email is in `ADMIN_EMAILS` (comma-separated, case-insensitive; empty means nobody). Everyone else, with or without a token, gets `404 {"detail": "Not Found"}` for every method and path under `/admin` (no 401/403/405), and the routes are not in the OpenAPI schema. Lists take `limit` and `cursor` and return `{items, next_cursor}`. Every action writes `audit_log` (`case_id` null, `actor = "operator"`, `action = operator_*`, `detail.admin = <email>`).
+
+| Method and path | Body | Returns |
+|---|---|---|
+| `GET /admin/me` | | `{is_admin: true, email}` |
+| `GET /admin/overview?days=14` (1..90) | | totals (searches, accepted, refused, sessions, flagged_sessions, cases, active_jobs), `series` per UTC day by outcome, `by_type`, `top_targets` (searched 2+ times), `quota` (global used today vs limits), `scans_paused`, `retention_days` |
+| `GET /admin/searches?outcome=&type=&q=&session=&since=` | | feed rows (newest first, keyset cursor = last id) with `session` (label data, `origin` = ip_hash, `origin_sessions`) |
+| `GET /admin/sessions?flagged=&blocked=&q=` | | visitors with `flags` (offset cursor; `flagged=true` sorts most severe first) |
+| `GET /admin/sessions/{user_id}` | | `{session, searches (newest 200), cases (metadata only)}` |
+| `POST /admin/sessions/{user_id}/block` | `{reason}` | visitor |
+| `POST /admin/sessions/{user_id}/unblock` | | visitor |
+| `POST /admin/pause` | `{paused}` | `{scans_paused}` |
+| `DELETE /admin/cases/{case_id}` | | 204 (demo cases: 400) |
+
+Misuse flags (`gateway.insights.session_flags`, pure; thresholds are named constants there; window: the last 7 days): many searches in a short burst, repeated rate limits, many distinct targets (harvesting rather than a self-check), repeated refused name searches, a target also searched from several sessions, several sessions sharing one `ip_hash`. Each is `{key, label, severity: high | medium | low}` with a plain-English label. Flags are hints for a person; nothing is blocked automatically.
+
+Web: `/admin` (not in the public navigation; the account menu shows it when `GET /admin/me` succeeds, asked only for signed-in sessions). Fixture mode and `/demo/admin` run the same components on invented data (`apps/web/lib/admin/demo-source.ts`).
 
 ## Worker HTTP API
 
@@ -163,7 +204,7 @@ The drain loop claims jobs until the queue is empty, one at a time (0.1 CPU), th
 
 ## Environment
 
-See `packages/core/sherlock_core/config.py`. Web app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`.
+See `packages/core/sherlock_core/config.py` (`ADMIN_EMAILS` turns on the operator panel). Web app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`.
 
 ## Boundaries (not negotiable)
 

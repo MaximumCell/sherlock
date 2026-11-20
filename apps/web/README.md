@@ -46,7 +46,8 @@ running (Next allows one per build folder), give it its own folder:
 (`lib/data/types.ts`), with two implementations: `lib/data/supabase.ts` (Supabase + gateway) and
 `lib/data/fixtures/` (in memory). The fixture source accepts every command, simulates job progress
 with timers and emits the same change events as Supabase Realtime, so the UI code path is identical.
-The `/demo` route always uses it, whatever the environment.
+The `/demo` route always uses it, whatever the environment, and so does `/demo/admin`, the operator panel
+on invented visitors and searches (`lib/admin/demo-source.ts`).
 
 All fixture data is fictional: the handle `ada-fixture`, the name-search subject "Marlow Quince",
 reserved `.example` domains, RFC 5737 addresses. Fixture mode also scores exposure locally
@@ -78,6 +79,7 @@ while the service wakes (a "Waking the scan service…" notice appears after 3 s
 | `POST /cases/{id}/findings/{fid}/curate`, `POST /correlations/{id}/review` | Pin, Possible links |
 | `GET /cases/{id}/report` | Report section (fetched when it scrolls into view) |
 | `GET /cases/{id}/exposure` | Summary score and "What to do" |
+| `GET /admin/*`, `POST /admin/*`, `DELETE /admin/cases/{id}` | Operator panel (`/admin`; `GET /admin/me` only for signed-in sessions, from the account menu without retries) |
 | `GET /cases/{id}/candidates`, `POST /cases/{id}/candidates/{cid}/confirm` | People section (404 shows "not available yet") |
 
 ## Layout
@@ -91,6 +93,8 @@ components/start      start screen: hero search, examples, how it works, recent 
 components/case       the investigation page: header, progress rail, section nav, and one folder
                       per section (scan, summary, found, links, people, map, next, history, report)
 components/tour       first-run coach-mark tour of the demo
+components/admin      operator panel (/admin, /demo/admin): gate, tiles, chart, feed, visitors, sheet
+lib/admin             operator panel types, pure logic, gateway and demo (invented data) sources
 lib/types.ts          mirrors packages/core/sherlock_core/models.py
 lib/data              DataSource interface, Supabase and fixture implementations, gateway client
 lib/query             TanStack Query hooks, mutations and Realtime cache patching

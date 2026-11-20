@@ -4,7 +4,8 @@ import { Info, LogIn, SearchX, UsersRound } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCandidates, useCase, useJobs, useSession } from "@/lib/query/hooks";
+import { useCandidates, useCase, useFindings, useJobs, useSession } from "@/lib/query/hooks";
+import type { Finding } from "@/lib/types";
 import { useConfirmCandidate } from "@/lib/query/mutations";
 import { requestSignIn } from "@/lib/sign-in-prompt";
 import { CaseSection } from "../section";
@@ -25,6 +26,8 @@ function PeopleBody({ caseId }: { caseId: string }) {
   const jobs = useJobs(caseId);
   const candidates = useCandidates(caseId);
   const confirm = useConfirmCandidate(caseId);
+  const findings = useFindings(caseId);
+  const byId = new Map<string, Finding>((findings.data ?? []).map((f) => [f.id, f]));
   const names = [
     ...new Set([
       ...(c.data?.identifiers.filter((i) => i.type === "name").map((i) => i.value) ?? []),
@@ -113,6 +116,9 @@ function PeopleBody({ caseId }: { caseId: string }) {
           <li key={candidate.candidate_id} className="min-w-0">
             <CandidateCard
               candidate={candidate}
+              profiles={candidate.finding_ids
+                .map((id) => byId.get(id))
+                .filter((f): f is Finding => f !== undefined)}
               rank={i + 1}
               anyConfirmed={anyConfirmed}
               pending={confirm.isPending && confirm.variables === candidate.candidate_id}

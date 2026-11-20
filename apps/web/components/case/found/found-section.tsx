@@ -5,12 +5,16 @@ import { useMemo } from "react";
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { groupFindings, showAllLabel, type FindingGroup } from "@/lib/finding-groups";
+import type { CaseAccount } from "@/lib/accounts";
+import { groupFindings, groupOf, showAllLabel, type FindingGroup } from "@/lib/finding-groups";
+import { resolvePlatform } from "@/lib/platforms";
+import { accountPlatform } from "@/lib/profile";
 import { useCurate } from "@/lib/query/mutations";
 import type { Correlation, Finding } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
 import { cn } from "@/lib/utils";
 import { CaseSection } from "../section";
+import { AccountGroupBody, MissesNote, ViewToggle, useCompactView } from "./account-group";
 import { ResultCard } from "./result-card";
 import { CLEAR_RESULT_FILTERS, ResultsExplorer } from "./results-explorer";
 
@@ -28,21 +32,32 @@ const FILTER_KEYS = [
   "page",
 ];
 
+const PERSON_GROUPS = new Set(["accounts", "names"]);
+
 function GroupBlock({
   group,
+  misses,
+  compact,
+  onCompact,
   onShowAll,
   onOpen,
   onPin,
 }: {
   group: FindingGroup;
+  /** Platforms in this group that were checked and had no account. */
+  misses: string[];
+  compact: boolean;
+  onCompact: (compact: boolean) => void;
   onShowAll: () => void;
   onOpen: (id: string) => void;
   onPin: (id: string, pinned: boolean) => void;
 }) {
-  const shown = group.items.slice(0, HIGHLIGHTS);
+  const person = PERSON_GROUPS.has(group.id);
+  const pin = (acc: CaseAccount, p: boolean) =>
+    (p ? [acc.primary] : acc.findings.filter((f) => f.curated)).forEach((f) => onPin(f.id, p));
   return (
     <section aria-labelledby={`group-${group.id}`} className="space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+      <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">
           <h3 id={`group-${group.id}`} className="text-lg font-semibold">
             {group.title}
@@ -52,29 +67,47 @@ function GroupBlock({
           </h3>
           <p className="text-sm text-muted-foreground">{group.description}</p>
         </div>
-        {group.items.length > HIGHLIGHTS || group.misses > 0 ? (
-          <Button variant="ghost" size="sm" onClick={onShowAll}>
-            {showAllLabel(group)}
-            <ChevronDown aria-hidden />
-          </Button>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {person ? <ViewToggle compact={compact} onChange={onCompact} /> : null}
+          {group.items.length > HIGHLIGHTS || group.misses > 0 ? (
+            <Button variant="ghost" size="sm" onClick={onShowAll}>
+              {showAllLabel(group)}
+              <ChevronDown aria-hidden />
+            </Button>
+          ) : null}
+        </div>
       </div>
-      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {shown.map((acc) => (
-          <ResultCard
-            key={acc.key}
-            account={acc}
-            onOpen={() => onOpen(acc.primary.id)}
-            onPin={(p) =>
-              (p ? [acc.primary] : acc.findings.filter((f) => f.curated)).forEach((f) =>
-                onPin(f.id, p),
-              )
-            }
-          />
-        ))}
-      </ul>
+      {person ? (
+        <AccountGroupBody
+          items={group.items}
+          compact={compact}
+          onOpen={(acc) => onOpen(acc.primary.id)}
+          onPin={pin}
+        />
+      ) : (
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {group.items.slice(0, HIGHLIGHTS).map((acc) => (
+            <ResultCard
+              key={acc.key}
+              account={acc}
+              onOpen={() => onOpen(acc.primary.id)}
+              onPin={(p) => pin(acc, p)}
+            />
+          ))}
+        </ul>
+      )}
+      {person ? <MissesNote platforms={misses} /> : null}
     </section>
   );
+}
+
+/** Platforms of a group's not-found rows that no found account of the group covers. */
+function missedPlatforms(findings: readonly Finding[], group: FindingGroup): string[] {
+  const found = new Set(group.items.map((a) => resolvePlatform(accountPlatform(a)).key));
+  return findings
+    .filter((f) => f.status === "not_found" && groupOf(f) === group.id)
+    .map((f) => f.platform)
+    .filter((p) => !found.has(resolvePlatform(p).key));
 }
 
 /** Results grouped into human categories, with the full filterable list one click away. */
@@ -97,6 +130,7 @@ export function FoundSection({
 }) {
   const { params, set } = useUrlState();
   const curate = useCurate(caseId);
+  const [compact, setCompact] = useCompactView();
   const groups = useMemo(() => groupFindings(findings, correlations), [findings, correlations]);
   const explorerOpen = FILTER_KEYS.some((k) => params.get(k));
   const pinned = findings.filter((f) => f.curated).length;
@@ -173,6 +207,9 @@ export function FoundSection({
                 <GroupBlock
                   key={g.id}
                   group={g}
+                  misses={missedPlatforms(findings, g)}
+                  compact={compact}
+                  onCompact={setCompact}
                   onShowAll={() =>
                     openExplorer({
                       group: g.id,

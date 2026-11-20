@@ -13,6 +13,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { memo } from "react";
+import { PlatformIcon } from "@/components/common/platform-icon";
+import { ProfileAvatar } from "@/components/common/profile-avatar";
 import type { GraphNode, GraphNodeKind } from "@/lib/graph/build";
 import { cn } from "@/lib/utils";
 
@@ -58,14 +60,16 @@ export const EntityNode = memo(function EntityNode({ data, selected }: NodeProps
     >
       <Handle type="target" position={Position.Top} isConnectable={false} className={HANDLE} />
       <Handle type="source" position={Position.Top} isConnectable={false} className={HANDLE} />
-      {node.avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- arbitrary third-party avatar hosts
-        <img
+      {node.kind === "account" && node.avatarUrl ? (
+        <ProfileAvatar
           src={node.avatarUrl}
-          alt=""
-          referrerPolicy="no-referrer"
-          className="h-5 w-5 shrink-0 rounded-sm object-cover"
+          name={node.sublabel ?? node.label}
+          platform={node.platform}
+          size="xs"
+          decorative
         />
+      ) : node.kind === "account" && node.platform ? (
+        <PlatformIcon platform={node.platform} size="md" />
       ) : (
         <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
       )}

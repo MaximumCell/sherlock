@@ -95,40 +95,6 @@ export function ProgressBar({
   );
 }
 
-/** Avatar with initials fallback. Remote images never send a referrer. */
-export function Avatar({
-  src,
-  name,
-  className,
-}: {
-  src: string | null;
-  name: string;
-  className?: string;
-}) {
-  const initials = name.replace(/[^a-z0-9]/gi, "").slice(0, 2).toUpperCase() || "?";
-  return (
-    <span
-      className={cn(
-        "relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted font-mono text-2xs font-semibold text-muted-foreground",
-        className,
-      )}
-      aria-hidden
-    >
-      {initials}
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- arbitrary third-party avatar hosts
-        <img
-          src={src}
-          alt=""
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      ) : null}
-    </span>
-  );
-}
-
 export function Kbd({ children }: { children: string }) {
   return (
     <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">

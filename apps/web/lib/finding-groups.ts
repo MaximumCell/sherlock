@@ -78,6 +78,8 @@ export function highlightScore(f: Finding, linked: ReadonlySet<string> = new Set
   if (v.fullname) score += 5;
   if (v.bio) score += 5;
   if (v.location) score += 2;
+  if (v.headline) score += 4;
+  if (v.employer) score += 2;
   if (v.emails.length) score += 4;
   if (v.links.length) score += 3;
   if (v.followers !== null) score += 2;

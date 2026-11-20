@@ -2,7 +2,8 @@
 
 import { ExternalLink, Pin } from "lucide-react";
 import { useMemo } from "react";
-import { Avatar } from "@/components/common/bits";
+import { ProfileAvatar } from "@/components/common/profile-avatar";
+import { ProvenanceLabel } from "@/components/common/provenance-label";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -17,6 +18,8 @@ import { useCorrelations, useFindings } from "@/lib/query/hooks";
 import { useCurate } from "@/lib/query/mutations";
 import type { Finding } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
+import { findingPlatform } from "@/lib/profile";
+import { resolvePlatform } from "@/lib/platforms";
 import { cn } from "@/lib/utils";
 import { AccountSheetBody } from "./account-sheet-body";
 import { FindingDetail } from "./finding-detail";
@@ -39,6 +42,8 @@ function SheetBody({
     [findings, all, finding.id],
   );
   const view = parseFinding(finding);
+  const platform = findingPlatform(finding);
+  const platformKnown = resolvePlatform(platform).known;
   const mine = new Set(account ? account.findings.map((f) => f.id) : [finding.id]);
   const related = linkRows(all).filter((c) => c.entities_involved.some((id) => mine.has(id)));
   if (account && account.findings.length > 1) {
@@ -49,10 +54,17 @@ function SheetBody({
   return (
     <>
       <SheetHeader className="pr-8 text-left">
-        <div className="flex items-start gap-3">
-          <Avatar src={view.avatarUrl} name={findingTitle(finding)} className="h-12 w-12 text-sm" />
+        <div className="flex items-start gap-4">
+          <ProfileAvatar
+            src={view.avatarUrl}
+            name={view.fullname ?? findingTitle(finding)}
+            platform={platformKnown ? platform : null}
+            url={view.url}
+            size={view.avatarUrl || view.fullname ? "lg" : "md"}
+          />
           <div className="min-w-0 flex-1 space-y-1">
-            <SheetTitle className="break-words">{findingTitle(finding)}</SheetTitle>
+            <SheetTitle className="break-words">{view.fullname ?? findingTitle(finding)}</SheetTitle>
+            {view.fullname ? <p className="text-sm text-muted-foreground">{findingTitle(finding)}</p> : null}
             <SheetDescription className="break-all font-mono text-xs">
               {finding.identifier_type}: {finding.identifier_value}
             </SheetDescription>
@@ -81,6 +93,8 @@ function SheetBody({
             </Button>
           ) : null}
         </div>
+        {/* after the buttons, so the sheet does not open with its tooltip focused */}
+        <ProvenanceLabel preview={view.preview} platform={platform} />
       </SheetHeader>
       <FindingDetail finding={finding} view={view} related={related} />
     </>

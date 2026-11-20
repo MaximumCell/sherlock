@@ -11,6 +11,8 @@ import type { Correlation, EvidenceRef, ReviewDecision } from "@/lib/types";
 import { AccountSide } from "./account-side";
 import { ConfidenceMeter } from "./confidence-meter";
 
+const PICTURE_RULES = new Set(["avatar_match", "shared_avatar"]);
+
 /** One link as a yes / no question: the items side by side, the reason in plain words. */
 export function LinkQuestion({
   correlation: c,
@@ -44,6 +46,7 @@ export function LinkQuestion({
   const missing = c.entities_involved.filter((id) => !index.byFinding.has(id)).length;
   const refs = c.evidence.filter((e): e is EvidenceRef => typeof e !== "string");
   const notes = c.evidence.filter((e): e is string => typeof e === "string");
+  const pictureMatch = PICTURE_RULES.has(c.type);
   const decide = (d: ReviewDecision) => onDecide(d, note.trim() || undefined);
 
   return (
@@ -74,9 +77,16 @@ export function LinkQuestion({
             account={acc}
             refs={refs}
             onOpen={() => onOpenFinding(acc.primary.id)}
+            pictureMatch={pictureMatch}
           />
         ))}
       </ul>
+      {pictureMatch ? (
+        <p className="text-sm text-muted-foreground">
+          Compare the two pictures. A match means the same image was used, not that it shows the
+          same face: Sherlock does no face recognition.
+        </p>
+      ) : null}
       {missing > 0 ? (
         <p className="text-sm text-muted-foreground">
           {missing} result{missing === 1 ? " in this link is" : "s in this link are"} no longer in

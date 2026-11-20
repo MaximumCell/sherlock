@@ -13,6 +13,7 @@ import { prioritisedSteps } from "@/lib/remediation";
 import type { Case, Correlation, Finding, Job } from "@/lib/types";
 import { CaseSection } from "../section";
 import { goToSection } from "../section-nav";
+import { FacesStrip } from "./faces-strip";
 import { RemediationList } from "./remediation-list";
 import { ScoreCard } from "./score-card";
 import { ScoreDetails } from "./score-details";
@@ -132,6 +133,7 @@ export function SummarySection({
           </ul>
         </div>
       </div>
+      <FacesStrip findings={findings} correlations={correlations} />
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">What to do</h3>
         {exposure.isPending ? (

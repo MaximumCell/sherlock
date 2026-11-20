@@ -1,7 +1,7 @@
 "use client";
 
 import { Pin } from "lucide-react";
-import { Avatar } from "@/components/common/bits";
+import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -14,7 +14,22 @@ import {
 import { findingTitle, parseFinding } from "@/lib/findings";
 import { timeAgo } from "@/lib/format";
 import type { Finding, FindingStatus } from "@/lib/types";
+import { resolvePlatform } from "@/lib/platforms";
+import { findingPlatform } from "@/lib/profile";
 import { cn } from "@/lib/utils";
+
+function RowAvatar({ finding, avatarUrl }: { finding: Finding; avatarUrl: string | null }) {
+  const platform = findingPlatform(finding);
+  return (
+    <ProfileAvatar
+      src={avatarUrl}
+      name={findingTitle(finding)}
+      platform={resolvePlatform(platform).known ? platform : null}
+      size="xs"
+      decorative
+    />
+  );
+}
 
 const STATUS_BADGE: Record<
   FindingStatus,
@@ -142,7 +157,7 @@ export function ResultsTable({ rows, notes, onOpen, onCurate, sourceLabel, advan
                       }}
                       className="flex items-center gap-2.5 rounded-sm text-left font-medium"
                     >
-                      <Avatar src={view.avatarUrl} name={findingTitle(f)} className="h-7 w-7" />
+                      <RowAvatar finding={f} avatarUrl={view.avatarUrl} />
                       <span>
                         {findingTitle(f)}
                         <span className="block text-2xs font-normal text-muted-foreground">
@@ -189,7 +204,7 @@ export function ResultsTable({ rows, notes, onOpen, onCurate, sourceLabel, advan
               key={f.id}
               className="relative flex items-start gap-3 rounded-xl border border-border bg-card p-3"
             >
-              <Avatar src={view.avatarUrl} name={findingTitle(f)} />
+              <RowAvatar finding={f} avatarUrl={view.avatarUrl} />
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center justify-between gap-2">
                   <button

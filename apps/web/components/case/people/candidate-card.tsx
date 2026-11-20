@@ -10,13 +10,15 @@ import {
   UserCheck,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { PlatformIcon } from "@/components/common/platform-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { safeUrl } from "@/lib/findings";
-import type { Candidate } from "@/lib/types";
+import type { Candidate, Finding } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
 import { cn } from "@/lib/utils";
 import { goToSection } from "../section-nav";
+import { CandidateProfiles } from "./candidate-profiles";
 
 function strength(score: number): {
   label: string;
@@ -48,12 +50,15 @@ function Facts({
 
 export function CandidateCard({
   candidate,
+  profiles = [],
   rank,
   anyConfirmed,
   pending,
   onConfirm,
 }: {
   candidate: Candidate;
+  /** The candidate's results, for the side-by-side profile pictures. */
+  profiles?: Finding[];
   rank: number;
   anyConfirmed: boolean;
   pending: boolean;
@@ -89,6 +94,8 @@ export function CandidateCard({
           <Badge variant={s.badge}>{s.label}</Badge>
         )}
       </header>
+
+      <CandidateProfiles findings={profiles} onOpen={(id) => set({ finding: id }, "push")} />
 
       <div className="mt-3 flex items-center gap-3">
         <div
@@ -141,6 +148,14 @@ export function CandidateCard({
                 const url = safeUrl(h.url);
                 const text = (
                   <>
+                    {h.platform ? (
+                      <PlatformIcon
+                        platform={h.platform}
+                        url={h.url}
+                        size="xs"
+                        className="mr-1 inline-flex align-[-3px]"
+                      />
+                    ) : null}
                     <span className="font-mono">{h.handle}</span>
                     {h.platform ? (
                       <span className="text-muted-foreground"> · {h.platform}</span>

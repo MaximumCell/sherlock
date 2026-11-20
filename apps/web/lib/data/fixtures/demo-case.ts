@@ -151,7 +151,12 @@ const ACCOUNTS: Account[] = [
   [
     "Stack Overflow",
     "development",
-    { fullname: "Ada F.", location: "Example City", reputation: 5421, created_at: "2016-06-18T11:00:00Z" },
+    {
+      fullname: "Ada F.",
+      location: "Example City",
+      reputation: 5421,
+      created_at: "2016-06-18T11:00:00Z",
+    },
   ],
   ["Docker Hub", "development", { fullname: "Ada Fixture", created_at: "2018-02-11T13:14:00Z" }],
   ["PyPI", "development", { fullname: "Ada Fixture", email: EMAIL }],
@@ -322,8 +327,20 @@ function emailSpecs(): Spec[] {
       curated: true,
       minutesAgo: 172,
     },
-    breach(61, "ExampleForum", "2019-06-02", ["Email addresses", "Usernames", "Password hashes"], 1_204_000),
-    breach(62, "SampleShop", "2021-10-17", ["Email addresses", "Names", "Phone numbers", "Order history"], 388_500),
+    breach(
+      61,
+      "ExampleForum",
+      "2019-06-02",
+      ["Email addresses", "Usernames", "Password hashes"],
+      1_204_000,
+    ),
+    breach(
+      62,
+      "SampleShop",
+      "2021-10-17",
+      ["Email addresses", "Names", "Phone numbers", "Order history"],
+      388_500,
+    ),
     breach(63, "DemoCloud", "2023-03-28", ["Email addresses", "IP addresses"], 52_300),
     reg(64, "Duolingo", "found"),
     reg(65, "Spotify", "found"),
@@ -514,8 +531,80 @@ function mediaSpecs(): Spec[] {
   ];
 }
 
+/**
+ * One GitHub account reported by several sources and lookups (the "accounts, not rows"
+ * scenario): the GitHub module's profile, a WhatsMyName hit, and the follow-up email
+ * search saying the address is registered on GitHub. With finding 1 (user_scanner) they
+ * are ONE account, merged automatically. Finding 93 is a second Steam hit the
+ * investigator split from finding 18.
+ */
+function sameAccountSpecs(): Spec[] {
+  return [
+    {
+      n: 90,
+      platform: "github",
+      module: "github",
+      idType: "username",
+      idValue: HANDLE,
+      url: profileUrl("GitHub", HANDLE),
+      extra: {
+        username: HANDLE,
+        fullname: "Ada Fixture",
+        bio: "Backend engineer. Fictional person used for demos. Rust, Postgres, tea.",
+        location: "Example City",
+        company: "Fixture Labs (fictional)",
+        email: EMAIL,
+        emails: EMAIL,
+        links: `https://${DOMAIN}`,
+        avatar_url: AVATAR_A,
+        created_at: "2016-03-14T09:12:00Z",
+        followers: 128,
+        following: 64,
+        public_repos: 41,
+      },
+      meta: { category: "development" },
+      minutesAgo: 189,
+    },
+    {
+      n: 91,
+      platform: "GitHub",
+      module: "whatsmyname",
+      idType: "username",
+      idValue: HANDLE,
+      url: profileUrl("GitHub", HANDLE),
+      extra: { username: HANDLE },
+      meta: { category: "coding" },
+      minutesAgo: 186,
+    },
+    {
+      n: 92,
+      platform: "github",
+      module: "user_scanner",
+      idType: "email",
+      idValue: EMAIL,
+      meta: { category: "development", reason: null },
+      minutesAgo: 167,
+    },
+    {
+      n: 93,
+      platform: "Steam",
+      module: "whatsmyname",
+      idType: "username",
+      idValue: HANDLE,
+      url: profileUrl("Steam", HANDLE),
+      extra: { username: HANDLE },
+      meta: { category: "gaming" },
+      minutesAgo: 185,
+    },
+  ];
+}
+
 export function demoFindings(caseId: string, now: number): Finding[] {
-  return [...accountSpecs(), ...emailSpecs(), ...infraSpecs(), ...mediaSpecs()].map((s) =>
-    buildFinding(caseId, now, s),
-  );
+  return [
+    ...accountSpecs(),
+    ...emailSpecs(),
+    ...infraSpecs(),
+    ...mediaSpecs(),
+    ...sameAccountSpecs(),
+  ].map((s) => buildFinding(caseId, now, s));
 }

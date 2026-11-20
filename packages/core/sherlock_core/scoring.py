@@ -25,6 +25,7 @@ from typing import Any
 
 from sherlock_core.correlation import facts as facts_mod
 from sherlock_core.correlation import norm, summarize
+from sherlock_core.correlation.accounts import Account, group_accounts
 from sherlock_core.correlation.facts import FindingFacts
 
 # ----------------------------------------------------------------------------- weights (sum = 100)
@@ -61,7 +62,7 @@ INFOSTEALER_SATURATION = 3
 
 FOOTPRINT_SATURATION = 50      # platforms with a found account
 LINK_WEIGHTS = {               # approved correlation type -> how strongly it ties accounts together
-    "manual_link": 1.0, "shared_email": 1.0, "shared_external_handle": 1.0, "shared_email_platform": 0.8,
+    "manual_link": 1.0, "shared_email": 1.0, "shared_external_handle": 1.0,
     "avatar_match": 0.8, "shared_url": 0.7, "shared_bio_text": 0.6, "shared_display_name": 0.5,
     "breach_overlap": 0.4,
 }
@@ -353,35 +354,32 @@ def _breach_factor(rows: list[_Row], today: date | None) -> dict[str, Any] | Non
                    BREACH_MAX, detail, evidence, steps)
 
 
-def _accounts(rows: list[_Row]) -> dict[str, dict[str, Any]]:
-    """canonical platform -> {label, ids} for found accounts."""
-    out: dict[str, dict[str, Any]] = {}
-    for r in rows:
-        if _is_account(r):
-            a = out.setdefault(r.ff.platform, {"labels": set(), "ids": set()})
-            a["labels"].add(r.ff.label)
-            a["ids"].add(r.id)
-    for a in out.values():
-        a["label"] = min(a["labels"], key=lambda s: (s.casefold(), s))
-    return out
+def _accounts(grouped: list[Account], rows: list[_Row]) -> list[Account]:
+    """Found accounts, one per account however many rows / sources reported it."""
+    ids = {r.id for r in rows if _is_account(r)}
+    return [a for a in grouped if any(i in ids for i in a.finding_ids)]
 
 
-def _footprint_factor(accounts: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+def _footprint_factor(accounts: list[Account]) -> dict[str, Any] | None:
     if not accounts:
         return None
     n = len(accounts)
-    labels = sorted((a["label"] for a in accounts.values()), key=lambda s: (s.casefold(), s))
-    detail = (f"An account was found on {_plural(n, 'distinct platform')} ({_listing(labels, 8)}). "
-              "Every account is one more place that holds personal data and can be breached or taken over.")
+    by_platform: dict[str, str] = {}
+    for a in accounts:
+        by_platform.setdefault(a.platform, a.label)
+    labels = sorted(by_platform.values(), key=lambda s: (s.casefold(), s))
+    where = f"{_plural(len(labels), 'distinct platform')} ({_listing(labels, 8)})"
+    head = (f"An account was found on {where}." if n == len(labels)
+            else f"{_plural(n, 'account')} were found on {where}.")
+    detail = head + " Every account is one more place that holds personal data and can be breached or taken over."
     steps = [f"Go through the {_plural(n, 'account')} found ({_listing(labels, 8)}) and delete or deactivate "
              "the ones you no longer use; set the rest to private where the platform allows it."]
     return _factor("account_footprint", "Account footprint", FOOTPRINT_MAX * _log_share(n, FOOTPRINT_SATURATION),
-                   FOOTPRINT_MAX, detail, {i for a in accounts.values() for i in a["ids"]}, steps)
+                   FOOTPRINT_MAX, detail, {i for a in accounts for i in a.finding_ids}, steps)
 
 
 _LINK_PHRASES = {
     "shared_email": ("the same email address{v}", "use a different address or an alias on the accounts you want kept apart"),
-    "shared_email_platform": ("the same email address{v}", "use a different address or an alias on the accounts you want kept apart"),
     "shared_external_handle": ("a profile that names another account{v}", "remove that cross-reference from the profile"),
     "shared_url": ("the same link{v}", "remove the link from the profiles you want kept apart"),
     "shared_display_name": ("the same display name{v}", "use a different display name on the accounts you want kept apart"),
@@ -392,12 +390,19 @@ _LINK_PHRASES = {
 }
 
 
-def _linkability_factor(correlations: list[dict], rows: list[_Row]) -> tuple[dict[str, Any] | None, int]:
-    corrs = [c for c in correlations if isinstance(c, dict)]
+def _cross_account(c: dict, unit_of: dict[str, str]) -> bool:
+    """True when the correlation's findings belong to 2+ different accounts."""
+    return len({unit_of.get(str(i), f"finding:{i}") for i in _items(c.get("entities_involved"))}) >= 2
+
+
+def _linkability_factor(correlations: list[dict], rows: list[_Row],
+                        unit_of: dict[str, str]) -> tuple[dict[str, Any] | None, int]:
+    # `same_account` rows are one account seen several times, never a link between accounts
+    corrs = [c for c in correlations if isinstance(c, dict) and c.get("type") != "same_account"]
     if not corrs:
         return None, 0
     labels = {r.id: r.ff.label for r in rows}
-    approved = sorted((c for c in corrs if c.get("status") == "approved"),
+    approved = sorted((c for c in corrs if c.get("status") == "approved" and _cross_account(c, unit_of)),
                       key=lambda c: (-LINK_WEIGHTS.get(str(c.get("type")), LINK_DEFAULT_WEIGHT), str(c.get("type")),
                                      str(c.get("matched_value") or ""), str(c.get("corr_key") or ""),
                                      sorted(str(i) for i in _items(c.get("entities_involved")))))
@@ -595,16 +600,24 @@ def score_exposure(findings: list[dict], correlations: list[dict]) -> dict[str, 
     Returns {score, band, factors: [{key, label, points, max_points, detail,
     evidence_finding_ids, remediation}], computed_from: {findings, approved_correlations}, method}.
     A factor is listed only when the case has data for it (possibly with 0 points).
+    Accounts are counted once however many sources reported them; only approved links
+    between DIFFERENT accounts count for linkability (`same_account` rows never do).
     Factors are ordered by points, highest first.
     """
     findings = [f for f in findings or [] if isinstance(f, dict)]
+    correlations = [c for c in correlations or [] if isinstance(c, dict)]
     rows = _rows(findings)
     found = sum(1 for f in findings if f.get("status") == "found")
-    summary = summarize(findings)
-    link_factor, approved = _linkability_factor(list(correlations or []), rows)
+    split = {str(c.get("matched_value")) for c in correlations
+             if c.get("type") == "same_account" and c.get("status") == "rejected"}
+    grouped = group_accounts(findings, split)
+    accounts = _accounts(grouped, rows)
+    unit_of = {i: a.account_key for a in grouped for i in a.finding_ids}
+    summary = summarize(findings, split)
+    link_factor, approved = _linkability_factor(correlations, rows, unit_of)
     factors = [f for f in (
         _breach_factor(rows, _reference_date(findings)),
-        _footprint_factor(_accounts(rows)),
+        _footprint_factor(accounts),
         link_factor,
         _contact_factor(rows),
         _handle_reuse_factor(summary, rows),

@@ -65,3 +65,90 @@ def test_job_claim_retry_and_stale_recovery():
 def test_rate_limit():
     s = MemoryStore()
     assert [s.hit_rate_limit("k", 3600, 2) for _ in range(3)] == [True, True, False]
+
+
+# ----------------------------------------------------------------------------- initial status (same_account)
+class _FakeTable:
+    """Just enough of the supabase query builder for `SupabaseStore.sync_correlations`."""
+
+    def __init__(self, rows):
+        self.rows, self._op, self._payload, self._filters = rows, "select", None, []
+
+    def select(self, *_):
+        self._op = "select"
+        return self
+
+    def insert(self, payload):
+        self._op, self._payload = "insert", payload
+        return self
+
+    def update(self, payload):
+        self._op, self._payload = "update", payload
+        return self
+
+    def delete(self):
+        self._op = "delete"
+        return self
+
+    def eq(self, k, v):
+        self._filters.append(lambda r: r.get(k) == v)
+        return self
+
+    def in_(self, k, vs):
+        self._filters.append(lambda r: r.get(k) in vs)
+        return self
+
+    def order(self, *_, **__):
+        return self
+
+    def range(self, *_):
+        return self
+
+    def execute(self):
+        match = [r for r in self.rows if all(f(r) for f in self._filters)]
+        if self._op == "insert":
+            new = [{"id": f"id{len(self.rows) + i}", "review_note": None, **p} for i, p in enumerate(self._payload)]
+            self.rows.extend(new)
+            return type("R", (), {"data": new})()
+        if self._op == "update":
+            for r in match:
+                r.update(self._payload)
+        if self._op == "delete":
+            self.rows[:] = [r for r in self.rows if r not in match]
+        return type("R", (), {"data": match})()
+
+
+def _supabase_store():
+    from sherlock_core.store import SupabaseStore
+    rows: list[dict] = []
+    s = SupabaseStore.__new__(SupabaseStore)
+    s.c = type("C", (), {"table": lambda self, name: _FakeTable(rows)})()
+    return s
+
+
+def _check_initial_status(s, cid):
+    merge = {"type": "same_account", "corr_key": "m", "matched_value": "github:kit", "entities_involved": ["f1", "f2"],
+             "confidence": 1.0, "evidence": ["one account"], "priority": 0.0, "status": "approved"}
+    link = {"type": "shared_email", "corr_key": "l", "matched_value": "a@b.c", "entities_involved": ["f1", "f3"],
+            "confidence": 0.9, "evidence": [], "priority": 1.0}
+    rows = {r["corr_key"]: r for r in s.sync_correlations(cid, [merge, link])}
+    assert rows["m"]["status"] == "approved" and rows["m"]["reviewed_at"]      # merged automatically
+    assert rows["l"]["status"] == "pending" and rows["l"]["reviewed_at"] is None
+    # the user splits the account: a later run supplying "approved" never overrides that
+    s.set_correlation_status(rows["m"]["id"], "rejected")
+    rows = {r["corr_key"]: r for r in s.sync_correlations(cid, [{**merge, "entities_involved": ["f1", "f2", "f4"]}, link])}
+    assert rows["m"]["status"] == "rejected" and rows["m"]["entities_involved"] == ["f1", "f2", "f4"]
+    # stale: a rejected merge (a split) is kept, an automatic merge that no longer applies is removed
+    rows = {r["corr_key"]: r for r in s.sync_correlations(cid, [{**merge, "corr_key": "m2"}])}
+    assert set(rows) == {"m", "m2"} and rows["m"]["status"] == "rejected"
+    rows = {r["corr_key"]: r for r in s.sync_correlations(cid, [])}
+    assert set(rows) == {"m"}
+
+
+def test_sync_correlations_initial_status_memory():
+    s = MemoryStore()
+    _check_initial_status(s, _case(s))
+
+
+def test_sync_correlations_initial_status_supabase():
+    _check_initial_status(_supabase_store(), "case-1")

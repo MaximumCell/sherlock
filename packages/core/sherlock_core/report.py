@@ -1,8 +1,10 @@
 """Deterministic Markdown report for a case. No LLM, no network.
 
-Contains only what a human approved (approved correlations with their evidence),
-the summary statistics, and the found findings grouped by platform. Rows with
-status not_found / error are counted, never listed.
+Contains only what a human approved (approved links between accounts with their
+evidence), the summary statistics, each account once (with the sources that
+confirmed it), and the other found findings grouped by platform. Rows with status
+not_found / error are counted, never listed. Automatic `same_account` merges are not
+links: they are how the account list is built.
 """
 from __future__ import annotations
 
@@ -10,6 +12,7 @@ from collections import defaultdict
 from typing import Any
 
 from sherlock_core.correlation import summarize
+from sherlock_core.correlation.accounts import group_accounts
 from sherlock_core.store import Store, get_store
 
 MAX_PER_PLATFORM = 25
@@ -48,9 +51,12 @@ def generate_markdown(case_id: str, store: Store | None = None) -> str:
     if not case:
         raise ValueError(f"case {case_id} not found")
     findings = store.list_findings(case_id)
-    approved = sorted(store.list_correlations(case_id, status="approved"),
+    corrs = store.list_correlations(case_id)
+    split = {str(c.get("matched_value")) for c in corrs if c.get("type") == "same_account"
+             and c.get("status") == "rejected"}
+    approved = sorted((c for c in corrs if c.get("status") == "approved" and c.get("type") != "same_account"),
                       key=lambda c: (-(c.get("priority") or 0), str(c.get("corr_key"))))
-    stats = summarize(findings)
+    stats = summarize(findings, split)
     by_id = {str(f.get("id")): f for f in findings}
     out: list[str] = []
 
@@ -68,7 +74,7 @@ def generate_markdown(case_id: str, store: Store | None = None) -> str:
     out.append("## Summary\n")
     out.append(f"- Checks run: {stats['total']} ({stats['found']} found, {stats['not_found']} not found, "
                f"{stats['error']} errors)")
-    out.append(f"- Platforms with a found account: {stats['platforms_found']}")
+    out.append(f"- Accounts found: {stats['account_count']} on {stats['platforms_found']} platform(s)")
     for h in stats["handles"][:MAX_LIST]:
         out.append(f"- Handle `{_md(h['handle'])}` found on {h['platform_count']} platform(s)")
     for e in stats["emails"][:MAX_LIST]:
@@ -80,7 +86,17 @@ def generate_markdown(case_id: str, store: Store | None = None) -> str:
         out.append(f"  - {_md(b['name'])}{date}: {who}")
     out.append("")
 
-    out.append(f"## Approved correlations ({len(approved)})\n")
+    accounts = stats["accounts"]
+    out.append(f"## Accounts ({len(accounts)})\n")
+    for a in accounts[:MAX_PER_PLATFORM * 4]:
+        who = f" `{_md(a['handle'])}`" if a["handle"] else ""
+        url = f" (<{a['url']}>)" if a["url"] else ""
+        out.append(f"- {_md(a['label'])}{who}{url}, confirmed by: {_md(', '.join(a['sources']))}")
+    if len(accounts) > MAX_PER_PLATFORM * 4:
+        out.append(f"- ... and {len(accounts) - MAX_PER_PLATFORM * 4} more")
+    out.append("")
+
+    out.append(f"## Approved links between accounts ({len(approved)})\n")
     if not approved:
         out.append("_No correlation has been approved yet._\n")
     for c in approved:
@@ -98,8 +114,11 @@ def generate_markdown(case_id: str, store: Store | None = None) -> str:
             out.append(f"\n**Reviewer note:** {_md(c['review_note'])}")
         out.append("")
 
-    found = [f for f in findings if f.get("status") == "found"]
-    out.append(f"## Found findings by platform ({len(found)})\n")
+    listed = {a["account_key"] for a in accounts}
+    in_accounts = {i for a in group_accounts(findings, split) if a.account_key in listed for i in a.finding_ids}
+    found = [f for f in findings if f.get("status") == "found" and str(f.get("id")) not in in_accounts
+             and not (isinstance(f.get("extra_metadata"), dict) and f["extra_metadata"].get("summary") is True)]
+    out.append(f"## Other found findings by platform ({len(found)})\n")
     by_platform: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for f in found:
         by_platform[str(f.get("platform") or "unknown")].append(f)

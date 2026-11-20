@@ -12,7 +12,7 @@ import {
   highlightScore,
   showAllLabel,
 } from "./finding-groups";
-import { DEFAULT_QUESTION, describeRule } from "./rules";
+import { DEFAULT_QUESTION, describeRule, evidenceLabel } from "./rules";
 import { prioritisedSteps } from "./remediation";
 import { sectionFromUrl, visibleSections } from "./sections";
 import type { Finding } from "./types";
@@ -266,14 +266,19 @@ describe("finding groups", () => {
     const ids = groups.map((g) => g.id);
     expect(ids).toEqual(FINDING_GROUP_IDS.filter((id) => ids.includes(id)));
     expect(ids.slice(0, 3)).toEqual(["accounts", "breaches", "web"]);
+    // one item per account: the 4 GitHub rows are one card, the split Steam rows stay two
     const total = groups.reduce((sum, g) => sum + g.items.length, 0);
-    expect(total).toBe(findings.filter((f) => f.status === "found").length);
+    expect(total).toBe(findings.filter((f) => f.status === "found").length - 3);
+    const github = groups.flatMap((g) => g.items).find((a) => a.key === "github:ada-fixture");
+    expect(github?.findings).toHaveLength(4);
+    expect(github?.label).toBe("GitHub");
+    expect(github?.sources).toEqual(["github", "user_scanner", "whatsmyname"]);
     expect(groups.find((g) => g.id === "accounts")?.misses).toBeGreaterThan(0);
   });
 
   it("puts pinned, rich results first", () => {
     const accounts = groupFindings(findings).find((g) => g.id === "accounts");
-    expect(accounts?.items[0]?.curated).toBe(true);
+    expect(accounts?.items[0]?.findings.some((f) => f.curated)).toBe(true);
     const bare = make({ curated: false, status: "found", extra_metadata: { category: "x" } });
     expect(highlightScore(make({ curated: true }))).toBeGreaterThan(highlightScore(bare));
     expect(highlightScore(make({ status: "not_found" }))).toBe(-1);
@@ -332,8 +337,10 @@ describe("one account count everywhere", () => {
   const findings = state.findings.filter((f) => f.case_id === DEMO_CASE_ID);
 
   it("the Summary count equals the Accounts & profiles heading", () => {
-    const accounts = groupFindings(findings).find((g) => g.id === "accounts");
-    expect(countAccounts(findings)).toBe(accounts?.items.length);
+    const accounts = groupFindings(findings, state.correlations).find((g) => g.id === "accounts");
+    expect(countAccounts(findings, state.correlations)).toBe(accounts?.items.length);
+    // without the merge rows every row would be counted
+    expect(countAccounts(findings)).toBe((accounts?.items.length ?? 0) + 3);
   });
 
   it("the expander repeats the heading count and names not-found rows", () => {
@@ -355,6 +362,37 @@ describe("link questions", () => {
     expect(describeRule("shared_external_handle").question).toMatch(/point to the other account/);
     expect(describeRule("shared_bio").question).toMatch(/same bio/);
     expect(describeRule("shared_name").question).toMatch(/same display name/);
+  });
+
+  it("every engine rule has a title, an explanation and a question; none falls back", () => {
+    for (const rule of [
+      "shared_email",
+      "shared_url",
+      "shared_external_handle",
+      "shared_display_name",
+      "shared_bio_text",
+      "breach_overlap",
+      "avatar_match",
+      "manual_link",
+      "same_account",
+    ]) {
+      const d = describeRule(rule);
+      expect(d.title).not.toMatch(/_/);
+      expect(d.summary).not.toMatch(/correlation rule/i);
+      expect(d.question.endsWith("?")).toBe(true);
+    }
+    expect(describeRule("something_new").summary).not.toMatch(/correlation rule/i);
+  });
+
+  it("evidence fields read as plain words", () => {
+    expect(evidenceLabel("identifier_value", "email")).toBe("Searched email");
+    expect(evidenceLabel("identifier_value", "username")).toBe("Searched username");
+    expect(evidenceLabel("extra.email")).toBe("Email shown on profile");
+    expect(evidenceLabel("links")).toBe("Links on profile");
+    expect(evidenceLabel("extra.bio")).toBe("Bio");
+    expect(evidenceLabel("avatar_phash")).toBe("Profile picture");
+    expect(evidenceLabel("extra.twitter")).toBe("X account named on profile");
+    expect(evidenceLabel("extra.public_repos")).toBe("Public repos");
   });
 
   it("unknown rules fall back to the default question", () => {

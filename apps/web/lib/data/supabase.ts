@@ -191,7 +191,12 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
 
       const [jobsRes, corrRes, counts] = await Promise.all([
         client.from("jobs").select("case_id,status,progress,batch_id").in("case_id", ids),
-        client.from("correlations").select("case_id").in("case_id", ids).eq("status", "pending"),
+        client
+          .from("correlations")
+          .select("case_id")
+          .in("case_id", ids)
+          .eq("status", "pending")
+          .neq("type", "same_account"),
         Promise.all(ids.map(countFound)),
       ]);
 
@@ -255,10 +260,14 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
     subscribeCase(caseId, onEvent) {
       const channel = client.channel(uniqueChannel(`case:${caseId}`));
       const listen = (table: RealtimeTable, filter: string) => {
-        channel.on("postgres_changes", { event: "*", schema: "public", table, filter }, (payload) => {
-          const event = toChangeEvent(table, payload);
-          if (event) onEvent(event);
-        });
+        channel.on(
+          "postgres_changes",
+          { event: "*", schema: "public", table, filter },
+          (payload) => {
+            const event = toChangeEvent(table, payload);
+            if (event) onEvent(event);
+          },
+        );
       };
       listen("jobs", `case_id=eq.${caseId}`);
       listen("raw_findings", `case_id=eq.${caseId}`);
@@ -300,10 +309,15 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
     async scan(caseId, body): Promise<ScanResult> {
       const res = await command<unknown>(`/cases/${caseId}/scan`, { method: "POST", body });
       const r = isRecord(res) ? res : {};
-      return { batch_id: typeof r.batch_id === "string" ? r.batch_id : "", jobs: toList(r.jobs, toJob) };
+      return {
+        batch_id: typeof r.batch_id === "string" ? r.batch_id : "",
+        jobs: toList(r.jobs, toJob),
+      };
     },
     async cancelJob(caseId, jobId): Promise<Job> {
-      return toJob(await command<unknown>(`/cases/${caseId}/jobs/${jobId}/cancel`, { method: "POST" }));
+      return toJob(
+        await command<unknown>(`/cases/${caseId}/jobs/${jobId}/cancel`, { method: "POST" }),
+      );
     },
     async wake(caseId) {
       await command<void>(`/cases/${caseId}/wake`, { method: "POST", parse: "none", retry: false });

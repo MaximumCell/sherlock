@@ -26,6 +26,7 @@ import {
 } from "@/lib/sections";
 import { useNearViewport } from "@/lib/use-near-viewport";
 import { useScrollSpy } from "@/lib/use-scroll-spy";
+import { groupFindings } from "@/lib/finding-groups";
 import { useUrlState } from "@/lib/use-url-state";
 import type { Case, Correlation, Entity, Finding } from "@/lib/types";
 import { CaseHeader } from "./case-header";
@@ -118,17 +119,23 @@ export function CasePage({ caseId }: { caseId: string }) {
     jobList.some((j) => j.target_type === "name");
   const sections = visibleSections(hasPeople);
   const active = useScrollSpy(sections);
-  const pending = correlationList.filter((x) => x.status === "pending").length;
+  const foundCount = useMemo(
+    () => groupFindings(findingList, correlationList).reduce((n, g) => n + g.items.length, 0),
+    [findingList, correlationList],
+  );
+  // automatic same_account merges are never questions
+  const links = correlationList.filter((x) => x.type !== "same_account");
+  const pending = links.filter((x) => x.status === "pending").length;
   const steps = deriveSteps({
     jobs: jobList,
     pendingLinks: pending,
-    totalLinks: correlationList.length,
+    totalLinks: links.length,
     results: findingList.filter((f) => f.status === "found").length,
   });
   const progress = sourceProgress(jobList);
   const ready = !findings.isPending && !correlations.isPending && !jobs.isPending;
   const counts: Partial<Record<SectionId, number>> = {
-    found: findingList.filter((f) => f.status === "found").length,
+    found: foundCount,
     links: pending,
   };
 
@@ -263,6 +270,7 @@ export function CasePage({ caseId }: { caseId: string }) {
             c={c}
             entities={entityList}
             findings={findingList}
+            correlations={correlationList}
             jobs={jobList}
             loading={entities.isPending}
           />

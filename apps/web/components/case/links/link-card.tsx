@@ -2,15 +2,15 @@
 
 import { Check, RotateCcw, X } from "lucide-react";
 import { useState } from "react";
-import { Avatar } from "@/components/common/bits";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { findingTitle, parseFinding } from "@/lib/findings";
+import { accountsInLink, type AccountIndex } from "@/lib/accounts";
 import { percent } from "@/lib/format";
+import { AccountSide } from "./account-side";
 import { ConfidenceMeter } from "./confidence-meter";
-import { describeRule } from "@/lib/rules";
-import type { Correlation, EvidenceRef, Finding, ReviewDecision } from "@/lib/types";
+import { describeRule, evidenceLabel } from "@/lib/rules";
+import type { Correlation, EvidenceRef, ReviewDecision } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export const STATUS_BADGE = {
@@ -21,7 +21,7 @@ export const STATUS_BADGE = {
 
 export interface ReviewCardProps {
   correlation: Correlation;
-  findings: ReadonlyMap<string, Finding>;
+  index: AccountIndex;
   selected: boolean;
   pending?: boolean;
   onSelect: () => void;
@@ -30,49 +30,9 @@ export interface ReviewCardProps {
   advanced: boolean;
 }
 
-function LinkedFinding({
-  finding,
-  evidence,
-  onOpen,
-}: {
-  finding: Finding;
-  evidence: EvidenceRef[];
-  onOpen: () => void;
-}) {
-  const view = parseFinding(finding);
-  return (
-    <li className="min-w-0 rounded-md border border-border bg-surface p-2.5">
-      <button
-        type="button"
-        onClick={onOpen}
-        className="flex w-full min-w-0 items-center gap-2 rounded-sm text-left"
-        aria-label={`Open ${findingTitle(finding)} for ${finding.identifier_value}`}
-      >
-        <Avatar src={view.avatarUrl} name={findingTitle(finding)} className="h-7 w-7" />
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-medium">{findingTitle(finding)}</span>
-          <span className="block truncate font-mono text-xs text-muted-foreground">
-            {finding.identifier_value}
-          </span>
-        </span>
-      </button>
-      {evidence.length > 0 ? (
-        <dl className="mt-2 space-y-1 border-t border-border pt-2">
-          {evidence.map((item, i) => (
-            <div key={`${item.field}-${i}`} className="text-xs">
-              <dt className="text-muted-foreground">{item.field.replace(/_/g, " ")}</dt>
-              <dd className="break-all font-mono">{item.value}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-    </li>
-  );
-}
-
 export function ReviewCard({
   correlation: c,
-  findings,
+  index,
   selected,
   pending = false,
   onSelect,
@@ -83,13 +43,11 @@ export function ReviewCard({
   const [note, setNote] = useState("");
   const rule = describeRule(c.type);
   const badge = STATUS_BADGE[c.status];
-  const linked = c.entities_involved
-    .map((id) => findings.get(id))
-    .filter((f): f is Finding => f !== undefined);
-  const missing = c.entities_involved.length - linked.length;
+  const linked = accountsInLink(c, index);
+  const missing = c.entities_involved.filter((id) => !index.byFinding.has(id)).length;
   const refs = c.evidence.filter((e): e is EvidenceRef => typeof e !== "string");
   const notes = c.evidence.filter((e): e is string => typeof e === "string");
-  const orphanRefs = refs.filter((r) => !findings.has(r.finding_id));
+  const orphanRefs = refs.filter((r) => !index.byFinding.has(r.finding_id));
   const decide = (decision: ReviewDecision) => onDecide(decision, note.trim() || undefined);
 
   return (
@@ -126,13 +84,14 @@ export function ReviewCard({
         </div>
       </header>
 
-      <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3" aria-label="Results in this link">
-        {linked.map((finding) => (
-          <LinkedFinding
-            key={finding.id}
-            finding={finding}
-            evidence={refs.filter((r) => r.finding_id === finding.id)}
-            onOpen={() => onOpenFinding(finding.id)}
+      <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3" aria-label="Accounts in this link">
+        {linked.map((acc) => (
+          <AccountSide
+            key={acc.key}
+            account={acc}
+            refs={refs}
+            compact
+            onOpen={() => onOpenFinding(acc.primary.id)}
           />
         ))}
       </ul>
@@ -153,7 +112,7 @@ export function ReviewCard({
           ))}
           {orphanRefs.map((r, i) => (
             <li key={`orphan-${i}`}>
-              {r.field}: <span className="font-mono text-xs">{r.value}</span>
+              {evidenceLabel(r.field)}: <span className="font-mono text-xs">{r.value}</span>
             </li>
           ))}
         </ul>

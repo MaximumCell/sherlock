@@ -2,67 +2,19 @@
 
 import { Check, CornerUpLeft, SkipForward, X } from "lucide-react";
 import { useState } from "react";
-import { Avatar, Kbd } from "@/components/common/bits";
+import { Kbd } from "@/components/common/bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { findingTitle, parseFinding } from "@/lib/findings";
+import { accountsInLink, type AccountIndex } from "@/lib/accounts";
 import { describeRule } from "@/lib/rules";
-import type { Correlation, EvidenceRef, Finding, ReviewDecision } from "@/lib/types";
+import type { Correlation, EvidenceRef, ReviewDecision } from "@/lib/types";
+import { AccountSide } from "./account-side";
 import { ConfidenceMeter } from "./confidence-meter";
-
-function Side({
-  finding,
-  evidence,
-  onOpen,
-}: {
-  finding: Finding;
-  evidence: EvidenceRef[];
-  onOpen: () => void;
-}) {
-  const view = parseFinding(finding);
-  const title = findingTitle(finding);
-  return (
-    <li className="min-w-0 rounded-xl border border-border bg-surface/60 p-4">
-      <button
-        type="button"
-        onClick={onOpen}
-        className="flex w-full min-w-0 items-center gap-3 rounded-md text-left"
-        aria-label={`Open ${title} for ${finding.identifier_value}`}
-      >
-        <Avatar src={view.avatarUrl} name={title} className="h-11 w-11 rounded-lg" />
-        <span className="min-w-0">
-          <span className="block truncate font-medium">{title}</span>
-          <span className="block truncate font-mono text-xs text-muted-foreground">
-            {finding.identifier_value}
-          </span>
-        </span>
-      </button>
-      {view.fullname || view.bio ? (
-        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-          {view.fullname ? <span className="text-foreground">{view.fullname}. </span> : null}
-          {view.bio}
-        </p>
-      ) : null}
-      {evidence.length > 0 ? (
-        <dl className="mt-3 space-y-1.5 border-t border-border pt-3">
-          {evidence.map((item, i) => (
-            <div key={`${item.field}-${i}`} className="text-sm">
-              <dt className="text-xs text-muted-foreground">{item.field.replace(/_/g, " ")}</dt>
-              <dd className="break-all rounded bg-warning/10 px-1.5 py-0.5 font-mono text-xs">
-                {item.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-    </li>
-  );
-}
 
 /** One link as a yes / no question: the items side by side, the reason in plain words. */
 export function LinkQuestion({
   correlation: c,
-  findings,
+  index,
   position,
   total,
   pending,
@@ -74,7 +26,7 @@ export function LinkQuestion({
   onOpenFinding,
 }: {
   correlation: Correlation;
-  findings: ReadonlyMap<string, Finding>;
+  index: AccountIndex;
   position: number;
   total: number;
   pending: boolean;
@@ -88,10 +40,8 @@ export function LinkQuestion({
   const [note, setNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
   const rule = describeRule(c.type);
-  const linked = c.entities_involved
-    .map((id) => findings.get(id))
-    .filter((f): f is Finding => f !== undefined);
-  const missing = c.entities_involved.length - linked.length;
+  const linked = accountsInLink(c, index);
+  const missing = c.entities_involved.filter((id) => !index.byFinding.has(id)).length;
   const refs = c.evidence.filter((e): e is EvidenceRef => typeof e !== "string");
   const notes = c.evidence.filter((e): e is string => typeof e === "string");
   const decide = (d: ReviewDecision) => onDecide(d, note.trim() || undefined);
@@ -116,14 +66,14 @@ export function LinkQuestion({
 
       <ul
         className={linked.length > 2 ? "grid gap-3 md:grid-cols-3" : "grid gap-3 md:grid-cols-2"}
-        aria-label="Results in this link"
+        aria-label="Accounts in this link"
       >
-        {linked.map((f) => (
-          <Side
-            key={f.id}
-            finding={f}
-            evidence={refs.filter((r) => r.finding_id === f.id)}
-            onOpen={() => onOpenFinding(f.id)}
+        {linked.map((acc) => (
+          <AccountSide
+            key={acc.key}
+            account={acc}
+            refs={refs}
+            onOpen={() => onOpenFinding(acc.primary.id)}
           />
         ))}
       </ul>

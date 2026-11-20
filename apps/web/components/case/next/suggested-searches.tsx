@@ -6,7 +6,8 @@ import { EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DETECTION_LABEL } from "@/lib/detect-target";
-import { findingTitle } from "@/lib/findings";
+import type { AccountIndex } from "@/lib/accounts";
+import { suggestionSource } from "@/lib/follow-up";
 import { useScan } from "@/lib/query/mutations";
 import { TARGET_TYPES, type Entity, type Finding, type Job, type TargetType } from "@/lib/types";
 
@@ -20,11 +21,10 @@ export function pivotSuggestions(entities: readonly Entity[]): (Entity & { kind:
   );
 }
 
-function why(entity: Entity, source: Finding | undefined): string {
-  const where = source ? findingTitle(source) : entity.platform;
+function why(entity: Entity, origin: string | null): string {
   const what = DETECTION_LABEL[entity.kind as TargetType] ?? "an identifier";
-  return where
-    ? `Your ${where} result mentions ${what} we have not searched yet.`
+  return origin
+    ? `${origin}. Not searched yet.`
     : `It showed up in your results as ${what} we have not searched yet.`;
 }
 
@@ -33,6 +33,7 @@ export function SuggestedSearches({
   caseId,
   entities,
   findings,
+  accounts,
   jobs,
   loading,
   advanced,
@@ -40,6 +41,7 @@ export function SuggestedSearches({
   caseId: string;
   entities: Entity[];
   findings: Finding[];
+  accounts: AccountIndex;
   jobs: Job[];
   loading: boolean;
   advanced: boolean;
@@ -86,10 +88,7 @@ export function SuggestedSearches({
                   {entity.value}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {why(
-                    entity,
-                    entity.source_finding_id ? byId.get(entity.source_finding_id) : undefined,
-                  )}
+                  {why(entity, suggestionSource(entity, byId, accounts))}
                 </p>
                 {advanced ? (
                   <p className="font-mono text-2xs text-muted-foreground">

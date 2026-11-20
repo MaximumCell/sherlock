@@ -3,6 +3,7 @@
  * score that reacts to scans and review decisions. Same factor keys, caps and bands
  * as the backend; the curves are simplified.
  */
+import { buildAccounts } from "../../accounts";
 import type { Correlation, Exposure, ExposureFactor, Finding } from "../../types";
 import { bandFor } from "../mappers";
 
@@ -40,17 +41,22 @@ export const FIXTURE_METHOD =
 
 export function scoreFixtureCase(findings: Finding[], correlations: Correlation[]): Exposure {
   const found = findings.filter((f) => f.status === "found" && f.extra_metadata.summary !== true);
-  const approved = correlations.filter((c) => c.status === "approved");
+  // automatic same_account merges are not links between accounts
+  const approved = correlations.filter((c) => c.status === "approved" && c.type !== "same_account");
 
   const breaches = found.filter((f) => f.platform === "breach");
   const sensitive = breaches.filter((f) =>
-    list(f.extra_metadata.data_classes).some((c) => /password|phone|physical address|home address|birth/i.test(String(c))),
+    list(f.extra_metadata.data_classes).some((c) =>
+      /password|phone|physical address|home address|birth/i.test(String(c)),
+    ),
   );
   const breach = factor(
     "breach_exposure",
     "Breach exposure",
     30,
-    breaches.length === 0 ? 0 : 30 * (0.45 * share(breaches.length, 20) + 0.15 + 0.3 * share(sensitive.length, 4)),
+    breaches.length === 0
+      ? 0
+      : 30 * (0.45 * share(breaches.length, 20) + 0.15 + 0.3 * share(sensitive.length, 4)),
     breaches.length
       ? `Listed in ${plural(breaches.length, "breach")}; ${sensitive.length} exposed passwords, phone numbers or addresses.`
       : "No breach listings found for the scanned identifiers.",
@@ -70,17 +76,21 @@ export function scoreFixtureCase(findings: Finding[], correlations: Correlation[
       ["username", "email", "name"].includes(f.identifier_type) &&
       !["dns", "rdap", "crt.sh", "internetdb", "activity"].includes(f.platform),
   );
+  // one per account, however many sources reported it
+  const accountCount = buildAccounts(accounts, correlations).accounts.length;
   const footprint = factor(
     "account_footprint",
     "Account footprint",
     15,
-    15 * share(accounts.length, 50),
-    `${plural(accounts.length, "public account")} found across the scanned platforms.`,
+    15 * share(accountCount, 50),
+    `${plural(accountCount, "public account")} found across the scanned platforms.`,
     accounts,
     accounts.length ? ["Close accounts you no longer use.", "Make dormant profiles private."] : [],
   );
 
-  const linkEvidence = found.filter((f) => approved.some((c) => c.entities_involved.includes(f.id)));
+  const linkEvidence = found.filter((f) =>
+    approved.some((c) => c.entities_involved.includes(f.id)),
+  );
   const linkability = factor(
     "identity_linkability",
     "Identity linkability",
@@ -134,17 +144,18 @@ export function scoreFixtureCase(findings: Finding[], correlations: Correlation[
       ? `An email address or phone number is published on ${plural(contactRows.length, "profile")}.`
       : "No contact details published on the profiles found.",
     contactRows,
-    contactRows.length ? ["Hide the email address on public profiles or use a forwarding alias."] : [],
+    contactRows.length
+      ? ["Hide the email address on public profiles or use a forwarding alias."]
+      : [],
   );
 
   const byHandle = new Map<string, Finding[]>();
   for (const f of accounts.filter((x) => x.identifier_type === "username")) {
     byHandle.set(f.identifier_value, [...(byHandle.get(f.identifier_value) ?? []), f]);
   }
-  const [topHandle, reused] = [...byHandle.entries()].sort((a, b) => b[1].length - a[1].length)[0] ?? [
-    "",
-    [],
-  ];
+  const [topHandle, reused] = [...byHandle.entries()].sort(
+    (a, b) => b[1].length - a[1].length,
+  )[0] ?? ["", []];
   const handle = factor(
     "handle_reuse",
     "Handle reuse",
@@ -163,7 +174,9 @@ export function scoreFixtureCase(findings: Finding[], correlations: Correlation[
     "Image location metadata",
     5,
     5 * Math.min(1, Math.sqrt(gps.length / 2)),
-    gps.length ? `${plural(gps.length, "image")} with GPS coordinates.` : "No image carries GPS coordinates.",
+    gps.length
+      ? `${plural(gps.length, "image")} with GPS coordinates.`
+      : "No image carries GPS coordinates.",
     gps,
     gps.length ? ["Strip location metadata before publishing photos."] : [],
   );
@@ -171,12 +184,19 @@ export function scoreFixtureCase(findings: Finding[], correlations: Correlation[
   const factors = [breach, footprint, linkability, infra, contact, handle, media].sort(
     (a, b) => b.points - a.points || a.key.localeCompare(b.key),
   );
-  const score = Math.round(Math.min(100, factors.reduce((sum, f) => sum + f.points, 0)));
+  const score = Math.round(
+    Math.min(
+      100,
+      factors.reduce((sum, f) => sum + f.points, 0),
+    ),
+  );
   return {
     score,
     band: bandFor(score),
     factors,
     computed_from: { findings: found.length, approved_correlations: approved.length },
-    method: found.length ? FIXTURE_METHOD : `No findings with status 'found' yet, so the score is 0. ${FIXTURE_METHOD}`,
+    method: found.length
+      ? FIXTURE_METHOD
+      : `No findings with status 'found' yet, so the score is 0. ${FIXTURE_METHOD}`,
   };
 }

@@ -3,17 +3,9 @@
  * demo data, accepts every command, and simulates job progress with timers,
  * emitting the same change events Supabase Realtime would.
  */
-import type {
-  Case,
-  Correlation,
-  CorrelationStatus,
-  Finding,
-  Job,
-  JsonObject,
-  NameHints,
-  ReviewDecision,
-} from "../../types";
+import type { Case, Correlation, Finding, Job, JsonObject, NameHints } from "../../types";
 import { GatewayError } from "../gateway";
+import { decisionStatus } from "../../review";
 import type {
   CaseSummary,
   ChangeEvent,
@@ -43,12 +35,6 @@ export interface FixtureDataSource extends DataSource {
   tick(): void;
   readonly state: FixtureState;
 }
-
-const DECISION_STATUS: Record<ReviewDecision, CorrelationStatus> = {
-  approve: "approved",
-  reject: "rejected",
-  reset: "pending",
-};
 
 const clone = <T>(value: T): T => structuredClone(value);
 
@@ -238,8 +224,9 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       jobs: state.jobs
         .filter((j) => j.case_id === c.id)
         .map((j) => ({ status: j.status, progress: j.progress, batch_id: j.batch_id })),
-      pendingReviews: state.correlations.filter((x) => x.case_id === c.id && x.status === "pending")
-        .length,
+      pendingReviews: state.correlations.filter(
+        (x) => x.case_id === c.id && x.status === "pending" && x.type !== "same_account",
+      ).length,
       foundCount: state.findings.filter((f) => f.case_id === c.id && f.status === "found").length,
     }));
   }
@@ -413,10 +400,10 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
     async reviewCorrelation(id, decision, note) {
       const corr: Correlation | undefined = state.correlations.find((x) => x.id === id);
       if (!corr) throw new GatewayError(404, "Correlation not found");
-      corr.status = DECISION_STATUS[decision];
+      corr.status = decisionStatus(corr, decision);
       corr.reviewed = corr.status === "approved";
       corr.review_note = decision === "reset" ? null : note?.trim() || corr.review_note;
-      corr.reviewed_at = decision === "reset" ? null : nowIso();
+      corr.reviewed_at = corr.status === "pending" ? null : nowIso();
       audit(corr.case_id, "review", "investigator", { rule: corr.type, decision });
       emit("correlations", "UPDATE", corr.case_id, corr.id, corr);
       return respond(corr);

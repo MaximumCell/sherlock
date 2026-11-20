@@ -2,6 +2,7 @@
  * Groups raw findings into the human categories shown under "What we found".
  * Pure: the UI decides how many highlights to show and how to render them.
  */
+import { buildAccounts, isSameAccount, type CaseAccount } from "./accounts";
 import { findingCategory, parseFinding } from "./findings";
 import type { Correlation, Finding } from "./types";
 
@@ -91,47 +92,60 @@ export interface FindingGroup {
   id: FindingGroupId;
   title: string;
   description: string;
-  /** Found rows, most informative first. */
-  items: Finding[];
+  /** One item per ACCOUNT (several sources reporting one account are one item), most informative first. */
+  items: CaseAccount[];
   /** Not-found and error rows that belong here (shown only in the full list). */
   misses: number;
 }
 
-/** Non-empty groups in display order. Only `found` rows count; misses are tallied. */
+/** Score of an account card: its best finding, plus a little per confirming source. */
+export function accountScore(acc: CaseAccount, linked: ReadonlySet<string>): number {
+  return Math.max(...acc.findings.map((f) => highlightScore(f, linked))) + acc.sources.length - 1;
+}
+
+/**
+ * Non-empty groups in display order. Only `found` rows count, grouped into accounts
+ * by the stored `same_account` rows; misses are tallied.
+ */
 export function groupFindings(
   findings: readonly Finding[],
-  correlations: readonly Pick<Correlation, "entities_involved" | "status">[] = [],
+  correlations: readonly Correlation[] = [],
 ): FindingGroup[] {
   const linked = new Set<string>();
   for (const c of correlations) {
-    if (c.status !== "rejected") c.entities_involved.forEach((id) => linked.add(id));
+    if (c.status !== "rejected" && !isSameAccount(c))
+      c.entities_involved.forEach((id) => linked.add(id));
   }
-  const buckets = new Map<FindingGroupId, { items: Finding[]; misses: number }>();
-  for (const f of findings) {
-    const id = groupOf(f);
-    const bucket = buckets.get(id) ?? { items: [], misses: 0 };
-    if (f.status === "found") bucket.items.push(f);
-    else bucket.misses += 1;
-    buckets.set(id, bucket);
-  }
+  const { accounts } = buildAccounts(findings, correlations);
+  const buckets = new Map<FindingGroupId, { items: CaseAccount[]; misses: number }>();
+  const bucket = (id: FindingGroupId) => {
+    const b = buckets.get(id) ?? { items: [], misses: 0 };
+    buckets.set(id, b);
+    return b;
+  };
+  for (const acc of accounts) bucket(groupOf(acc.primary)).items.push(acc);
+  for (const f of findings) if (f.status !== "found") bucket(groupOf(f)).misses += 1;
   return FINDING_GROUP_IDS.flatMap((id) => {
-    const bucket = buckets.get(id);
-    if (!bucket || bucket.items.length === 0) return [];
-    const items = [...bucket.items].sort(
-      (a, b) =>
-        highlightScore(b, linked) - highlightScore(a, linked) ||
-        a.platform.localeCompare(b.platform),
+    const b = buckets.get(id);
+    if (!b || b.items.length === 0) return [];
+    const items = [...b.items].sort(
+      (x, y) => accountScore(y, linked) - accountScore(x, linked) || x.label.localeCompare(y.label),
     );
-    return [{ id, ...FINDING_GROUP_META[id], items, misses: bucket.misses }];
+    return [{ id, ...FINDING_GROUP_META[id], items, misses: b.misses }];
   });
 }
 
 /**
- * Accounts and profiles found: the single definition behind the Summary tile, the summary
- * sentence and the "Accounts & profiles" group heading.
+ * Accounts and profiles found, one per account: the single definition behind the Summary
+ * tile, the summary sentence and the "Accounts & profiles" group heading.
  */
-export function countAccounts(findings: readonly Finding[]): number {
-  return findings.filter((f) => f.status === "found" && groupOf(f) === "accounts").length;
+export function countAccounts(
+  findings: readonly Finding[],
+  correlations: readonly Correlation[] = [],
+): number {
+  return buildAccounts(findings, correlations).accounts.filter(
+    (a) => groupOf(a.primary) === "accounts",
+  ).length;
 }
 
 /** Label of a group's expander: the heading count, with not-found rows named explicitly. */

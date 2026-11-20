@@ -6,6 +6,17 @@ export const DECISION_STATUS: Record<ReviewDecision, CorrelationStatus> = {
   reset: "pending",
 };
 
+/**
+ * Status a decision leads to. For an automatic `same_account` merge, "reject" splits it
+ * and "reset" merges it again, which the gateway stores as approved (never pending).
+ */
+export function decisionStatus(
+  c: Pick<Correlation, "type">,
+  decision: ReviewDecision,
+): CorrelationStatus {
+  return c.type === "same_account" && decision === "reset" ? "approved" : DECISION_STATUS[decision];
+}
+
 export interface ReviewAction {
   id: string;
   decision: ReviewDecision;
@@ -21,16 +32,16 @@ export function applyReview(
   correlations: readonly Correlation[],
   action: ReviewAction,
 ): Correlation[] {
-  const status = DECISION_STATUS[action.decision];
   return correlations.map((c) => {
     if (c.id !== action.id) return c;
+    const status = decisionStatus(c, action.decision);
     const note = action.note?.trim();
     return {
       ...c,
       status,
       reviewed: status === "approved",
       review_note: action.decision === "reset" ? null : note || c.review_note,
-      reviewed_at: action.decision === "reset" ? null : (action.at ?? new Date().toISOString()),
+      reviewed_at: status === "pending" ? null : (action.at ?? new Date().toISOString()),
     };
   });
 }
@@ -48,7 +59,9 @@ export function sortQueue(correlations: readonly Correlation[]): Correlation[] {
 }
 
 export function filterQueue(correlations: readonly Correlation[], filter: ReviewFilter) {
-  return sortQueue(filter === "all" ? correlations : correlations.filter((c) => c.status === filter));
+  return sortQueue(
+    filter === "all" ? correlations : correlations.filter((c) => c.status === filter),
+  );
 }
 
 export function countByStatus(correlations: readonly Correlation[]): Record<ReviewFilter, number> {

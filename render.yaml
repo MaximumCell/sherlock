@@ -49,6 +49,9 @@ services:
       # Comma-separated origins of the deployed web app (e.g. https://your-app.vercel.app)
       - key: FRONTEND_ORIGINS
         sync: false
+      # Operator panel: comma-separated emails of the operator accounts (confirmed email sign-in)
+      - key: ADMIN_EMAILS
+        sync: false
       # Public worker URLs. Adjust if Render had to add a suffix to a service name.
       - key: WORKER_URL_IDENTITY
         value: https://sherlock-worker-identity.onrender.com

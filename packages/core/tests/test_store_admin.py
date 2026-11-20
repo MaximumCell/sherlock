@@ -293,7 +293,7 @@ def test_search_stats(s):
     _search(s, U1, "example.com", type_="domain")
     stats = s.search_stats((datetime.now(UTC) - timedelta(days=1)).isoformat())
     today = datetime.now(UTC).date().isoformat()
-    assert stats["rows"] == 4 and stats["truncated"] is False
+    assert stats["rows"] == 4 and stats["sessions"] == 2 and stats["truncated"] is False
     assert stats["by_day"] == {today: {"accepted": 3, "rate_limited": 1}}
     assert stats["by_type"] == {"username": 3, "domain": 1}
     assert stats["by_outcome"] == {"accepted": 3, "rate_limited": 1}
@@ -302,7 +302,7 @@ def test_search_stats(s):
 
 
 def test_aggregate_searches_empty():
-    assert aggregate_searches([]) == {"rows": 0, "truncated": False, "by_day": {}, "by_type": {}, "by_outcome": {},
+    assert aggregate_searches([]) == {"rows": 0, "sessions": 0, "truncated": False, "by_day": {}, "by_type": {}, "by_outcome": {},
                                       "targets": []}
 
 

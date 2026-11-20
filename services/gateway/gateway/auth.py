@@ -17,6 +17,8 @@ from typing import Annotated
 from fastapi import Depends, Header, HTTPException, Request
 from sherlock_core.store import get_store
 
+from gateway.visitors import client_origin, touch_visitor
+
 log = logging.getLogger("sherlock.gateway.auth")
 
 CACHE_TTL_S = 60.0
@@ -27,6 +29,8 @@ CACHE_MAX = 2000
 class Principal:
     user_id: str
     is_anonymous: bool = False
+    email: str | None = None          # the Supabase user's email (None for anonymous sessions)
+    email_verified: bool = False      # Supabase confirmed the email (`email_confirmed_at` is set)
 
 
 TokenVerifier = Callable[[str], Awaitable[Principal | None]]
@@ -47,7 +51,9 @@ def _lookup(token: str) -> Principal | None:
     user = getattr(res, "user", None)
     if user is None or not getattr(user, "id", None):
         return None
-    return Principal(user_id=str(user.id), is_anonymous=bool(getattr(user, "is_anonymous", False)))
+    email = (getattr(user, "email", None) or "").strip() or None
+    return Principal(user_id=str(user.id), is_anonymous=bool(getattr(user, "is_anonymous", False)),
+                     email=email, email_verified=bool(email and getattr(user, "email_confirmed_at", None)))
 
 
 async def verify_supabase_token(token: str) -> Principal | None:
@@ -81,6 +87,7 @@ async def get_principal(
     if principal is None:
         raise HTTPException(401, "invalid or expired session", headers={"WWW-Authenticate": "Bearer"})
     request.state.principal = principal
+    await touch_visitor(principal, client_origin(request))
     return principal
 
 

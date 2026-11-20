@@ -20,7 +20,7 @@ from sherlock_core.platforms import all_platforms
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from gateway.logs import setup_logging
-from gateway.routers import cases, correlations
+from gateway.routers import admin, cases, correlations
 from gateway.schemas import Health, PlatformOut
 
 log = logging.getLogger("sherlock.gateway")
@@ -100,6 +100,7 @@ def create_app() -> FastAPI:
 
     app.include_router(cases.router)
     app.include_router(correlations.router)
+    app.include_router(admin.router)
     return app
 
 

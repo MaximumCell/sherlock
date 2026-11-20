@@ -184,3 +184,147 @@ class CandidateConfirmed(BaseModel):
 
 class ErrorOut(BaseModel):
     detail: str
+
+
+# ----------------------------------------------------------------------------- operator panel (/admin)
+SearchOutcome = Literal["accepted", "rate_limited", "blocked", "paused", "forbidden", "invalid"]
+
+
+class BlockRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=300)
+
+
+class PauseRequest(BaseModel):
+    paused: bool
+
+
+class AdminMe(BaseModel):
+    is_admin: Literal[True]
+    email: str
+
+
+class MisuseFlag(BaseModel):
+    key: str
+    label: str
+    severity: Literal["high", "medium", "low"]
+
+
+class SessionBrief(BaseModel):
+    """Who ran a search, as the feed shows it. `origin` is the ip_hash: never an IP address."""
+    user_id: str
+    is_anonymous: bool
+    email: str | None = None
+    user_agent: str | None = None
+    country: str | None = None
+    origin: str | None = None
+    origin_sessions: int = 0           # sessions seen from the same origin, this one included
+    blocked: bool = False
+
+
+class VisitorSession(SessionBrief):
+    first_seen: str | None = None
+    last_seen: str | None = None
+    search_count: int = 0
+    refused_count: int = 0
+    blocked_at: str | None = None
+    blocked_reason: str | None = None
+    flags: list[MisuseFlag] = []
+
+
+class SearchLogRow(BaseModel):
+    id: int
+    created_at: str
+    user_id: str
+    case_id: str | None = None
+    target_type: str
+    target_value: str
+    modules: list[str] | None = None
+    outcome: SearchOutcome
+    detail: str | None = None
+    country: str | None = None
+    is_anonymous: bool
+    session: SessionBrief | None = None
+
+
+class SearchPage(BaseModel):
+    items: list[SearchLogRow]
+    next_cursor: str | None = None
+
+
+class SessionPage(BaseModel):
+    items: list[VisitorSession]
+    next_cursor: str | None = None
+
+
+class CaseMeta(BaseModel):
+    """A case as metadata only. Findings are never part of the operator panel."""
+    id: str
+    title: str | None = None
+    identifiers: list[Identifier]
+    status: str | None = None
+    created_at: str | None = None
+    archived_at: str | None = None
+    job_count: int
+    found_count: int
+
+
+class SessionDetail(BaseModel):
+    session: VisitorSession
+    searches: list[SearchLogRow]
+    cases: list[CaseMeta]
+
+
+class OverviewTotals(BaseModel):
+    searches: int                      # every search attempt in the window, refused ones included
+    accepted: int
+    refused: int
+    sessions: int                      # distinct sessions that searched in the window
+    flagged_sessions: int
+    cases: int                         # all non-demo cases now
+    active_jobs: int                   # queued or running now
+
+
+class DayPoint(BaseModel):
+    day: str
+    accepted: int
+    rate_limited: int
+    blocked: int
+    paused: int
+    forbidden: int
+    invalid: int
+
+
+class TypeCount(BaseModel):
+    target_type: str
+    count: int
+
+
+class TargetCount(BaseModel):
+    target_type: str
+    target_value: str
+    count: int
+    sessions: int
+
+
+class Quota(BaseModel):
+    global_used_today: int
+    global_limit: int
+    per_session_limit: int
+    name_per_user_limit: int
+
+
+class Overview(BaseModel):
+    days: int
+    since: str
+    totals: OverviewTotals
+    series: list[DayPoint]
+    by_type: list[TypeCount]
+    top_targets: list[TargetCount]
+    quota: Quota
+    scans_paused: bool
+    retention_days: int
+    truncated: bool
+
+
+class PauseState(BaseModel):
+    scans_paused: bool

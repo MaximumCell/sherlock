@@ -178,7 +178,7 @@ class Store:
 
     def search_stats(self, since: str, *, max_rows: int = 20000) -> Row:
         """Aggregates of search_log rows created since `since` (UTC days):
-        `{rows, truncated, by_day: {YYYY-MM-DD: {outcome: n}}, by_type: {type: n},
+        `{rows, sessions (distinct user ids), truncated, by_day: {YYYY-MM-DD: {outcome: n}}, by_type: {type: n},
         by_outcome: {outcome: n}, targets: [{target_type, target_value, count, sessions}]}`.
         `targets` lists every target with its search count and distinct-session count,
         most searched first. At most `max_rows` rows are read (`truncated` says so)."""
@@ -208,7 +208,7 @@ def aggregate_searches(rows: list[Row], *, truncated: bool = False) -> Row:
         t["sessions"].add(str(r["user_id"]))
     ranked = sorted(targets.items(), key=lambda kv: (-kv[1]["count"], kv[0]))
     return {
-        "rows": len(rows), "truncated": truncated, "by_day": by_day, "by_type": by_type, "by_outcome": by_outcome,
+        "rows": len(rows), "sessions": len({str(r["user_id"]) for r in rows}), "truncated": truncated, "by_day": by_day, "by_type": by_type, "by_outcome": by_outcome,
         "targets": [{"target_type": k[0], "target_value": k[1], "count": v["count"], "sessions": len(v["sessions"])}
                     for k, v in ranked],
     }

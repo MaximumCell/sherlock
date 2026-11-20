@@ -5,6 +5,8 @@ from gateway.agent.llm import LLMClient
 from gateway.auth import Principal, get_token_verifier
 from gateway.main import create_app
 from gateway.routers.cases import get_llm_client
+from gateway.service import reset_purge_clock
+from gateway.visitors import reset_touch_cache
 from gateway.wake import get_waker
 from sherlock_core import config, modules
 from sherlock_core.modules.base import Module
@@ -12,9 +14,16 @@ from sherlock_core.store import MemoryStore, set_store
 
 TOKENS = {
     "anon": Principal("00000000-0000-4000-8000-00000000000a", is_anonymous=True),
-    "user": Principal("00000000-0000-4000-8000-00000000000b", is_anonymous=False),
+    "user": Principal("00000000-0000-4000-8000-00000000000b", is_anonymous=False,
+                      email="kit@example.com", email_verified=True),
     "other": Principal("00000000-0000-4000-8000-00000000000c", is_anonymous=True),
+    "admin": Principal("00000000-0000-4000-8000-0000000000ad", is_anonymous=False,
+                       email="Operator@Example.com", email_verified=True),
+    # the operator's address on an account whose email was never confirmed: not an operator
+    "unverified": Principal("00000000-0000-4000-8000-0000000000ae", is_anonymous=False,
+                            email="operator@example.com", email_verified=False),
 }
+ADMIN_EMAILS = frozenset({"operator@example.com"})
 
 
 def _fake(name_, inputs_, queue_):
@@ -76,6 +85,10 @@ def llm():
 @pytest.fixture
 def client(store, woken, llm, monkeypatch):
     monkeypatch.setattr(config, "FRONTEND_ORIGINS", ["https://sherlock.example"])
+    monkeypatch.setattr(config, "ADMIN_EMAILS", ADMIN_EMAILS)
+    monkeypatch.setattr(config, "INTERNAL_SECRET", "test-secret")
+    reset_touch_cache()
+    reset_purge_clock()
     app = create_app()
 
     async def verify(token):
@@ -108,6 +121,11 @@ def as_user():
 @pytest.fixture
 def as_other():
     return auth("other")
+
+
+@pytest.fixture
+def as_admin():
+    return auth("admin")
 
 
 @pytest.fixture

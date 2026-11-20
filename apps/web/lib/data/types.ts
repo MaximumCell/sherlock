@@ -68,6 +68,7 @@ export interface DataSource {
   getSession(): Promise<SessionInfo | null>;
   onSessionChange(cb: (session: SessionInfo | null) => void): Unsubscribe;
   signInWithGitHub(redirectTo: string): Promise<SignInOutcome>;
+  signInWithGoogle(redirectTo: string): Promise<SignInOutcome>;
   signInWithEmail(email: string, redirectTo: string): Promise<SignInOutcome>;
   signOut(): Promise<void>;
 

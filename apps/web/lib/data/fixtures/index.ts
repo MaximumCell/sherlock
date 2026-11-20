@@ -252,6 +252,11 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       sessionListeners.forEach((l) => l(session));
       return "signed_in";
     },
+    async signInWithGoogle() {
+      session = { ...session, anonymous: false, email: "investigator@example.com" };
+      sessionListeners.forEach((l) => l(session));
+      return "signed_in";
+    },
     async signInWithEmail(email) {
       session = { ...session, anonymous: false, email };
       sessionListeners.forEach((l) => l(session));

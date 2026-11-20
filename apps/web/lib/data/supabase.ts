@@ -16,6 +16,7 @@ import type {
 } from "../types";
 import { createGatewayAdminSource } from "../admin/gateway-source";
 import { createGateway, GatewayError, type GatewayClient, type GatewayRequest } from "./gateway";
+import type { SignInOutcome } from "./types";
 import {
   isRecord,
   toAuditEntry,
@@ -131,6 +132,22 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
     return count ?? 0;
   }
 
+  /** OAuth sign-in. An anonymous session is upgraded in place so its cases stay attached. */
+  async function oauthSignIn(
+    provider: "github" | "google",
+    label: string,
+    redirectTo: string,
+  ): Promise<SignInOutcome> {
+    const session = await getSession();
+    if (session?.anonymous) {
+      const linked = await client.auth.linkIdentity({ provider, options: { redirectTo } });
+      if (!linked.error) return "redirect";
+    }
+    const { error } = await client.auth.signInWithOAuth({ provider, options: { redirectTo } });
+    if (error) fail(`${label} sign-in failed`, error.message);
+    return "redirect";
+  }
+
   return {
     mode: "supabase",
     admin: createGatewayAdminSource(command),
@@ -143,23 +160,8 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
       return () => data.subscription.unsubscribe();
     },
 
-    async signInWithGitHub(redirectTo) {
-      const session = await getSession();
-      if (session?.anonymous) {
-        // Upgrade the anonymous user in place so its cases stay attached.
-        const linked = await client.auth.linkIdentity({
-          provider: "github",
-          options: { redirectTo },
-        });
-        if (!linked.error) return "redirect";
-      }
-      const { error } = await client.auth.signInWithOAuth({
-        provider: "github",
-        options: { redirectTo },
-      });
-      if (error) fail("GitHub sign-in failed", error.message);
-      return "redirect";
-    },
+    signInWithGitHub: (redirectTo) => oauthSignIn("github", "GitHub", redirectTo),
+    signInWithGoogle: (redirectTo) => oauthSignIn("google", "Google", redirectTo),
 
     async signInWithEmail(email, redirectTo) {
       const session = await getSession();

@@ -1,19 +1,53 @@
 [project]
-name = "sherlocks"
-version = "0.1.0"
+name = "sherlock"
+version = "2.0.0"
+description = "Sherlock OSINT investigation platform (workspace root)"
 requires-python = ">=3.11"
-dependencies = [
-    "user-scanner>=1.4.3",
-    "python-dotenv>=1.0",
-    "httpx>=0.28",
-    "supabase>=2.0",
-    "fastapi>=0.115",
-    "uvicorn>=0.32",
-    "google-genai>=0.3",
-]
-
-[dependency-groups]
-dev = []
+dependencies = []
 
 [tool.uv]
 package = false
+
+[tool.uv.workspace]
+members = ["packages/core", "services/gateway", "services/worker"]
+
+[tool.uv.sources]
+sherlock-core = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+    "ruff>=0.8",
+    "pyright>=1.1.390",
+    "sherlock-core",
+    "sherlock-gateway",
+    "sherlock-worker",
+]
+
+[tool.uv.sources.sherlock-gateway]
+workspace = true
+
+[tool.uv.sources.sherlock-worker]
+workspace = true
+
+[tool.pytest.ini_options]
+testpaths = ["packages/core/tests", "services/gateway/tests", "services/worker/tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-q --import-mode=importlib"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["apps"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+include = ["packages/core/sherlock_core", "services/gateway/gateway", "services/worker/worker"]

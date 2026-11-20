@@ -1,0 +1,4 @@
+[["original","timestamp","mimetype"],
+["http://example.com:80/","20020120142510","text/html"],
+["https://www.example.com/","20261119164210","text/html"],
+["http://example.com/favicon.ico","20100102003410","image/x-icon"]]

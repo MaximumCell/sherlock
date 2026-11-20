@@ -1,0 +1,72 @@
+{
+  "_id": "5dd96eb166059660ed1ee413",
+  "avatarUrl": "https://cdn-avatars.huggingface.co/v1/production/uploads/5dd96eb166059660ed1ee413/NQtzmrDdbG0H8qkZvRyGk.jpeg",
+  "isPro": true,
+  "fullname": "Julien Chaumond",
+  "numModels": 53,
+  "numDatasets": 26,
+  "numSpaces": 49,
+  "numKernels": 0,
+  "numBuckets": 10,
+  "numDiscussions": 1888,
+  "numPapers": 8,
+  "numUpvotes": 1084,
+  "numLikes": 2091,
+  "numFollowers": 5351,
+  "numFollowing": 600,
+  "numFollowingOrgs": 340,
+  "user": "julien-c",
+  "type": "user",
+  "isFollowing": false,
+  "details": "<3 ML/AI for everyone, building products to propel communities fwd",
+  "primaryOrgAvatarUrl": "https://cdn-avatars.huggingface.co/v1/production/uploads/1583856921041-5dd96eb166059660ed1ee413.png",
+  "hardwareItems": [
+    {
+      "sku": [
+        "GPU",
+        "NVIDIA",
+        "RTX 3090"
+      ],
+      "mem": 24,
+      "num": 2
+    },
+    {
+      "sku": [
+        "Apple Silicon",
+        "-",
+        "Apple M1 Pro"
+      ],
+      "mem": 32,
+      "num": 1
+    },
+    {
+      "sku": [
+        "Apple Silicon",
+        "-",
+        "Apple M5 Max"
+      ],
+      "mem": 128,
+      "num": 1,
+      "isPrimary": true
+    },
+    {
+      "sku": [
+        "GPU",
+        "NVIDIA",
+        "GB10"
+      ],
+      "mem": 128,
+      "num": 1
+    },
+    {
+      "sku": [
+        "GPU",
+        "AMD",
+        "Ryzen AI Max+ 395"
+      ],
+      "mem": 128,
+      "num": 1
+    }
+  ],
+  "createdAt": "2019-11-23T17:38:57.000Z"
+}

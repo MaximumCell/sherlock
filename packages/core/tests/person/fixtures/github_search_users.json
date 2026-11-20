@@ -1,0 +1,41 @@
+{
+ "total_count": 13,
+ "incomplete_results": false,
+ "items": [
+  {
+   "login": "torvalds",
+   "id": 1024025,
+   "avatar_url": "https://avatars.githubusercontent.com/u/1024025?v=4",
+   "html_url": "https://github.com/torvalds",
+   "type": "User"
+  },
+  {
+   "login": "nthng-quan",
+   "id": 71642028,
+   "avatar_url": "https://avatars.githubusercontent.com/u/71642028?v=4",
+   "html_url": "https://github.com/nthng-quan",
+   "type": "User"
+  },
+  {
+   "login": "Linuuuus",
+   "id": 20279920,
+   "avatar_url": "https://avatars.githubusercontent.com/u/20279920?v=4",
+   "html_url": "https://github.com/Linuuuus",
+   "type": "User"
+  },
+  {
+   "login": "torvalds1Found",
+   "id": 186627611,
+   "avatar_url": "https://avatars.githubusercontent.com/u/186627611?v=4",
+   "html_url": "https://github.com/torvalds1Found",
+   "type": "User"
+  },
+  {
+   "login": "justin00314",
+   "id": 6055190,
+   "avatar_url": "https://avatars.githubusercontent.com/u/6055190?v=4",
+   "html_url": "https://github.com/justin00314",
+   "type": "User"
+  }
+ ]
+}

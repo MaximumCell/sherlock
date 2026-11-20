@@ -1,0 +1,27 @@
+{
+ "search_metadata": {"status": "Success"},
+ "visual_matches": [
+  {
+   "position": 1,
+   "title": "Example logo - Wikipedia",
+   "link": "https://en.wikipedia.org/wiki/Example",
+   "source": "Wikipedia",
+   "source_icon": "https://serpapi.com/images/i/abc",
+   "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:1",
+   "thumbnail_width": 245,
+   "thumbnail_height": 206,
+   "image": "https://upload.wikimedia.org/example.png",
+   "image_width": 1024,
+   "image_height": 861
+  },
+  {
+   "position": 2,
+   "title": "Example logo download",
+   "link": "https://example.org/logo",
+   "source": "example.org",
+   "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:2",
+   "image": "https://example.org/logo.png"
+  },
+  {"position": 3, "title": "Entry without a link", "source": "nowhere"}
+ ]
+}

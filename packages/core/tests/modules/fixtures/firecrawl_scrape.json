@@ -1,0 +1,14 @@
+{
+ "success": true,
+ "data": {
+  "markdown": "# Example User\n\nContact: user@example.com or @exampleuser\n\nMore at https://example.org/about and https://example.com/u/exampleuser\n",
+  "metadata": {
+   "title": "Example User - Profile",
+   "description": "Profile page",
+   "language": "en",
+   "ogImage": "https://example.com/og.png",
+   "sourceURL": "https://example.com/u/exampleuser",
+   "statusCode": 200
+  }
+ }
+}

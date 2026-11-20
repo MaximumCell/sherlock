@@ -1,0 +1,255 @@
+{
+ "orcid-identifier": {
+  "uri": "https://orcid.org/0000-0003-1279-3709",
+  "path": "0000-0003-1279-3709",
+  "host": "orcid.org"
+ },
+ "person": {
+  "name": {
+   "created-date": {
+    "value": 1460763570943
+   },
+   "last-modified-date": {
+    "value": 1460763570943
+   },
+   "given-names": {
+    "value": "Timothy"
+   },
+   "family-name": {
+    "value": "Berners-Lee"
+   },
+   "credit-name": {
+    "value": "Timothy J Berners-Lee"
+   },
+   "source": null,
+   "visibility": "public",
+   "path": "0000-0003-1279-3709"
+  },
+  "other-names": {
+   "last-modified-date": null,
+   "other-name": [],
+   "path": "/0000-0003-1279-3709/other-names"
+  },
+  "biography": null,
+  "researcher-urls": {
+   "last-modified-date": {
+    "value": 1732378755452
+   },
+   "researcher-url": [
+    {
+     "created-date": {
+      "value": 1489710150872
+     },
+     "last-modified-date": {
+      "value": 1732378755452
+     },
+     "source": {
+      "source-orcid": {
+       "uri": "https://orcid.org/0000-0003-1279-3709",
+       "path": "0000-0003-1279-3709",
+       "host": "orcid.org"
+      },
+      "source-client-id": null,
+      "source-name": {
+       "value": "Timothy J Berners-Lee"
+      },
+      "assertion-origin-orcid": null,
+      "assertion-origin-client-id": null,
+      "assertion-origin-name": null
+     },
+     "url-name": "webid",
+     "url": {
+      "value": "https://timbl.solidcommunity.net/profile/card#me"
+     },
+     "visibility": "public",
+     "path": "/0000-0003-1279-3709/researcher-urls/1084153",
+     "put-code": 1084153,
+     "display-index": 1
+    }
+   ],
+   "path": "/0000-0003-1279-3709/researcher-urls"
+  },
+  "emails": {
+   "last-modified-date": null,
+   "email": [],
+   "path": "/0000-0003-1279-3709/email"
+  },
+  "addresses": {
+   "last-modified-date": null,
+   "address": [],
+   "path": "/0000-0003-1279-3709/address"
+  },
+  "keywords": {
+   "last-modified-date": null,
+   "keyword": [],
+   "path": "/0000-0003-1279-3709/keywords"
+  }
+ },
+ "activities-summary": {
+  "employments": {
+   "affiliation-group": [
+    {
+     "summaries": [
+      {
+       "employment-summary": {
+        "department-name": null,
+        "role-title": "CoFounder and CTO",
+        "start-date": null,
+        "end-date": null,
+        "organization": {
+         "name": "Inrupt",
+         "address": {
+          "city": "Boston",
+          "region": "Massachusetts",
+          "country": "US"
+         },
+         "disambiguated-organization": null
+        }
+       }
+      }
+     ]
+    },
+    {
+     "summaries": [
+      {
+       "employment-summary": {
+        "department-name": "Christ Church; Department of Computer Science",
+        "role-title": null,
+        "start-date": null,
+        "end-date": null,
+        "organization": {
+         "name": "University of Oxford",
+         "address": {
+          "city": "Oxford",
+          "region": "Oxfordshire",
+          "country": "GB"
+         },
+         "disambiguated-organization": {
+          "disambiguated-organization-identifier": "6396",
+          "disambiguation-source": "RINGGOLD"
+         }
+        }
+       }
+      }
+     ]
+    },
+    {
+     "summaries": [
+      {
+       "employment-summary": {
+        "department-name": null,
+        "role-title": null,
+        "start-date": null,
+        "end-date": null,
+        "organization": {
+         "name": "Massachusetts Institute of Technology",
+         "address": {
+          "city": "Cambridge",
+          "region": "MA",
+          "country": "US"
+         },
+         "disambiguated-organization": {
+          "disambiguated-organization-identifier": "2167",
+          "disambiguation-source": "RINGGOLD"
+         }
+        }
+       }
+      }
+     ]
+    },
+    {
+     "summaries": [
+      {
+       "employment-summary": {
+        "department-name": null,
+        "role-title": "Software Engineer",
+        "start-date": {
+         "year": {
+          "value": "1984"
+         },
+         "month": {
+          "value": "09"
+         },
+         "day": {
+          "value": "01"
+         }
+        },
+        "end-date": {
+         "year": {
+          "value": "1994"
+         },
+         "month": {
+          "value": "09"
+         },
+         "day": {
+          "value": "01"
+         }
+        },
+        "organization": {
+         "name": "CERN",
+         "address": {
+          "city": "Geneva",
+          "region": null,
+          "country": "CH"
+         },
+         "disambiguated-organization": {
+          "disambiguated-organization-identifier": "https://ror.org/01ggx4157",
+          "disambiguation-source": "ROR"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "educations": {
+   "affiliation-group": [
+    {
+     "summaries": [
+      {
+       "education-summary": {
+        "department-name": "Physics",
+        "role-title": "BA",
+        "start-date": {
+         "year": {
+          "value": "1973"
+         },
+         "month": {
+          "value": "09"
+         },
+         "day": {
+          "value": "18"
+         }
+        },
+        "end-date": {
+         "year": {
+          "value": "1976"
+         },
+         "month": {
+          "value": "06"
+         },
+         "day": {
+          "value": "08"
+         }
+        },
+        "organization": {
+         "name": "University of Oxford",
+         "address": {
+          "city": "Oxford",
+          "region": "Oxfordshire",
+          "country": "GB"
+         },
+         "disambiguated-organization": {
+          "disambiguated-organization-identifier": "6396",
+          "disambiguation-source": "RINGGOLD"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "thibault",
+  "username": "thibault",
+  "createdAt": 1290415680000,
+  "profile": {
+    "bio": "I also produce organic dog meat at https://www.elwooddogmeat.com/",
+    "realName": "Thibault Duplessis",
+    "links": "github.com/ornicar\nmas.to/@thibault"
+  },
+  "url": "https://lichess.org/@/thibault",
+  "streamer": {
+    "twitch": {
+      "channel": "https://www.twitch.tv/ornicar2"
+    }
+  }
+}

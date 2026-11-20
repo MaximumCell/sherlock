@@ -1,35 +1,148 @@
+# Render blueprint: Sherlock v2 on the free tier.
+#
+# Four free web services: the gateway and one worker per queue. Free instances have
+# 512 MB / 0.1 CPU, sleep after 15 idle minutes, and ALL of them draw from one shared
+# pool of 750 instance-hours per month. Consequences, by design:
+#
+#   * No keep-alive pings, anywhere. Four services kept awake would need ~2,900 hours
+#     a month; the pool covers about one. Every service is allowed to sleep.
+#   * Workers are woken on demand. After enqueueing jobs the gateway sends a signed
+#     POST /wake to the worker of each affected queue; that inbound request starts the
+#     instance, and the worker also drains its queue on startup. The web app re-pokes
+#     through the gateway (POST /cases/{id}/wake) while jobs are still queued.
+#   * Nothing is lost when an instance sleeps or is killed: jobs live in Postgres
+#     (Supabase), and a job whose worker stops heartbeating is requeued.
+#   * Free web services cannot be background workers and have no private network, so
+#     workers are plain web services reached over their public URL; /wake is
+#     authenticated with HMAC-SHA256 over the body using INTERNAL_SECRET.
+#
+# Values marked `sync: false` are secrets: Render asks for them when the blueprint is
+# first applied and they never live in this repository.
+
+envVarGroups:
+  - name: sherlock-internal
+    envVars:
+      # Generated once by Render and shared by all four services.
+      - key: INTERNAL_SECRET
+        generateValue: true
+
 services:
   - type: web
-    name: sherlock-api
-    runtime: python
+    name: sherlock-gateway
+    runtime: docker
     plan: free
-    region: oregon
     branch: main
-    rootDir: .
-    buildCommand: |
-      pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: |
-      uvicorn api.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
     autoDeploy: true
+    dockerfilePath: ./Dockerfile.gateway
+    dockerContext: .
+    healthCheckPath: /health
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
+      - fromGroup: sherlock-internal
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
         sync: false
       - key: GOOGLE_API_KEY
         sync: false
-      # Optional — only set if you have a Firecrawl account
-      - key: SCRAPING_API_KEY
-        sync: false
-        value: ""
-      - key: SCRAPING_API_URL
-        value: https://api.firecrawl.dev
       - key: MODEL_NAME
         value: gemma-4-26b-a4b-it
-      # Set to your deployed Next.js origin, e.g. https://sherlock.vercel.app
-      # Multiple origins: comma-separated. The CORS middleware parses it.
+      # Comma-separated origins of the deployed web app (e.g. https://your-app.vercel.app)
       - key: FRONTEND_ORIGINS
-        value: ""
+        sync: false
+      # Operator panel: comma-separated emails of the operator accounts (confirmed email sign-in)
+      - key: ADMIN_EMAILS
+        sync: false
+      # Public worker URLs. Adjust if Render had to add a suffix to a service name.
+      - key: WORKER_URL_IDENTITY
+        value: https://sherlock-worker-identity.onrender.com
+      - key: WORKER_URL_INFRA
+        value: https://sherlock-worker-infra.onrender.com
+      - key: WORKER_URL_MEDIA
+        value: https://sherlock-worker-media.onrender.com
+      # Module keys are read by the gateway too, so GET /modules reports availability correctly.
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false
+      - key: SERPAPI_KEY
+        sync: false
+      - key: SCRAPING_API_KEY
+        sync: false
+
+  - type: web
+    name: sherlock-worker-identity
+    runtime: docker
+    plan: free
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile.worker
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: sherlock-internal
+      - key: WORKER_QUEUE
+        value: identity
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false
+      - key: SERPAPI_KEY
+        sync: false
+      - key: SCRAPING_API_KEY
+        sync: false
+
+  - type: web
+    name: sherlock-worker-infra
+    runtime: docker
+    plan: free
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile.worker
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: sherlock-internal
+      - key: WORKER_QUEUE
+        value: infra
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false
+      - key: SERPAPI_KEY
+        sync: false
+      - key: SCRAPING_API_KEY
+        sync: false
+
+  - type: web
+    name: sherlock-worker-media
+    runtime: docker
+    plan: free
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile.worker
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: sherlock-internal
+      - key: WORKER_QUEUE
+        value: media
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false
+      - key: SERPAPI_KEY
+        sync: false
+      - key: SCRAPING_API_KEY
+        sync: false

@@ -61,8 +61,8 @@ reserved `.example` domains, RFC 5737 addresses. Fixture mode also scores exposu
 | ![Map](docs/screenshots/graph.png) | ![Links](docs/screenshots/review.png) |
 | **People (name search)** | **Light theme, first visit** |
 | ![People](docs/screenshots/people.png) | ![Light](docs/screenshots/home-light.png) |
-| **Mobile (375 px)** | |
-| ![Mobile](docs/screenshots/mobile.png) | |
+| **What we found (profiles)** | **Mobile (375 px)** |
+| ![Results](docs/screenshots/results.png) | ![Mobile](docs/screenshots/mobile.png) |
 
 ## Gateway calls
 
@@ -98,6 +98,9 @@ lib/graph             graph model + deterministic radial layout
 lib/detect-target.ts  guesses the target type from free text (start screen chip)
 lib/case-progress.ts  scan progress, the three rail steps, status lines; also case-summary,
                       finding-groups, remediation, sections (old ?tab= links map onto sections)
+lib/platforms.ts      one platform identity (key, label, category) from GET /platforms, with a bundled
+                      snapshot; lib/platform-glyphs.ts (simple-icons, lazy chunk), lib/profile.ts
+                      (profile level, faces, provenance labels)
 lib/finding-extras.ts parsers for module-specific finding shapes (DNS, services, wallet, image,
                       activity); unknown keys fall back to a generic key/value view
 ```

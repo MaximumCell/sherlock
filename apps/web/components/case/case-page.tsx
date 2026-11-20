@@ -186,6 +186,7 @@ export function CasePage({ caseId }: { caseId: string }) {
 
       <div
         data-print="hide"
+        data-sticky
         className="sticky top-14 z-30 -mx-4 mt-6 border-b border-border/80 bg-background/85 px-4 py-2.5 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:-mx-6 sm:px-6"
       >
         <div className="flex items-center gap-4">

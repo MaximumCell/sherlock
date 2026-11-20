@@ -26,7 +26,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     target: "link-question",
     fallback: "links",
-    title: "Do these belong to the same person?",
+    title: "You decide what is linked",
     body: "We suggest links between results and explain why. Answer yes or no, or press Y and N. Only your yes counts towards the score and report.",
   },
   {

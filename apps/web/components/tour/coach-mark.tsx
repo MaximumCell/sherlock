@@ -15,6 +15,39 @@ interface Box {
 const PAD = 6;
 const GAP = 12;
 const CARD_MAX = 360;
+/** Tallest spotlight, as a share of the viewport. */
+const SPOT_MAX = 0.42;
+const SPOT_MIN = 72;
+
+/**
+ * How tall the spotlight may be so the card still fits underneath it: on a short
+ * window the spotlight shrinks to the top of the section instead of the card
+ * covering what it describes.
+ */
+function spotHeight(targetHeight: number, offset: number, cardHeight: number): number {
+  const room = window.innerHeight - offset - cardHeight - PAD * 2 - GAP - 16;
+  const cap = Math.max(SPOT_MIN, Math.min(window.innerHeight * SPOT_MAX, room));
+  return Math.min(targetHeight, cap);
+}
+
+/**
+ * Space taken at the top of the viewport by sticky bars (top bar, progress rail).
+ * A target must sit below it, otherwise its top edge hides underneath.
+ */
+function stickyOffset(target: HTMLElement): number {
+  let bottom = 0;
+  document.querySelectorAll<HTMLElement>("header, [data-sticky]").forEach((el) => {
+    if (el.contains(target) || target.contains(el)) return;
+    const style = getComputedStyle(el);
+    if (style.position !== "sticky" && style.position !== "fixed") return;
+    const pinnedAt = Number.parseFloat(style.top);
+    if (Number.isNaN(pinnedAt)) return;
+    const r = el.getBoundingClientRect();
+    // a sticky bar will sit at `top` once the page scrolls, wherever it is right now
+    if (r.height < window.innerHeight * 0.4) bottom = Math.max(bottom, pinnedAt + r.height);
+  });
+  return bottom + PAD + GAP;
+}
 
 function findTarget(step: TourStep): HTMLElement | null {
   return (
@@ -50,6 +83,7 @@ export function CoachMark({
   const [box, setBox] = useState<Box | null>(null);
   const [cardHeight, setCardHeight] = useState(180);
   const cardRef = useRef<HTMLDivElement>(null);
+  const cardHeightRef = useRef(cardHeight);
 
   // bring the target into view, then track its position while the page moves
   useEffect(() => {
@@ -65,20 +99,26 @@ export function CoachMark({
         return;
       }
       const r = target.getBoundingClientRect();
-      setBox({ top: r.top, left: r.left, width: r.width, height: r.height });
+      const offset = stickyOffset(target);
+      const top = Math.max(r.top, offset - GAP);
+      const height = Math.max(0, spotHeight(r.bottom - top, offset, cardHeightRef.current));
+      setBox({ top, left: r.left, width: r.width, height });
     };
     target = findTarget(step);
     const align = (behavior: ScrollBehavior) => {
       if (!target) return;
-      const tall = target.getBoundingClientRect().height > window.innerHeight * 0.5;
-      target.scrollIntoView({ block: tall ? "start" : "center", behavior });
+      const r = target.getBoundingClientRect();
+      const offset = stickyOffset(target);
+      // just under the sticky bars: the spotlight is sized so the card fits below it
+      window.scrollTo({ top: Math.max(0, window.scrollY + r.top - offset), behavior });
     };
     align(reducedMotion() ? "auto" : "smooth");
     // the page can still be settling (panels folding, data arriving): re-align once it has
     const realign = window.setTimeout(() => {
       if (!target) return;
       const r = target.getBoundingClientRect();
-      if (r.top < 0 || r.top > window.innerHeight * 0.6) align("auto");
+      const offset = stickyOffset(target);
+      if (r.top < offset - 2 || r.top > window.innerHeight * 0.6) align("auto");
     }, 900);
     measure();
     const onMove = () => {
@@ -98,7 +138,10 @@ export function CoachMark({
 
   useLayoutEffect(() => {
     cardRef.current?.focus({ preventScroll: true });
-    if (cardRef.current) setCardHeight(cardRef.current.offsetHeight);
+    if (cardRef.current) {
+      cardHeightRef.current = cardRef.current.offsetHeight;
+      setCardHeight(cardRef.current.offsetHeight);
+    }
   }, [index]);
 
   useEffect(() => {
@@ -115,16 +158,13 @@ export function CoachMark({
   let top = vh / 2 - cardHeight / 2;
   let left = vw / 2 - width / 2;
   if (box) {
-    // the top of a tall target stays visible, so measure space from its visible part
-    const visibleBottom = Math.min(box.top + box.height, vh);
-    const below = visibleBottom + PAD + GAP;
+    const below = box.top + box.height + PAD + GAP;
     const above = box.top - PAD - GAP - cardHeight;
-    top =
-      below + cardHeight <= vh - 16
-        ? below
-        : above >= 72
-          ? above
-          : Math.max(72, vh - cardHeight - 16);
+    const fitsBelow = below + cardHeight <= vh - 16;
+    const fitsAbove = above >= 16;
+    // the spotlight is capped (SPOT_MAX), so one of the two normally fits; the last
+    // resort pins the card to the bottom edge, clear of the spotlight's top
+    top = fitsBelow ? below : fitsAbove ? above : Math.max(16, vh - cardHeight - 16);
     left = Math.min(Math.max(16, box.left), vw - width - 16);
   }
   const last = index === total - 1;
@@ -139,7 +179,7 @@ export function CoachMark({
             top: box.top - PAD,
             left: box.left - PAD,
             width: box.width + PAD * 2,
-            height: Math.min(box.height + PAD * 2, vh),
+            height: box.height + PAD * 2,
           }}
         />
       ) : (
@@ -152,7 +192,7 @@ export function CoachMark({
         aria-labelledby="tour-title"
         aria-describedby="tour-body"
         tabIndex={-1}
-        className="pointer-events-auto absolute animate-rise-in space-y-3 rounded-2xl border border-border bg-popover p-5 text-popover-foreground shadow-lift outline-none"
+        className="pointer-events-auto absolute space-y-3 rounded-2xl border border-border bg-popover p-5 text-popover-foreground shadow-lift outline-none"
         style={{ top, left, width }}
       >
         <div className="flex items-start justify-between gap-3">

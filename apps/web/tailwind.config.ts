@@ -101,6 +101,12 @@ const config: Config = {
         },
         caret: { "50%": { opacity: "0" } },
         "page-in": { from: { opacity: "0" }, to: { opacity: "1" } },
+        "grow-x": { from: { transform: "scaleX(0)" }, to: { transform: "scaleX(1)" } },
+        draw: { from: { strokeDashoffset: "1" }, to: { strokeDashoffset: "0" } },
+        sweep: {
+          "0%, 18%, 100%": { opacity: "0.45", transform: "translateY(0)" },
+          "6%": { opacity: "1", transform: "translateY(-2px)" },
+        },
       },
       animation: {
         "fade-in": "fade-in var(--dur-2) var(--ease-out)",

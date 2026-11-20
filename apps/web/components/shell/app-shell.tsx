@@ -15,7 +15,7 @@ const FOOTER_LINKS = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col overflow-x-clip">
       <div className="app-backdrop" aria-hidden />
       <a
         href="#main"

@@ -15,6 +15,8 @@ import { TARGET_TYPE_META, validateTarget } from "@/lib/validation";
 import { AckDialog } from "./ack-dialog";
 import { SearchOptions, type SearchOptionsValue } from "./search-options";
 import { TypeChip } from "./type-chip";
+import { TypewriterPlaceholder } from "./typewriter-placeholder";
+import { chipState } from "@/lib/ui/search-hints";
 
 export interface SmartSearchSubmit {
   type: TargetType;
@@ -39,6 +41,7 @@ export function SmartSearch({
   showCaseFields = true,
   submitLabel = "Search",
   pending = false,
+  examples,
   onSubmit,
 }: {
   size?: "hero" | "compact";
@@ -49,6 +52,8 @@ export function SmartSearch({
   showCaseFields?: boolean;
   submitLabel?: string;
   pending?: boolean;
+  /** Fictional examples the hero placeholder types out. */
+  examples?: readonly string[];
   onSubmit: (input: SmartSearchSubmit) => void;
 }) {
   const id = useId();
@@ -66,6 +71,7 @@ export function SmartSearch({
 
   const detected = useMemo(() => detectTarget(value), [value]);
   const type: TargetType | null = chosen ?? detected?.type ?? null;
+  const chip = chipState(value, chosen, detected?.type ?? null);
   const sources = useMemo(
     () => (type ? sourcesFor(catalogue.data?.modules ?? [], type) : []),
     [catalogue.data, type],
@@ -114,41 +120,59 @@ export function SmartSearch({
     <form
       onSubmit={submit}
       noValidate
-      className="w-full space-y-3"
+      className="group/search w-full space-y-3"
       role="search"
       aria-label="Start a search"
     >
       <div
+        data-pending={pending || undefined}
         className={cn(
-          "flex items-center gap-2 border border-input bg-card shadow-lift transition-shadow focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15",
-          hero ? "rounded-2xl p-2 pl-4" : "rounded-xl p-1.5 pl-3",
+          "relative flex items-center gap-2 border transition-[border-color,box-shadow,transform] duration-3 ease-out",
+          hero
+            ? "glass rounded-xl border-input p-2 pl-5 shadow-lift focus-within:border-accent/70 focus-within:shadow-glow data-[pending]:scale-[0.99] data-[pending]:border-accent data-[pending]:shadow-glow"
+            : "rounded-lg border-input bg-background/60 p-1.5 pl-3 focus-within:border-accent/70 focus-within:ring-2 focus-within:ring-ring/25",
         )}
       >
+        {hero ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-6 -top-px h-px bg-gradient-to-r from-transparent via-accent/70 to-transparent opacity-0 transition-opacity duration-3 group-focus-within/search:opacity-100"
+          />
+        ) : null}
         <Search
           className={cn("shrink-0 text-muted-foreground", hero ? "h-5 w-5" : "h-4 w-4")}
           aria-hidden
         />
-        <input
-          id={`${id}-input`}
-          aria-label="What do you want to look into?"
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : undefined}
-          autoFocus={autoFocus}
-          autoComplete="off"
-          spellCheck={false}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="Username, email, website, IP, name…"
-          className={cn(
-            "min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground/80 focus-visible:ring-0 focus-visible:ring-offset-0",
-            hero ? "h-11 text-lg" : "h-9 text-base",
-          )}
-        />
+        <div className="relative min-w-0 flex-1">
+          <input
+            id={`${id}-input`}
+            aria-label="What do you want to look into?"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
+            autoFocus={autoFocus}
+            autoComplete="off"
+            spellCheck={false}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={hero && examples ? "" : "Username, email, website, IP, name…"}
+            className={cn(
+              "w-full min-w-0 bg-transparent outline-none placeholder:text-muted-foreground/80 focus-visible:ring-0 focus-visible:ring-offset-0",
+              hero ? "h-12 text-lg sm:text-xl" : "h-9 text-base",
+            )}
+          />
+          {hero && examples && !value ? (
+            <TypewriterPlaceholder
+              examples={examples}
+              fallback="Username, email, website, IP, name…"
+              className="pointer-events-none absolute inset-y-0 left-0 flex items-center truncate text-lg text-muted-foreground/80 sm:text-xl"
+            />
+          ) : null}
+        </div>
         <Button
           type="submit"
           size={hero ? "lg" : "default"}
           disabled={pending}
-          className={hero ? "rounded-xl" : "rounded-lg"}
+          className={hero ? "rounded-lg px-5" : "rounded-md"}
         >
           <span className={cn(hero ? "" : "sr-only sm:not-sr-only")}>
             {pending ? "Starting…" : submitLabel}
@@ -157,11 +181,10 @@ export function SmartSearch({
         </Button>
       </div>
 
-      <div className={cn("flex flex-wrap items-center gap-2", hero && "justify-center")}>
-        {value.trim() || chosen ? (
+      <div className="flex min-h-8 flex-wrap items-center gap-2" aria-live="polite">
+        {chip.kind !== "empty" ? (
           <TypeChip
-            type={type}
-            chosen={chosen !== null}
+            chip={chip}
             onChange={(next) => {
               setChosen(next);
               setError(null);
@@ -172,7 +195,7 @@ export function SmartSearch({
           type="button"
           aria-expanded={more}
           onClick={() => setMore((v) => !v)}
-          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-sm text-muted-foreground transition-colors duration-1 hover:bg-muted hover:text-foreground"
         >
           More options
           <ChevronDown
@@ -183,7 +206,7 @@ export function SmartSearch({
       </div>
 
       {error ? (
-        <p id={errorId} role="alert" className={cn("text-sm text-danger", hero && "text-center")}>
+        <p id={errorId} role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}
@@ -191,7 +214,7 @@ export function SmartSearch({
       {type === "name" ? (
         <div className="space-y-3 text-left">
           {needsSignIn ? (
-            <div className="flex flex-col gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/[0.08] p-3 text-sm sm:flex-row sm:items-center">
               <p className="flex-1">
                 Name search needs a signed-in account. It is rate-limited to prevent misuse.
               </p>

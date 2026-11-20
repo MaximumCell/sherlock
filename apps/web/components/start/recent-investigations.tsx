@@ -20,7 +20,16 @@ export function RecentSkeleton() {
       aria-label="Loading investigations"
     >
       {Array.from({ length: 3 }, (_, i) => (
-        <Skeleton key={i} className="h-36 rounded-xl" />
+        <li key={i} className="panel space-y-4 p-4">
+          <div className="flex gap-3.5">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          </div>
+          <Skeleton className="h-5 w-40" />
+        </li>
       ))}
     </ul>
   );
@@ -60,7 +69,7 @@ export function RecentInvestigations({
     );
   if (total === 0) {
     return (
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="border-t border-border pt-6 text-sm text-muted-foreground">
         Your investigations appear here after your first search. Nothing yet? Open the{" "}
         <Link href="/demo" className="font-medium text-accent hover:underline">
           demo investigation
@@ -72,10 +81,12 @@ export function RecentInvestigations({
 
   return (
     <section aria-labelledby="recent-title" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="recent-title" className="text-lg font-semibold">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border pt-6">
+        <h2 id="recent-title" className="font-display text-3xl tracking-tight">
           Recent investigations
-          <span className="ml-2 text-sm font-normal text-muted-foreground">{total}</span>
+          <span className="ml-3 align-middle font-mono text-sm tabular-nums text-muted-foreground">
+            {total}
+          </span>
         </h2>
         <Button
           variant={open ? "secondary" : "ghost"}
@@ -87,14 +98,14 @@ export function RecentInvestigations({
           <SlidersHorizontal aria-hidden />
           Search and filter
           {filtering ? (
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-label="filters active" />
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" role="img" aria-label="filters active" />
           ) : null}
         </Button>
       </div>
       {open ? (
         <div
           id="recent-filters"
-          className="animate-fade-in rounded-xl border border-border bg-surface/60 p-3"
+          className="animate-fade-in rounded-lg border border-border bg-surface/60 p-3"
         >
           <CasesToolbar key={resetKey} query={query} tags={tags} onChange={set} />
         </div>

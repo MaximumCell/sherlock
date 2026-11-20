@@ -12,10 +12,10 @@ function Banner({ tone, children }: { tone: "warning" | "info"; children: React.
       role={tone === "warning" ? "alert" : "status"}
       data-print="hide"
       className={cn(
-        "flex items-start justify-center gap-2 border-b px-4 py-2 text-sm sm:px-6",
+        "flex items-start justify-center gap-2 border-b px-4 py-1.5 text-[0.8125rem] sm:px-6",
         tone === "warning"
           ? "border-warning/30 bg-warning/10 text-foreground"
-          : "border-border bg-surface text-muted-foreground",
+          : "border-border bg-surface/70 text-muted-foreground",
       )}
     >
       <Icon

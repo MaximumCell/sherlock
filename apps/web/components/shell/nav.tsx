@@ -40,20 +40,37 @@ export const MORE_ITEMS: NavItem[] = [
   { href: "/audit", label: "Activity log", icon: ScrollText, match: (p) => p.startsWith("/audit") },
 ];
 
+/** The mark: a lens holding three connected nodes. The investigation motif, in one glyph. */
+export function BrandMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={cn("h-6 w-6", className)} aria-hidden>
+      <circle cx="10.5" cy="10.5" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M15.6 15.6 21 21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="M7.6 12.4 10.2 7.8 13.4 11.6Z"
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity="0.55"
+        strokeWidth="1"
+        strokeLinejoin="round"
+      />
+      <circle cx="7.6" cy="12.4" r="1.25" fill="currentColor" />
+      <circle cx="13.4" cy="11.6" r="1.25" fill="currentColor" />
+      <circle cx="10.2" cy="7.8" r="1.6" className="fill-accent" />
+    </svg>
+  );
+}
+
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link
       href="/"
-      className="flex shrink-0 items-center gap-2 rounded-md px-1 py-1"
+      className="group flex shrink-0 items-center gap-2 rounded-md px-1 py-1"
       aria-label="Sherlock, start a new search"
     >
-      <svg viewBox="0 0 24 24" className="h-6 w-6 text-accent" aria-hidden>
-        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" strokeWidth="2" />
-        <path d="M15.5 15.5 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="10.5" cy="10.5" r="2" fill="currentColor" />
-      </svg>
+      <BrandMark className="text-foreground transition-transform duration-3 ease-out group-hover:-rotate-6" />
       {compact ? null : (
-        <span className="text-[1.0625rem] font-semibold tracking-tight">Sherlock</span>
+        <span className="font-display text-[1.375rem] leading-none tracking-tight">Sherlock</span>
       )}
     </Link>
   );
@@ -81,15 +98,22 @@ export function NavLinks({
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-2 rounded-md text-sm font-medium transition-colors",
+                "relative flex items-center gap-2 rounded-md text-sm font-medium transition-colors duration-1",
                 vertical ? "px-3 py-2.5" : "px-3 py-1.5",
                 active
-                  ? "bg-muted text-foreground"
+                  ? "text-foreground"
                   : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                active && vertical && "bg-muted",
               )}
             >
               {vertical ? <item.icon className="h-4 w-4" aria-hidden /> : null}
               {item.label}
+              {active && !vertical ? (
+                <span
+                  aria-hidden
+                  className="absolute inset-x-3 -bottom-[11px] h-px bg-foreground"
+                />
+              ) : null}
             </Link>
           </li>
         );
@@ -132,11 +156,11 @@ export function AdminNavLink({
         "flex items-center gap-2 rounded-md text-sm font-medium transition-colors",
         vertical ? "px-3 py-2.5" : "px-3 py-1.5",
         active
-          ? "bg-accent/15 text-foreground"
-          : "text-accent hover:bg-accent/10 hover:text-foreground",
+          ? "bg-muted text-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
-      <ShieldCheck className="h-4 w-4" aria-hidden />
+      <ShieldCheck className="h-4 w-4 text-accent" aria-hidden />
       {ADMIN_ITEM.label}
     </Link>
   );

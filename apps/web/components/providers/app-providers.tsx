@@ -5,6 +5,7 @@ import { NewInvestigationProvider } from "@/components/cases/new-investigation-c
 import { usePlatformRegistry } from "@/lib/query/hooks";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { MotionProvider } from "@/components/motion/motion-provider";
 import { DataProvider } from "./data-provider";
 import { useTheme } from "./theme-provider";
 
@@ -22,11 +23,13 @@ function ThemedToaster() {
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <DataProvider>
-      <TooltipProvider delayDuration={250}>
-        <NewInvestigationProvider>{children}</NewInvestigationProvider>
-        <ThemedToaster />
-        <PlatformRegistry />
-      </TooltipProvider>
+      <MotionProvider>
+        <TooltipProvider delayDuration={250}>
+          <NewInvestigationProvider>{children}</NewInvestigationProvider>
+          <ThemedToaster />
+          <PlatformRegistry />
+        </TooltipProvider>
+      </MotionProvider>
     </DataProvider>
   );
 }

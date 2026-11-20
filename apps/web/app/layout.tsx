@@ -1,13 +1,32 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans, Instrument_Serif } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/components/providers/app-providers";
 import { AppShell } from "@/components/shell/app-shell";
 import { THEME_SCRIPT } from "@/lib/storage";
 import "./globals.css";
 
-const sans = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
-const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"], display: "swap" });
+// Plex Sans for every word of interface, Instrument Serif for headlines and the big numbers,
+// Plex Mono for identifiers. Self-hosted at build time by next/font.
+const sans = IBM_Plex_Sans({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+const display = Instrument_Serif({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  display: "swap",
+});
+const mono = IBM_Plex_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: { default: "Sherlock", template: "%s · Sherlock" },
@@ -16,15 +35,16 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0f1014" },
-    { media: "(prefers-color-scheme: light)", color: "#fafbfc" },
-  ],
+  themeColor: "#09090f",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`dark ${sans.variable} ${display.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>

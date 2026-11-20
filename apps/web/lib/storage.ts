@@ -30,10 +30,10 @@ export function recordAcknowledgement(now: Date = new Date()): void {
 }
 
 /**
- * Inline script run before first paint (app/layout.tsx): a stored choice wins, otherwise the
- * system preference. Nothing flashes.
+ * Inline script run before first paint (app/layout.tsx): dark is the default look; a stored
+ * "light" choice wins. It also marks the page hidden/visible so CSS loops can pause.
  */
-export const THEME_SCRIPT = `(function(){var d=false;try{var t=localStorage.getItem(${JSON.stringify(THEME_KEY)});d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);}catch(e){}document.documentElement.classList.toggle("dark",d);})()`;
+export const THEME_SCRIPT = `(function(){var d=true;try{d=localStorage.getItem(${JSON.stringify(THEME_KEY)})!=="light";}catch(e){}var h=document.documentElement;h.classList.toggle("dark",d);document.addEventListener("visibilitychange",function(){if(document.hidden)h.setAttribute("data-hidden","");else h.removeAttribute("data-hidden");});})()`;
 
 /** True when a keyboard event comes from a field the user is typing in. */
 export function isTypingTarget(target: EventTarget | null): boolean {

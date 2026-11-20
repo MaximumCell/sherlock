@@ -1,0 +1,38 @@
+{
+ "_note": "Real ddgs 9.16.1 (Bing backend) results recorded 2026-11-20. Only the public figures' own rows are kept. The Bing backend had appended the titles and snippets of the following results (other, private people) to these rows; those tails were cut, nothing else changed.",
+ "site:linkedin.com/in \"satyanadella\"": {
+  "backend": "bing",
+  "rows": [
+   {
+    "title": "Satya Nadella - Chairman and CEO at Microsoft | LinkedIn",
+    "href": "https://www.linkedin.com/in/satyanadella",
+    "body": "Chairman and CEO at Microsoft · As chairman and CEO of Microsoft, I define my mission and that of my company as empowering every person and every organization on the planet to achieve more ..."
+   }
+  ]
+ },
+ "site:linkedin.com/in \"reidhoffman\"": {
+  "backend": "bing",
+  "rows": [
+   {
+    "title": "Reid Hoffman - Co-Founder, LinkedIn, Manas AI & Inflection AI ...",
+    "href": "https://www.linkedin.com/in/reidhoffman",
+    "body": "Co-founder of LinkedIn, author, and investor focusing on AI innovation to benefit humanity. Expertise in startups, product development, strategy, and business growth."
+   }
+  ]
+ },
+ "\"Reid Hoffman\" site:linkedin.com/in": {
+  "backend": "bing",
+  "rows": [
+   {
+    "title": "Reid Hoffman - Co-Founder, LinkedIn, Manas AI & ...",
+    "href": "https://www.linkedin.com/in/reidhoffman",
+    "body": "View Reid Hoffman’s profile on LinkedIn, a professional community of 1 billion members."
+   }
+  ]
+ },
+ "site:linkedin.com/in \"Satya Nadella\"": {
+  "backend": "bing+google",
+  "rows": [],
+  "error": "DDGSException: No results found."
+ }
+}

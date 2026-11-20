@@ -104,6 +104,14 @@ def registry(monkeypatch):
     return reg
 
 
+@pytest.fixture(autouse=True)
+def offline_enrichment(monkeypatch):
+    """run_job's profile previews would fetch the fake modules' profile URLs: keep them offline."""
+    async def no_previews(findings, http, **kw):
+        return []
+    monkeypatch.setattr("sherlock_core.modules.preview.enrich_previews", no_previews)
+
+
 @pytest.fixture
 def store():
     return RecordingStore()
@@ -248,6 +256,59 @@ async def test_correlation_failure_does_not_lose_the_scan(store, monkeypatch):
     assert store.get_job(job["id"])["status"] == "succeeded"
     assert len(store.list_findings(cid)) == 2
     assert any(a["action"] == "correlation_error" for a in store.list_audit(cid))
+
+
+def _row(platform, extra=None):
+    from sherlock_core.models import make_finding
+    return make_finding(case_id="c1", identifier_type="username", identifier_value="octocat",
+                        source_tool="ok_user", platform=platform, url=f"https://{platform}.example/octocat",
+                        extra=extra or {})
+
+
+async def test_enrich_runs_previews_then_hashes_the_fetched_pictures(monkeypatch):
+    calls = []
+
+    async def previews(findings, http, **kw):
+        calls.append("previews")
+        f = dict(findings[0], extra_metadata={"url": "u", "extra": {"avatar_url": "https://img.example/a.png"}})
+        return [f]
+
+    async def hashes(findings, http):
+        calls.append("hashes")
+        assert findings[0]["extra_metadata"]["extra"]["avatar_url"]   # sees the fetched picture
+        f = dict(findings[0])
+        f["extra_metadata"] = {"url": "u", "extra": {**f["extra_metadata"]["extra"], "avatar_phash": "ab" * 8}}
+        return [f]
+
+    monkeypatch.setattr("sherlock_core.modules.preview.enrich_previews", previews)
+    monkeypatch.setattr("sherlock_core.modules.avatar_hash.hash_avatars", hashes)
+    rows = [_row("github"), _row("gitlab")]
+    out = await jobs._enrich(rows, None, "identity")
+    assert calls == ["previews", "hashes"]
+    assert out[0]["extra_metadata"]["extra"]["avatar_phash"] == "ab" * 8
+    assert out[1] is rows[1]
+
+
+async def test_enrich_skips_previews_outside_the_identity_queue(monkeypatch):
+    async def previews(findings, http, **kw):
+        raise AssertionError("previews must only run for identity jobs")
+
+    monkeypatch.setattr("sherlock_core.modules.preview.enrich_previews", previews)
+    rows = [_row("dns")]
+    assert await jobs._enrich(rows, None, "infra") == rows
+
+
+async def test_enrich_failures_never_cost_the_findings(monkeypatch):
+    async def broken(findings, http, **kw):
+        raise RuntimeError("preview bug")
+
+    async def hangs(findings, http):
+        raise TimeoutError
+
+    monkeypatch.setattr("sherlock_core.modules.preview.enrich_previews", broken)
+    monkeypatch.setattr("sherlock_core.modules.avatar_hash.hash_avatars", hangs)
+    rows = [_row("github"), _row("gitlab")]
+    assert await jobs._enrich(rows, None, "identity") == rows
 
 
 async def test_module_exception_retries_then_fails(store):

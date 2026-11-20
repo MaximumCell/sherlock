@@ -202,16 +202,28 @@ def _persist(job: Row, findings: list[Row], store: Store) -> Row:
     return {"findings": len(findings), "found": sum(1 for f in findings if f.get("status") == "found")}
 
 
-async def _with_avatar_hashes(findings: list[Row], http: httpx.AsyncClient) -> list[Row]:
-    """Add perceptual hashes for profile pictures so `avatar_match` can compare them.
-    Best effort: needs Pillow/imagehash (worker image) and must never cost the scan."""
-    try:
-        from sherlock_core.modules.avatar_hash import hash_avatars
-        hashed = {f["finding_key"]: f for f in await asyncio.wait_for(hash_avatars(findings, http), timeout=60)}
-    except Exception as e:
-        log.info("avatar hashing skipped: %s", str(e) or type(e).__name__)
-        return findings
-    return [hashed.get(f.get("finding_key"), f) for f in findings]
+async def _enrich(findings: list[Row], http: httpx.AsyncClient, queue: str = "") -> list[Row]:
+    """Post-module enrichment, best effort: nothing here may cost the scan.
+
+    1. identity queue: profile previews (picture / name / bio from the public profile page);
+    2. perceptual hashes of profile pictures so `avatar_match` can compare them
+       (needs Pillow/imagehash, i.e. the worker image).
+    """
+    async def step(name: str, fn: Callable[[], Any], timeout: float) -> None:
+        nonlocal findings
+        try:
+            updated = {f["finding_key"]: f for f in await asyncio.wait_for(fn(), timeout=timeout)}
+        except Exception as e:
+            log.info("%s skipped: %s", name, str(e) or type(e).__name__)
+            return
+        findings = [updated.get(f.get("finding_key"), f) for f in findings]
+
+    if queue == "identity":
+        from sherlock_core.modules.preview import enrich_previews
+        await step("profile previews", lambda: enrich_previews(findings, http), 50)
+    from sherlock_core.modules.avatar_hash import hash_avatars
+    await step("avatar hashing", lambda: hash_avatars(findings, http), 60)
+    return findings
 
 
 async def _fail(job: Row, store: Store, error: str, *, retry: bool = True) -> None:
@@ -296,7 +308,7 @@ async def run_job(job: Row, store: Store, http: httpx.AsyncClient | None = None)
             current = await asyncio.to_thread(store.get_job, job_id)
             if current and current["status"] == "cancelled":
                 return
-            rows = await _with_avatar_hashes(list(findings or []), client)
+            rows = await _enrich(list(findings or []), client, module.queue)
             result = await asyncio.to_thread(_persist, job, rows, store)
             await asyncio.to_thread(store.complete_job, job_id, result)
             await asyncio.to_thread(store.log, case_id, "job_succeeded", f"worker:{module.name}", {

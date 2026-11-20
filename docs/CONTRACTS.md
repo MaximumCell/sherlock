@@ -48,6 +48,10 @@ Conventions inside `extra_metadata.extra` (use these names when the source has t
 | `avatar_phash` | 64-bit perceptual hash, hex (media modules) |
 | `created_at` | account creation time, ISO 8601 |
 | `followers`, `following` | integers |
+| `headline`, `employer`, `education` | professional headline / employer / school as published (person modules, `linkedin_search`) |
+| `preview` | where the profile fields came from when not from the platform's API: `{source: "page-meta", fetched_at, title, site_name, url}` (public profile page meta, `modules/preview.py`, added by the worker after identity scans) or `{source: "search-snippet", provider, query, fetched_at, title}` (`linkedin_search`). Absent for API data |
+
+The worker's preview step only fills `avatar_url`, `fullname`, `bio`, `location` and `links` when the module left them empty (links are merged), and always sets `preview` with them.
 
 Legacy rows keep their old shapes (documented in `packages/core/sherlock_core/correlation/facts.py`, the only code allowed to know them). Breach rows: `platform = "breach"`, top-level meta `breach_name`, `breach_date`, `data_classes`; pass `discriminator=<breach name>` so each breach is its own row.
 
@@ -123,6 +127,7 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 |---|---|---|
 | `GET /health` | | `{ok, service}` |
 | `GET /modules` | | `ModuleInfo[]` |
+| `GET /platforms` | | `{key, label, domain, category, aliases[], hosts[]}[]` (public, `Cache-Control: public, max-age=86400`; see `sherlock_core.platforms`) |
 | `POST /cases` | `{title?, tags?, identifiers: Identifier[], scan?: bool}` | `{case: Case, jobs: Job[]}` |
 | `PATCH /cases/{id}` | `{title?, notes?, tags?, archived?}` | `Case` |
 | `DELETE /cases/{id}` | | 204 |

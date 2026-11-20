@@ -24,6 +24,19 @@ def test_health_and_modules_are_public(client):
     assert all(m["available"] and m["queue"] in ("identity", "infra", "media") for m in mods)
 
 
+def test_platforms_is_public_and_cacheable(client):
+    r = client.get("/platforms")
+    assert r.status_code == 200
+    assert "public" in r.headers["cache-control"] and "max-age" in r.headers["cache-control"]
+    entries = r.json()
+    assert len(entries) >= 120
+    gh = next(e for e in entries if e["key"] == "github")
+    assert gh["label"] == "GitHub" and gh["domain"] == "github.com" and gh["category"] == "dev"
+    assert "github.com" in gh["hosts"] and "github user" in gh["aliases"]
+    assert {e["category"] for e in entries} <= {"social", "dev", "video", "music", "gaming", "forum", "shopping",
+                                                 "professional", "other"}
+
+
 def test_cors_allows_configured_origin_only(client):
     ok = client.options("/cases", headers={"Origin": "https://sherlock.example",
                                            "Access-Control-Request-Method": "POST"})

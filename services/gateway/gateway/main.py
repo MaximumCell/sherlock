@@ -9,18 +9,19 @@ from __future__ import annotations
 import logging
 import time
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sherlock_core import config
 from sherlock_core.models import ModuleInfo
 from sherlock_core.modules import all_modules
+from sherlock_core.platforms import all_platforms
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from gateway.logs import setup_logging
 from gateway.routers import cases, correlations
-from gateway.schemas import Health
+from gateway.schemas import Health, PlatformOut
 
 log = logging.getLogger("sherlock.gateway")
 access = logging.getLogger("sherlock.gateway.access")
@@ -90,6 +91,12 @@ def create_app() -> FastAPI:
     @app.get("/modules", response_model=list[ModuleInfo], tags=["meta"])
     def modules():
         return [m.info() for m in all_modules()]
+
+    @app.get("/platforms", response_model=list[PlatformOut], tags=["meta"])
+    def platforms(response: Response):
+        """Display metadata (label, domain, category) per platform, for icons. Public and static."""
+        response.headers["Cache-Control"] = "public, max-age=86400"
+        return all_platforms()
 
     app.include_router(cases.router)
     app.include_router(correlations.router)

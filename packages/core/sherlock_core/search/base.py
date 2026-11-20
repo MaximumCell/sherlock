@@ -27,6 +27,7 @@ class SearchHit:
     url: str
     snippet: str
     source: str        # provider name, e.g. "serpapi-google"
+    thumbnail: str = ""  # result thumbnail when the provider returns one (SerpApi sometimes does)
 
 
 class SearchError(Exception):

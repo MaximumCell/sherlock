@@ -16,3 +16,9 @@ private people, or the endpoint needs a key or blocked the recording host):
   serpapi_google_lens  item shape from https://serpapi.com/google-lens-api
   firecrawl_scrape     Firecrawl v1 /scrape success shape
   wayback_urls         CDX JSON row format (header row + rows), same as the recorded ones
+
+previews/*.html     real anonymous GETs of public organisational / brand profile pages
+                    (and a few founders of the platforms themselves), recorded 2026-11-20
+                    and trimmed to the tags a preview reads: <title>, og:/twitter:/profile:
+                    meta, canonical, Person/ProfilePage JSON-LD and rel="me" links, verbatim.
+                    Walls / blocks: replit, strava, lastfm, reddit, tiktok, pinterest.

@@ -3,6 +3,7 @@
  * demo data, accepts every command, and simulates job progress with timers,
  * emitting the same change events Supabase Realtime would.
  */
+import { createDemoAdminSource } from "../../admin/demo-source";
 import type { Case, Correlation, Finding, Job, JsonObject, NameHints } from "../../types";
 import { GatewayError } from "../gateway";
 import { decisionStatus } from "../../review";
@@ -237,6 +238,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
 
   return {
     mode: "fixtures",
+    admin: createDemoAdminSource(),
     state,
     tick,
 

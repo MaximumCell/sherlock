@@ -14,6 +14,7 @@ import type {
   Job,
   ScanResult,
 } from "../types";
+import { createGatewayAdminSource } from "../admin/gateway-source";
 import { createGateway, GatewayError, type GatewayClient, type GatewayRequest } from "./gateway";
 import {
   isRecord,
@@ -132,6 +133,7 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
 
   return {
     mode: "supabase",
+    admin: createGatewayAdminSource(command),
     getSession,
 
     onSessionChange(cb) {

@@ -43,6 +43,28 @@ export interface GatewayDeps {
   delays?: readonly number[];
 }
 
+/**
+ * A 503 the gateway itself answered with `{detail}` (for example "Searches are paused by the
+ * operator") is a decision, not a cold start: it is shown at once instead of retried.
+ */
+export function isGatewayRefusal(status: number, body: string): boolean {
+  if (status !== 503) return false;
+  try {
+    const parsed: unknown = JSON.parse(body);
+    return (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      typeof (parsed as { detail?: unknown }).detail === "string"
+    );
+  } catch {
+    return false;
+  }
+}
+
+class FinalError {
+  constructor(readonly error: GatewayError) {}
+}
+
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** FastAPI errors are `{detail: string}` or `{detail: [{loc, msg}]}`. */
@@ -97,9 +119,11 @@ export function createGateway(deps: GatewayDeps) {
             if (parse === "text") return (await res.text()) as T;
             return (await res.json()) as T;
           }
-          failure = new GatewayError(res.status, parseErrorDetail(res.status, await res.text()));
-          if (!RETRY_STATUSES.has(res.status)) throw failure;
+          const text = await res.text();
+          failure = new GatewayError(res.status, parseErrorDetail(res.status, text));
+          if (!RETRY_STATUSES.has(res.status) || isGatewayRefusal(res.status, text)) throw new FinalError(failure);
         } catch (err) {
+          if (err instanceof FinalError) throw err.error;
           if (err instanceof GatewayError) {
             if (!RETRY_STATUSES.has(err.status)) throw err;
             failure = err;

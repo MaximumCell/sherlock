@@ -1,3 +1,4 @@
+import type { AdminSource } from "../admin/types";
 import type { DataMode } from "../env";
 import type { PlatformEntry } from "../platforms";
 import type {
@@ -60,6 +61,8 @@ export type SignInOutcome = "redirect" | "email_sent" | "signed_in";
  */
 export interface DataSource {
   readonly mode: DataMode;
+  /** Operator panel (`/admin`): the gateway's `/admin/*` routes, or bundled fictional data. */
+  readonly admin: AdminSource;
 
   // session
   getSession(): Promise<SessionInfo | null>;

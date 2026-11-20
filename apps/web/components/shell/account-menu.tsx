@@ -1,7 +1,8 @@
 "use client";
 
-import { LogIn, LogOut, ScrollText, UserRound } from "lucide-react";
+import { LogIn, LogOut, ScrollText, ShieldHalf, UserRound } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useData } from "@/components/providers/data-provider";
@@ -15,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAdminMe } from "@/lib/admin/hooks";
 import { useAdvanced } from "@/lib/preferences";
 import { useSession } from "@/lib/query/hooks";
 import { onSignInRequest } from "@/lib/sign-in-prompt";
@@ -27,6 +29,10 @@ export function AccountMenu() {
   const [advanced, setAdvanced] = useAdvanced();
   const user = session.data;
   const signedIn = Boolean(user && !user.anonymous);
+  // Only asked for signed-in sessions, without cold-start retries: guests never wake the gateway for it.
+  const operator = useAdminMe({ quiet: true }).data;
+  const pathname = usePathname();
+  const adminHref = pathname?.startsWith("/demo") ? "/demo/admin" : "/admin";
   useEffect(() => onSignInRequest(() => setSignInOpen(true)), []);
 
   const signOut = async () => {
@@ -73,6 +79,14 @@ export function AccountMenu() {
               Activity log
             </Link>
           </DropdownMenuItem>
+          {operator ? (
+            <DropdownMenuItem asChild>
+              <Link href={adminHref}>
+                <ShieldHalf aria-hidden />
+                Operator panel
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuCheckboxItem
             checked={advanced}
             onCheckedChange={(checked) => setAdvanced(checked === true)}

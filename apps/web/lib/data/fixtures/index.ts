@@ -15,6 +15,7 @@ import type {
   SessionInfo,
   TableRows,
 } from "../types";
+import { PLATFORM_SNAPSHOT } from "../../platforms";
 import { FIXTURE_MODULES, modulesFor } from "./catalogue";
 import { scoreFixtureCase } from "./exposure";
 import { entitiesForCandidate, syntheticCandidates } from "./people";
@@ -291,6 +292,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
     },
 
     listModules: () => respond(FIXTURE_MODULES),
+    listPlatforms: () => respond([...PLATFORM_SNAPSHOT]),
 
     async createCase(body) {
       if (body.identifiers.some((i) => i.type === "name") && session.anonymous) {

@@ -16,6 +16,7 @@ export const keys = {
   candidates: (mode: DataMode, id: string) => [mode, "case", id, "candidates"] as const,
   audit: (mode: DataMode, caseId: string | null) => [mode, "audit", caseId ?? "all"] as const,
   modules: (mode: DataMode) => [mode, "modules"] as const,
+  platforms: (mode: DataMode) => [mode, "platforms"] as const,
 };
 
 /** Apply one Realtime change to a cached list (upsert by id, newest first, or remove). */

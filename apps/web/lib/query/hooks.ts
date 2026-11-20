@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useData } from "@/components/providers/data-provider";
 import { FIXTURE_MODULES } from "../data/fixtures/catalogue";
+import { installPlatforms } from "../platforms";
 import type { Job, ModuleInfo } from "../types";
 import { applyChangeEvent, keys } from "./cache";
 
@@ -114,6 +115,25 @@ export function useModules() {
     },
     staleTime: 5 * 60_000,
   });
+}
+
+/**
+ * Fetches the platform registry once per session (long cache) and installs it behind
+ * every platform label and icon. Failures are silent: the bundled snapshot stays.
+ */
+export function usePlatformRegistry(): void {
+  const { ds, mode } = useData();
+  const query = useQuery({
+    queryKey: keys.platforms(mode),
+    queryFn: () => ds.listPlatforms(),
+    staleTime: 24 * 60 * 60_000,
+    gcTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  useEffect(() => {
+    if (query.data) installPlatforms(query.data);
+  }, [query.data]);
 }
 
 /** Subscribe to Realtime for one case and patch the query cache as rows change. */

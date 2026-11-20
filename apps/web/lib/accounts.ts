@@ -93,6 +93,11 @@ function mergedView(findings: readonly Finding[]): FindingView {
     base.createdAt ??= v.createdAt;
     base.followers ??= v.followers;
     base.following ??= v.following;
+    base.headline ??= v.headline;
+    base.employer ??= v.employer;
+    base.education ??= v.education;
+    base.snippet ??= v.snippet;
+    base.preview ??= v.preview;
   }
   base.emails = [...new Set(views.flatMap((v) => v.emails))];
   base.links = [...new Set(views.flatMap((v) => v.links))];

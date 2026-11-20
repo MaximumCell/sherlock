@@ -22,6 +22,14 @@ export interface BreachInfo {
   dataClasses: string[];
 }
 
+/** Where profile details came from when not from an official API (`extra.preview`). */
+export interface PreviewInfo {
+  source: "page-meta" | "search-snippet";
+  fetchedAt: string | null;
+  /** The whole stored object, shown under Advanced. */
+  raw: JsonObject;
+}
+
 export interface FindingView {
   url: string | null;
   category: string;
@@ -34,6 +42,12 @@ export interface FindingView {
   createdAt: string | null;
   followers: number | null;
   following: number | null;
+  /** LinkedIn search results and person records. */
+  headline: string | null;
+  employer: string | null;
+  education: string | null;
+  snippet: string | null;
+  preview: PreviewInfo | null;
   breach: BreachInfo | null;
   dns: DnsInfo | null;
   network: NetworkInfo | null;
@@ -79,6 +93,13 @@ export function safeImageUrl(value: string | null | undefined): string | null {
   return safeUrl(value);
 }
 
+function parsePreview(v: JsonValue | undefined): PreviewInfo | null {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return null;
+  const source = v.source;
+  if (source !== "page-meta" && source !== "search-snippet") return null;
+  return { source, fetchedAt: str(v.fetched_at), raw: v };
+}
+
 const KNOWN_EXTRA = new Set([
   "fullname",
   "bio",
@@ -90,6 +111,13 @@ const KNOWN_EXTRA = new Set([
   "created_at",
   "followers",
   "following",
+  "headline",
+  "employer",
+  "company",
+  "education",
+  "snippet",
+  "preview",
+  "candidate_hint",
 ]);
 const KNOWN_META = new Set([
   "url",
@@ -140,6 +168,11 @@ export function parseFinding(f: Finding): FindingView {
     createdAt: str(extra.created_at),
     followers: int(extra.followers),
     following: int(extra.following),
+    headline: str(extra.headline),
+    employer: str(extra.employer) ?? str(extra.company),
+    education: str(extra.education),
+    snippet: str(extra.snippet),
+    preview: parsePreview(extra.preview),
     breach:
       f.platform === "breach" || breachName
         ? {

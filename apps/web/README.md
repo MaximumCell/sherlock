@@ -61,10 +61,12 @@ reserved `.example` domains, RFC 5737 addresses. Fixture mode also scores exposu
 | ![Start](docs/screenshots/home.png) | ![Investigation](docs/screenshots/overview.png) |
 | **Connections map** | **Possible links** |
 | ![Map](docs/screenshots/graph.png) | ![Links](docs/screenshots/review.png) |
-| **People (name search)** | **Light theme, first visit** |
+| **People (name search)** | **Light theme** |
 | ![People](docs/screenshots/people.png) | ![Light](docs/screenshots/home-light.png) |
 | **What we found (profiles)** | **Mobile (375 px)** |
 | ![Results](docs/screenshots/results.png) | ![Mobile](docs/screenshots/mobile.png) |
+| **Scan in progress (demo replay)** | **Operator panel (demo data)** |
+| ![Scanner](docs/screenshots/scanner.png) | ![Operator panel](docs/screenshots/admin.png) |
 
 ## Gateway calls
 

@@ -192,7 +192,7 @@ export function CoachMark({
         aria-labelledby="tour-title"
         aria-describedby="tour-body"
         tabIndex={-1}
-        className="pointer-events-auto absolute animate-fade-in space-y-3 rounded-xl border border-border bg-popover p-5 text-popover-foreground shadow-lift outline-none transition-[top,left] duration-3 ease-out motion-reduce:transition-none"
+        className="pointer-events-auto absolute animate-fade-in space-y-3 rounded-xl border border-border bg-popover p-5 text-popover-foreground shadow-lift outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-[top,left] duration-3 ease-out motion-reduce:transition-none"
         style={{ top, left, width }}
       >
         <div className="flex items-start justify-between gap-3">

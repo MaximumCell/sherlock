@@ -3,7 +3,8 @@
 import { useMemo } from "react";
 import { CountUp } from "@/components/motion/count-up";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
-import { findingTitle, parseFinding } from "@/lib/findings";
+import { parseFinding } from "@/lib/findings";
+import { sourceTitle } from "@/lib/sources";
 import { resolvePlatform } from "@/lib/platforms";
 import { findingPlatform } from "@/lib/profile";
 import type { Finding } from "@/lib/types";
@@ -25,7 +26,9 @@ function Ticker({ items, findings }: { items: TickerItem[]; findings: Map<string
             const f = findings.get(item.id);
             const view = f ? parseFinding(f) : null;
             const platform = resolvePlatform(f ? findingPlatform(f) : item.platform);
-            const label = platform.known || !f ? platform.label : findingTitle(f);
+            // a site's name when the result is an account, otherwise the data source that found it
+            const label =
+              platform.known || !f ? platform.label : sourceTitle(f.module ?? f.source_tool);
             return (
               <li key={item.id} className="flex min-w-0 animate-rise-in items-center gap-2.5">
                 <span className="animate-tick-in">

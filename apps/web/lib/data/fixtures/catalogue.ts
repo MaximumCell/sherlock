@@ -56,6 +56,14 @@ export const FIXTURE_MODULES: ModuleInfo[] = [
     "https://wiki.leakcheck.io/en/api/public",
   ),
   mod(
+    "linkedin_search",
+    "LinkedIn (via public search results)",
+    "identity",
+    ["username", "name"],
+    "Finds LinkedIn profiles for a username or a name through public web-search results (title, snippet and URL only; linkedin.com itself is never fetched).",
+    "https://www.linkedin.com/",
+  ),
+  mod(
     "name_search",
     "Name search",
     "identity",

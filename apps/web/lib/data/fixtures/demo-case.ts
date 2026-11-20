@@ -21,8 +21,32 @@ export function avatar(initials: string, hue: number): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
+/** Abstract geometric avatar (no initials), also inline: the demo shows no real people. */
+export function geoAvatar(hue: number, variant: 0 | 1 | 2): string {
+  const shapes = [
+    `<circle cx="22" cy="24" r="16" fill="hsl(${hue + 40} 70% 62%)"/><rect x="30" y="30" width="26" height="26" rx="6" fill="hsl(${hue - 30} 65% 55%)" opacity=".85"/>`,
+    `<path d="M0 64 L32 14 L64 64Z" fill="hsl(${hue + 30} 65% 60%)"/><circle cx="46" cy="18" r="9" fill="hsl(${hue - 40} 80% 70%)"/>`,
+    `<rect x="8" y="8" width="22" height="22" rx="4" fill="hsl(${hue + 50} 60% 64%)"/><rect x="34" y="8" width="22" height="22" rx="11" fill="hsl(${hue} 60% 70%)"/><rect x="8" y="34" width="48" height="22" rx="4" fill="hsl(${hue - 50} 55% 58%)"/>`,
+  ];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="hsl(${hue} 40% 26%)"/>${shapes[variant]}</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 const AVATAR_A = avatar("AF", 212);
 const AVATAR_B = avatar("af", 160);
+const AVATAR_C = geoAvatar(268, 0);
+const AVATAR_D = geoAvatar(18, 1);
+const AVATAR_E = geoAvatar(140, 2);
+/** A picture that fails to load, like a host that refuses hot-linking: initials take over. */
+const BROKEN_AVATAR = "data:image/png;base64,AAAA";
+
+const pagePreview = (title: string, site: string, minutesAgo: number): JsonObject => ({
+  source: "page-meta",
+  fetched_at: new Date(Date.UTC(2026, 10, 20, 9, 0) - minutesAgo * 60_000).toISOString(),
+  url: `https://${site.toLowerCase()}.example/${HANDLE}`,
+  title,
+  site_name: site,
+});
 
 /** Deterministic 7x24 activity matrix (weekday x hour, UTC): evenings and weekends. */
 export function activityMatrix(seed: number): number[][] {
@@ -177,17 +201,34 @@ const ACCOUNTS: Account[] = [
       fullname: "Ada Fixture",
       bio: "Writing about queues, retries and other ways things fail.",
       followers: 86,
+      avatar_url: AVATAR_D,
+      preview: pagePreview("Ada Fixture – Medium", "Medium", 30),
     },
   ],
   ["Kaggle", "development", { fullname: "Ada Fixture", location: "Example City" }],
-  ["Codeberg", "development", { created_at: "2022-04-03T19:22:00Z", avatar_url: AVATAR_A }],
-  ["Bluesky", "social", { fullname: "ada", bio: "moved from the bird site", followers: 57 }],
+  ["Codeberg", "development", { created_at: "2022-04-03T19:22:00Z", avatar_url: BROKEN_AVATAR }],
+  [
+    "Bluesky",
+    "social",
+    {
+      fullname: "ada",
+      bio: "moved from the bird site. Databases, trains, film photography.",
+      followers: 57,
+      avatar_url: AVATAR_C,
+      links: `https://${DOMAIN}, https://github.example/${HANDLE}`,
+      preview: pagePreview("ada (@ada-fixture.bsky.social) — Bluesky", "Bluesky", 32),
+    },
+  ],
   ["Telegram", "messaging", { fullname: "Ada F" }],
   ["Twitch", "video", { created_at: "2019-03-30T22:10:00Z", followers: 12, avatar_url: AVATAR_B }],
   ["Steam", "gaming", { fullname: "adafx", location: "Example City", avatar_url: AVATAR_B }],
   ["Lichess", "gaming", { created_at: "2018-10-10T20:00:00Z", rating_blitz: 1684 }],
   ["Chess.com", "gaming", { created_at: "2021-02-01T20:30:00Z" }],
-  ["Spotify", "music", { fullname: "ada" }],
+  [
+    "Spotify",
+    "music",
+    { fullname: "ada", avatar_url: AVATAR_E, preview: pagePreview("ada | Spotify", "Spotify", 31) },
+  ],
   ["Last.fm", "music", { created_at: "2014-08-19T17:00:00Z", scrobbles: 48210 }],
   ["SoundCloud", "music", {}],
   ["Flickr", "photo", { fullname: "Ada Fixture", location: "Example City" }],
@@ -599,6 +640,40 @@ function sameAccountSpecs(): Spec[] {
   ];
 }
 
+/** A LinkedIn profile seen only in public search results (`linkedin_search`). */
+function linkedinSpecs(): Spec[] {
+  return [
+    {
+      n: 94,
+      platform: "linkedin",
+      module: "linkedin_search",
+      idType: "username",
+      idValue: HANDLE,
+      url: `https://linkedin.example/in/${HANDLE}`,
+      extra: {
+        fullname: "Ada Fixture",
+        headline: "Backend engineer at Fixture Labs (fictional)",
+        employer: "Fixture Labs (fictional)",
+        education: "Example University",
+        location: "Example City",
+        handle: HANDLE,
+        snippet:
+          "Backend engineer at Fixture Labs · Experience: Fixture Labs · Education: Example University · Location: Example City · 500+ connections",
+        preview: {
+          source: "search-snippet",
+          provider: "example-search",
+          query: `site:linkedin.com/in "${HANDLE}"`,
+          fetched_at: "2026-11-20T08:40:00Z",
+          title: "Ada Fixture - Backend engineer at Fixture Labs | LinkedIn",
+        },
+      },
+      meta: { category: "professional", result_kind: "profile", search_provider: "example-search" },
+      curated: true,
+      minutesAgo: 120,
+    },
+  ];
+}
+
 export function demoFindings(caseId: string, now: number): Finding[] {
   return [
     ...accountSpecs(),
@@ -606,5 +681,6 @@ export function demoFindings(caseId: string, now: number): Finding[] {
     ...infraSpecs(),
     ...mediaSpecs(),
     ...sameAccountSpecs(),
+    ...linkedinSpecs(),
   ].map((s) => buildFinding(caseId, now, s));
 }

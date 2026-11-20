@@ -15,7 +15,11 @@ export interface AppEnv {
   fallback: boolean;
   /** The Supabase variables that are empty or invalid, by name. */
   missingSupabaseVars: string[];
+  /** Social sign-in buttons to show. Empty by default: only email works out of the box. */
+  oauthProviders: OAuthProvider[];
 }
+
+export type OAuthProvider = "google" | "github";
 
 export interface RawEnv {
   supabaseUrl?: string;
@@ -23,6 +27,7 @@ export interface RawEnv {
   apiUrl?: string;
   fixtures?: string;
   nodeEnv?: string;
+  authProviders?: string;
 }
 
 export function resolveEnv(raw: RawEnv): AppEnv {
@@ -47,6 +52,10 @@ export function resolveEnv(raw: RawEnv): AppEnv {
     mode,
     fallback: !fixturesRequested && !supabaseConfigured,
     missingSupabaseVars,
+    oauthProviders: (raw.authProviders ?? "")
+      .split(",")
+      .map((p) => p.trim().toLowerCase())
+      .filter((p): p is OAuthProvider => p === "google" || p === "github"),
   };
 }
 
@@ -56,4 +65,5 @@ export const env: AppEnv = resolveEnv({
   apiUrl: process.env.NEXT_PUBLIC_API_URL,
   fixtures: process.env.NEXT_PUBLIC_FIXTURES,
   nodeEnv: process.env.NODE_ENV,
+  authProviders: process.env.NEXT_PUBLIC_AUTH_PROVIDERS,
 });

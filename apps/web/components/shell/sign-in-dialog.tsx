@@ -1,6 +1,7 @@
 "use client";
 
 import { Mail } from "lucide-react";
+import { env } from "@/lib/env";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { useData } from "@/components/providers/data-provider";
@@ -94,29 +95,35 @@ export function SignInDialog({
           </p>
         ) : (
           <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={pending !== null}
-              onClick={() => void run("google", () => ds.signInWithGoogle(redirectTo()))}
-            >
-              <GoogleMark />
-              {pending === "google" ? "Redirecting…" : "Continue with Google"}
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={pending !== null}
-              onClick={() => void run("github", () => ds.signInWithGitHub(redirectTo()))}
-            >
-              <GitHubMark />
-              {pending === "github" ? "Redirecting…" : "Continue with GitHub"}
-            </Button>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              or
-              <span className="h-px flex-1 bg-border" />
-            </div>
+            {env.oauthProviders.includes("google") ? (
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={pending !== null}
+                onClick={() => void run("google", () => ds.signInWithGoogle(redirectTo()))}
+              >
+                <GoogleMark />
+                {pending === "google" ? "Redirecting…" : "Continue with Google"}
+              </Button>
+            ) : null}
+            {env.oauthProviders.includes("github") ? (
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={pending !== null}
+                onClick={() => void run("github", () => ds.signInWithGitHub(redirectTo()))}
+              >
+                <GitHubMark />
+                {pending === "github" ? "Redirecting…" : "Continue with GitHub"}
+              </Button>
+            ) : null}
+            {env.oauthProviders.length > 0 ? (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border" />
+                or
+                <span className="h-px flex-1 bg-border" />
+              </div>
+            ) : null}
             <form onSubmit={submitEmail} className="space-y-2" noValidate>
               <Label htmlFor="sign-in-email">Email magic link</Label>
               <div className="flex gap-2">

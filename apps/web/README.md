@@ -20,6 +20,7 @@ Copy `.env.example` to `.env.local`.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `NEXT_PUBLIC_API_URL` | Gateway base URL for commands (default `http://localhost:8000`) |
 | `NEXT_PUBLIC_FIXTURES` | `1` serves everything from the bundled fictional demo case |
+| `NEXT_PUBLIC_AUTH_PROVIDERS` | Optional. `google`, `github` or both (comma-separated) to show those sign-in buttons. Each must also be enabled in Supabase. Empty shows email sign-in only |
 
 If the Supabase variables are missing the app shows a banner and falls back to fixture data.
 

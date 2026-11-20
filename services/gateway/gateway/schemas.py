@@ -77,6 +77,16 @@ class Health(BaseModel):
     service: str
 
 
+class PlatformOut(BaseModel):
+    """One entry of `GET /platforms` (see `sherlock_core.platforms`)."""
+    key: str
+    label: str
+    domain: str
+    category: Literal["social", "dev", "video", "music", "gaming", "forum", "shopping", "professional", "other"]
+    aliases: list[str] = []
+    hosts: list[str] = []
+
+
 class CaseCreated(BaseModel):
     case: Case
     jobs: list[Job]

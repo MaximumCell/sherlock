@@ -54,5 +54,6 @@ class SerpApiProvider(SearchProvider):
         for o in data.get("organic_results") or []:
             if isinstance(o, dict) and o.get("link"):
                 hits.append(SearchHit(title=str(o.get("title") or ""), url=str(o["link"]),
-                                      snippet=str(o.get("snippet") or ""), source=self.name))
+                                      snippet=str(o.get("snippet") or ""), source=self.name,
+                                      thumbnail=str(o.get("thumbnail") or "")))
         return hits[:num]

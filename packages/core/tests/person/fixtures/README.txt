@@ -17,3 +17,7 @@ SYNTHETIC (no live 200 could be recorded without an API key; built from the offi
 fictional person and companies, includes address / date-of-birth fields to prove they are dropped):
 
   companies_house_officer_search.json, companies_house_appointments.json
+
+linkedin_ddgs.json   real keyless (ddgs 9.16.1, Bing) results recorded 2026-11-20 for public figures
+                     (Satya Nadella, Reid Hoffman); only their own rows kept, concatenated tails of
+                     other (private) people cut off. See modules/linkedin_search.py.

@@ -26,11 +26,17 @@ export function RemediationList({
   const shown = all ? list : list.slice(0, visible);
   return (
     <div className="space-y-3">
-      <ol className={cn("grid gap-3", columns === 3 && "md:grid-cols-3")}>
+      <ol
+        className={cn(
+          "panel grid divide-y divide-border overflow-hidden",
+          columns === 3 &&
+            "md:grid-cols-3 md:divide-x md:divide-y-0 [&>li:nth-child(n+4)]:md:border-t",
+        )}
+      >
         {shown.map((step, i) => (
           <li
             key={step.text}
-            className="panel flex animate-rise-in flex-col gap-3 p-4"
+            className="flex animate-rise-in flex-col gap-3 p-4"
             style={{ animationDelay: `${Math.min(i, 6) * 60}ms` }}
           >
             <span className="flex items-center gap-2">

@@ -14,9 +14,28 @@ import { cn } from "@/lib/utils";
 function SearchArt() {
   return (
     <svg viewBox="0 0 120 64" className="h-16 w-full" aria-hidden>
-      <rect x="8" y="20" width="104" height="24" rx="6" className="fill-card stroke-input" strokeWidth="1.2" />
-      <circle cx="22" cy="32" r="5" className="fill-none stroke-muted-foreground" strokeWidth="1.6" />
-      <path d="M26 36 29 39" className="stroke-muted-foreground" strokeWidth="1.6" strokeLinecap="round" />
+      <rect
+        x="8"
+        y="20"
+        width="104"
+        height="24"
+        rx="6"
+        className="fill-card stroke-input"
+        strokeWidth="1.2"
+      />
+      <circle
+        cx="22"
+        cy="32"
+        r="5"
+        className="fill-none stroke-muted-foreground"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M26 36 29 39"
+        className="stroke-muted-foreground"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
       <rect
         x="36"
         y="29"
@@ -70,8 +89,24 @@ function SourcesArt() {
 function ConfirmArt() {
   return (
     <svg viewBox="0 0 120 64" className="h-16 w-full" aria-hidden>
-      <rect x="10" y="16" width="38" height="32" rx="5" className="fill-card stroke-input" strokeWidth="1.2" />
-      <rect x="72" y="16" width="38" height="32" rx="5" className="fill-card stroke-input" strokeWidth="1.2" />
+      <rect
+        x="10"
+        y="16"
+        width="38"
+        height="32"
+        rx="5"
+        className="fill-card stroke-input"
+        strokeWidth="1.2"
+      />
+      <rect
+        x="72"
+        y="16"
+        width="38"
+        height="32"
+        rx="5"
+        className="fill-card stroke-input"
+        strokeWidth="1.2"
+      />
       <circle cx="22" cy="28" r="5" className="fill-muted-foreground/40" />
       <circle cx="84" cy="28" r="5" className="fill-muted-foreground/40" />
       <rect x="17" y="37" width="24" height="4" rx="2" className="fill-muted-foreground/30" />
@@ -85,7 +120,12 @@ function ConfirmArt() {
       />
       <g className="origin-center [transform-box:fill-box] group-data-[play]:animate-[tick-in_var(--dur-3)_var(--ease-spring)_1000ms_both]">
         <circle cx="60" cy="32" r="8" className="fill-success" />
-        <path d="M56.5 32 l2.5 2.5 l4.5 -5" className="fill-none stroke-background" strokeWidth="2" strokeLinecap="round" />
+        <path
+          d="M56.5 32 l2.5 2.5 l4.5 -5"
+          className="fill-none stroke-background"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
       </g>
     </svg>
   );
@@ -154,7 +194,9 @@ export function HowItWorks({
           aria-hidden
           className={cn(
             "absolute bg-border",
-            trail ? "bottom-3 left-[11px] top-3 w-px" : "left-3 right-3 top-[11px] hidden h-px sm:block",
+            trail
+              ? "bottom-3 left-[11px] top-3 w-px"
+              : "left-3 right-3 top-[11px] hidden h-px sm:block",
           )}
         />
         {STEPS.map(({ art: Art, title, body }, i) => (

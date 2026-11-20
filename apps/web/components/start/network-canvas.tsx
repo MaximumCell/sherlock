@@ -72,7 +72,9 @@ function draw(
       ctx.stroke();
     }
     const lit = n.pulse >= 0;
-    ctx.fillStyle = lit ? withAlpha(palette.accent, 0.9) : withAlpha(palette.node, 0.25 + n.z * 0.5);
+    ctx.fillStyle = lit
+      ? withAlpha(palette.accent, 0.9)
+      : withAlpha(palette.node, 0.25 + n.z * 0.5);
     ctx.beginPath();
     ctx.arc(p.x, p.y, lit ? r + 0.6 : r, 0, Math.PI * 2);
     ctx.fill();

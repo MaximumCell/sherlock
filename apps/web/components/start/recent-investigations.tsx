@@ -98,7 +98,11 @@ export function RecentInvestigations({
           <SlidersHorizontal aria-hidden />
           Search and filter
           {filtering ? (
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" role="img" aria-label="filters active" />
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-accent"
+              role="img"
+              aria-label="filters active"
+            />
           ) : null}
         </Button>
       </div>

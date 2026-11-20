@@ -3,10 +3,19 @@
 import { PlatformIcon } from "@/components/common/platform-icon";
 import { useModules } from "@/lib/query/hooks";
 
-/** A few of the sites the sources look at; they light up in turn, like a sweep. */
-const SAMPLE = ["github", "gitlab", "reddit", "hackernews", "bluesky", "gravatar", "devto", "keybase"];
+/** A few of the sites the sources look at. */
+const SAMPLE = [
+  "github",
+  "gitlab",
+  "reddit",
+  "hackernews",
+  "bluesky",
+  "gravatar",
+  "devto",
+  "keybase",
+];
 
-/** "39 sources · live · public data only", with a quiet sweep across sample platform icons. */
+/** "39 sources · 38 live · public data only", with a few of the sites they cover. */
 export function SourceStrip() {
   const catalogue = useModules();
   const modules = catalogue.data?.modules ?? [];
@@ -14,12 +23,8 @@ export function SourceStrip() {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
       <ul className="flex items-center gap-1" aria-hidden>
-        {SAMPLE.map((p, i) => (
-          <li
-            key={p}
-            className="motion-safe:animate-[sweep_4.8s_var(--ease-in-out)_infinite]"
-            style={{ animationDelay: `${i * 0.22}s` }}
-          >
+        {SAMPLE.map((p) => (
+          <li key={p}>
             <PlatformIcon platform={p} size="sm" />
           </li>
         ))}

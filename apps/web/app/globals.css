@@ -157,9 +157,8 @@
 
   /* Glass is reserved for floating chrome (top bar, sticky rail, map controls, search). */
   .glass {
-    background: hsl(var(--background) / 0.94);
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    @apply backdrop-blur-[14px] backdrop-saturate-150;
+    background: hsl(var(--background) / 0.82);
   }
 
   /* A small mono label above headings: "01 · SUMMARY". */

@@ -59,7 +59,6 @@ const config: Config = {
       },
       boxShadow: {
         soft: "0 1px 2px 0 hsl(var(--shadow) / 0.10)",
-        panel: "0 1px 0 0 hsl(var(--foreground) / 0.03) inset, 0 12px 32px -16px hsl(var(--shadow) / 0.45)",
         lift: "0 1px 0 0 hsl(var(--foreground) / 0.05) inset, 0 16px 36px -18px hsl(var(--shadow) / 0.55)",
         glow: "0 0 0 1px hsl(var(--glow) / 0.45), 0 0 28px -6px hsl(var(--glow) / 0.55)",
       },
@@ -104,10 +103,6 @@ const config: Config = {
         "grow-y": { from: { transform: "scaleY(0)" }, to: { transform: "scaleY(1)" } },
         "grow-x": { from: { transform: "scaleX(0)" }, to: { transform: "scaleX(1)" } },
         draw: { from: { strokeDashoffset: "1" }, to: { strokeDashoffset: "0" } },
-        sweep: {
-          "0%, 18%, 100%": { opacity: "0.45", transform: "translateY(0)" },
-          "6%": { opacity: "1", transform: "translateY(-2px)" },
-        },
       },
       animation: {
         "fade-in": "fade-in var(--dur-2) var(--ease-out)",

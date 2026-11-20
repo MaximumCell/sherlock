@@ -48,11 +48,12 @@ export function MapView({
       if (event.key === "Escape" && !document.querySelector('[role="dialog"][data-state="open"]'))
         setExpanded(false);
     };
-    window.addEventListener("keydown", onKey);
+    // capture phase: runs before a panel on top closes itself, so Esc closes one layer at a time
+    window.addEventListener("keydown", onKey, true);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
       document.body.style.overflow = overflow;
     };
   }, [expanded]);
@@ -118,35 +119,53 @@ export function MapView({
           The map fills in as searches find accounts and links connect them.
         </EmptyState>
       ) : (
-        <div
-          role={expanded ? "dialog" : undefined}
-          aria-modal={expanded || undefined}
-          aria-label={expanded ? "Connections map, large view" : undefined}
-          className={cn(
-            "overflow-hidden border border-border bg-[radial-gradient(ellipse_at_center,hsl(var(--surface)),hsl(var(--background)))]",
-            expanded
-              ? "fixed inset-2 z-50 rounded-xl shadow-lift sm:inset-4"
-              : "relative h-[65dvh] min-h-[420px] rounded-xl",
-          )}
-        >
+        <>
           {expanded ? (
-            <div className="glass absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 border-b border-border px-4 py-2">
-              <p className="min-w-0 truncate text-sm">
-                <span className="font-display text-lg">Connections map</span>
-                <span className="ml-3 hidden text-muted-foreground sm:inline">
-                  Hover a node to focus its connections. Esc to close.
-                </span>
-              </p>
-              <Button ref={closeRef} variant="outline" size="sm" onClick={() => setExpanded(false)}>
-                <Minimize2 aria-hidden />
-                Close large view
-              </Button>
-            </div>
+            <div
+              aria-hidden
+              className="fixed inset-0 z-50 animate-page-in bg-[hsl(var(--shadow)/0.7)] backdrop-blur-sm"
+              onClick={() => setExpanded(false)}
+            />
           ) : null}
-          <div className={cn("h-full", expanded && "pt-12")}>
-            <GraphCanvas key={`${signature}:${expanded}`} model={model} onNodeClick={onNodeClick} />
+          <div
+            role={expanded ? "dialog" : undefined}
+            aria-modal={expanded || undefined}
+            aria-label={expanded ? "Connections map, large view" : undefined}
+            className={cn(
+              "overflow-hidden border border-border bg-[radial-gradient(ellipse_at_center,hsl(var(--surface)),hsl(var(--background)))]",
+              expanded
+                ? "fixed inset-2 z-50 rounded-xl shadow-lift sm:inset-4"
+                : "relative h-[65dvh] min-h-[420px] rounded-xl",
+            )}
+          >
+            {expanded ? (
+              <div className="glass absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 border-b border-border px-4 py-2">
+                <p className="min-w-0 truncate text-sm">
+                  <span className="font-display text-lg">Connections map</span>
+                  <span className="ml-3 hidden text-muted-foreground sm:inline">
+                    Hover a node to focus its connections. Esc to close.
+                  </span>
+                </p>
+                <Button
+                  ref={closeRef}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setExpanded(false)}
+                >
+                  <Minimize2 aria-hidden />
+                  Close large view
+                </Button>
+              </div>
+            ) : null}
+            <div className={cn("h-full", expanded && "pt-12")}>
+              <GraphCanvas
+                key={`${signature}:${expanded}`}
+                model={model}
+                onNodeClick={onNodeClick}
+              />
+            </div>
           </div>
-        </div>
+        </>
       )}
       <NodeSheet
         node={picked}

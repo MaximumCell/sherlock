@@ -25,7 +25,13 @@ const EXAMPLES: { type: TargetType; label: string; value: string }[] = [
   { type: "wallet", label: "Wallet", value: "0x52908400098527886E0F7030069857D2E4169EE7" },
   { type: "name", label: "Name", value: "Marlow Quince" },
 ];
-const TYPED = ["ada-fixture", "ada@example.com", "192.0.2.44", "Marlow Quince", "ada-fixture.example"];
+const TYPED = [
+  "ada-fixture",
+  "ada@example.com",
+  "192.0.2.44",
+  "Marlow Quince",
+  "ada-fixture.example",
+];
 
 /** Where the network converges on launch: roughly the search box, as a share of the hero. */
 const SEARCH_FOCUS = { x: 0.3, y: 0.58 };
@@ -34,7 +40,7 @@ function DemoCard() {
   return (
     <Link
       href="/demo"
-      className="group flex items-center gap-4 rounded-xl border border-border bg-popover/70 p-4 backdrop-blur transition-[border-color,transform] duration-2 ease-out hover:-translate-y-0.5 hover:border-input"
+      className="group flex items-center gap-4 rounded-xl border border-border bg-popover p-4 transition-[border-color,transform] duration-2 ease-out hover:-translate-y-0.5 hover:border-input"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/40 text-accent">
         <PlayCircle className="h-5 w-5" aria-hidden />
@@ -85,8 +91,8 @@ export function StartView() {
                 What do you want to <em className="text-accent">look into</em>?
               </h1>
               <p className="max-w-xl text-lg text-muted-foreground">
-                Search what is public about a username, email, website, IP, phone, wallet, image
-                or name. You decide what is real.
+                Search what is public about a username, email, website, IP, phone, wallet, image or
+                name. You decide what is real.
               </p>
             </div>
             <SmartSearch
@@ -124,10 +130,13 @@ export function StartView() {
             </div>
           </div>
 
-          <aside className="space-y-6 self-end lg:col-span-4 lg:col-start-9" aria-label="Getting started">
+          <aside
+            className="space-y-6 self-end lg:col-span-4 lg:col-start-9"
+            aria-label="Getting started"
+          >
             <DemoCard />
             {firstVisit ? (
-              <div className="rounded-xl border border-border bg-popover/70 p-5 backdrop-blur">
+              <div className="rounded-xl border border-border bg-popover p-5">
                 <HowItWorks variant="trail" onDismiss={() => setIntroDismissed(true)} />
               </div>
             ) : null}

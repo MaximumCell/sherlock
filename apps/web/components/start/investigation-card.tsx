@@ -14,7 +14,12 @@ import type { Exposure } from "@/lib/types";
 import { useCaseHref } from "@/lib/use-case-href";
 import { cn } from "@/lib/utils";
 
-const BAND_TONE = { low: "success", moderate: "warning", high: "danger", severe: "danger" } as const;
+const BAND_TONE = {
+  low: "success",
+  moderate: "warning",
+  high: "danger",
+  severe: "danger",
+} as const;
 
 /** The card's left-hand status: progress ring, exposure mini-dial, pending pip or a tick. */
 function StatusVisual({ row, exposure }: { row: CaseRow; exposure: Exposure | null }) {
@@ -54,10 +59,16 @@ function StatusVisual({ row, exposure }: { row: CaseRow; exposure: Exposure | nu
     <span
       className={cn(
         "flex h-10 w-10 items-center justify-center rounded-full border",
-        empty ? "border-dashed border-input text-muted-foreground" : "border-success/40 text-success",
+        empty
+          ? "border-dashed border-input text-muted-foreground"
+          : "border-success/40 text-success",
       )}
     >
-      {empty ? <CircleDot className="h-4 w-4" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
+      {empty ? (
+        <CircleDot className="h-4 w-4" aria-hidden />
+      ) : (
+        <Check className="h-4 w-4" aria-hidden />
+      )}
     </span>
   );
 }
@@ -103,7 +114,11 @@ export function InvestigationCard({ row }: { row: CaseRow }) {
           <p
             className={cn(
               "text-sm",
-              kind === "scanning" ? "text-accent" : kind === "needs_review" ? "text-warning" : "text-muted-foreground",
+              kind === "scanning"
+                ? "text-accent"
+                : kind === "needs_review"
+                  ? "text-warning"
+                  : "text-muted-foreground",
             )}
           >
             {line}
@@ -120,7 +135,10 @@ export function InvestigationCard({ row }: { row: CaseRow }) {
         <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
           <p className="flex flex-wrap gap-1">
             {row.case.tags.map((tag) => (
-              <span key={tag} className="rounded-[5px] bg-muted px-1.5 py-px text-2xs text-muted-foreground">
+              <span
+                key={tag}
+                className="rounded-[5px] bg-muted px-1.5 py-px text-2xs text-muted-foreground"
+              >
                 {tag}
               </span>
             ))}

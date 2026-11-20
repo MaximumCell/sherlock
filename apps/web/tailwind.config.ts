@@ -101,6 +101,7 @@ const config: Config = {
         },
         caret: { "50%": { opacity: "0" } },
         "page-in": { from: { opacity: "0" }, to: { opacity: "1" } },
+        "grow-y": { from: { transform: "scaleY(0)" }, to: { transform: "scaleY(1)" } },
         "grow-x": { from: { transform: "scaleX(0)" }, to: { transform: "scaleX(1)" } },
         draw: { from: { strokeDashoffset: "1" }, to: { strokeDashoffset: "0" } },
         sweep: {

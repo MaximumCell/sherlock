@@ -1,6 +1,7 @@
 "use client";
 
 import { CircleCheck, ExternalLink, KeyRound } from "lucide-react";
+import { useState } from "react";
 import { TargetIcon } from "@/components/common/bits";
 import { PlatformIcon } from "@/components/common/platform-icon";
 import { ErrorState, PageHeader } from "@/components/common/states";
@@ -8,27 +9,59 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { safeUrl } from "@/lib/findings";
 import { useAdvanced } from "@/lib/preferences";
-import { resolvePlatform } from "@/lib/platforms";
 import { useModules } from "@/lib/query/hooks";
 import { SOURCE_GROUPS } from "@/lib/sources";
 import type { ModuleInfo } from "@/lib/types";
+import {
+  matchesAvailability,
+  SourceConstellation,
+  sourceIconKey,
+  type Availability,
+} from "./source-constellation";
 
-/** The platform a single-platform source reads ("profile_bluesky", "linkedin_search", "github"). */
-function sourcePlatform(name: string): string | null {
-  const p = resolvePlatform(name.replace(/^profile_/, "").replace(/_search$/, ""));
-  return p.known ? p.key : null;
-}
-
-function SourceCard({ module: m, advanced }: { module: ModuleInfo; advanced: boolean }) {
+function SourceRow({
+  module: m,
+  advanced,
+  anchor,
+}: {
+  module: ModuleInfo;
+  advanced: boolean;
+  anchor: boolean;
+}) {
   const source = safeUrl(m.source_url);
-  const platform = sourcePlatform(m.name);
   return (
-    <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-soft">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="flex items-center gap-2 font-medium leading-snug">
-          {platform ? <PlatformIcon platform={platform} size="md" /> : null}
-          {m.title}
-        </h3>
+    <li
+      id={anchor ? `source-${m.name}` : undefined}
+      className="grid scroll-mt-40 grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 p-4 target:bg-accent/[0.06] sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+    >
+      <PlatformIcon platform={sourceIconKey(m.name)} size="lg" />
+      <div className="min-w-0 space-y-1">
+        <h3 className="font-medium leading-snug">{m.title}</h3>
+        <p className="text-sm text-muted-foreground">{m.description}</p>
+        {!m.available ? (
+          <p className="text-sm text-warning">
+            Needs an API key on the server before it can run.
+            {advanced && m.requires_env.length ? (
+              <span className="mt-1 block">
+                {m.requires_env.map((key) => (
+                  <code
+                    key={key}
+                    className="mr-1 rounded bg-warning/10 px-1 py-0.5 font-mono text-xs"
+                  >
+                    {key}
+                  </code>
+                ))}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
+        {advanced ? (
+          <p className="font-mono text-2xs text-muted-foreground">
+            {m.name} · queue {m.queue} · inputs {m.inputs.join(", ")}
+          </p>
+        ) : null}
+      </div>
+      <div className="col-start-2 flex flex-wrap items-center gap-3 sm:col-start-3 sm:flex-col sm:items-end">
         {m.available ? (
           <Badge variant="success">
             <CircleCheck className="h-3 w-3" aria-hidden />
@@ -40,47 +73,18 @@ function SourceCard({ module: m, advanced }: { module: ModuleInfo; advanced: boo
             Needs setup
           </Badge>
         )}
+        {source ? (
+          <a
+            href={source}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-1 rounded-sm text-xs text-accent underline-offset-4 hover:underline"
+          >
+            About this source
+            <ExternalLink className="h-3 w-3" aria-hidden />
+          </a>
+        ) : null}
       </div>
-      <p className="flex-1 text-sm text-muted-foreground">{m.description}</p>
-      {!m.available ? (
-        <p className="text-sm text-warning">
-          Needs an API key on the server before it can run.
-          {advanced && m.requires_env.length ? (
-            <span className="mt-1 block">
-              {m.requires_env.map((key) => (
-                <code
-                  key={key}
-                  className="mr-1 rounded bg-warning/10 px-1 py-0.5 font-mono text-xs"
-                >
-                  {key}
-                </code>
-              ))}
-            </span>
-          ) : null}
-        </p>
-      ) : null}
-      {advanced || source ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs">
-          {advanced ? (
-            <span className="font-mono text-muted-foreground">
-              {m.name} · queue {m.queue} · inputs {m.inputs.join(", ")}
-            </span>
-          ) : (
-            <span />
-          )}
-          {source ? (
-            <a
-              href={source}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex items-center gap-1 rounded-sm text-accent underline-offset-4 hover:underline"
-            >
-              About this source
-              <ExternalLink className="h-3 w-3" aria-hidden />
-            </a>
-          ) : null}
-        </div>
-      ) : null}
     </li>
   );
 }
@@ -91,17 +95,21 @@ export function ModulesView() {
   const [advanced] = useAdvanced();
   const modules = catalogue.data?.modules ?? [];
   const available = modules.filter((m) => m.available).length;
+  const [group, setGroup] = useState<string | null>(null);
+  const [availability, setAvailability] = useState<Availability>("all");
+  const anchored = new Set<string>();
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10">
+    <div className="mx-auto max-w-6xl space-y-10">
       <PageHeader
+        eyebrow="Catalogue"
         title="Data sources"
         description="Every place Sherlock can check, grouped by what you search. All of them read public data only. A source that searches several kinds of target is listed under each."
       />
       {catalogue.isPending ? (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true">
-          {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-40 rounded-xl" />
+        <div className="panel grid gap-2 p-5 sm:grid-cols-3 xl:grid-cols-4" aria-busy="true">
+          {Array.from({ length: 16 }, (_, i) => (
+            <Skeleton key={i} className="h-9 rounded-md" />
           ))}
         </div>
       ) : catalogue.isError ? (
@@ -120,7 +128,7 @@ export function ModulesView() {
           </p>
           <aside
             aria-labelledby="profiles-note"
-            className="space-y-2 rounded-xl border border-border bg-muted/30 p-4 text-sm"
+            className="space-y-2 border-l-2 border-accent/50 py-1 pl-4 text-sm"
           >
             <h2 id="profiles-note" className="font-medium">
               Profile pictures, previews and LinkedIn
@@ -138,20 +146,30 @@ export function ModulesView() {
               itself is never visited.
             </p>
           </aside>
-          <nav aria-label="Jump to a kind of search" className="flex flex-wrap gap-1.5">
+          <SourceConstellation
+            modules={modules}
+            group={group}
+            onGroup={setGroup}
+            availability={availability}
+            onAvailability={setAvailability}
+          />
+          <nav aria-label="Jump to a kind of search" className="flex flex-wrap gap-1">
             {SOURCE_GROUPS.map((g) => (
               <a
                 key={g.id}
                 href={`#sources-${g.id}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <TargetIcon type={g.types[0] ?? "username"} className="h-3.5 w-3.5" />
                 {g.title}
               </a>
             ))}
           </nav>
-          {SOURCE_GROUPS.map((g) => {
-            const list = modules.filter((m) => g.types.some((t) => m.inputs.includes(t)));
+          {SOURCE_GROUPS.filter((g) => !group || g.id === group).map((g) => {
+            const list = modules.filter(
+              (m) =>
+                g.types.some((t) => m.inputs.includes(t)) && matchesAvailability(m, availability),
+            );
             return (
               <section
                 key={g.id}
@@ -162,25 +180,33 @@ export function ModulesView() {
                 <div>
                   <h2
                     id={`sources-${g.id}-title`}
-                    className="flex items-center gap-2 text-xl font-semibold"
+                    className="flex items-center gap-2 font-display text-3xl tracking-tight"
                   >
                     <TargetIcon
                       type={g.types[0] ?? "username"}
                       className="h-5 w-5 text-muted-foreground"
                     />
                     {g.title}
-                    <span className="text-sm font-normal text-muted-foreground">{list.length}</span>
+                    <span className="font-mono text-sm text-muted-foreground">{list.length}</span>
                   </h2>
                   <p className="text-sm text-muted-foreground">{g.description}</p>
                 </div>
                 {list.length ? (
-                  <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {list.map((m) => (
-                      <SourceCard key={m.name} module={m} advanced={advanced} />
-                    ))}
+                  <ul className="panel divide-y divide-border">
+                    {list.map((m) => {
+                      const anchor = !anchored.has(m.name);
+                      anchored.add(m.name);
+                      return (
+                        <SourceRow key={m.name} module={m} advanced={advanced} anchor={anchor} />
+                      );
+                    })}
                   </ul>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No source can search this yet.</p>
+                  <p className="text-sm text-muted-foreground">
+                    {availability === "all"
+                      ? "No source can search this yet."
+                      : "No source matches this filter."}
+                  </p>
                 )}
               </section>
             );

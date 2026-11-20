@@ -1,7 +1,7 @@
 "use client";
 
-import { TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { BrokenLink } from "@/components/common/not-found-view";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -19,13 +19,11 @@ export default function RouteError({
   return (
     <div
       role="alert"
-      className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center"
+      className="mx-auto flex max-w-lg flex-col items-center gap-6 py-20 text-center"
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-danger/10 text-danger">
-        <TriangleAlert className="h-5 w-5" aria-hidden />
-      </span>
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold">This page ran into a problem</h1>
+      <BrokenLink tone="danger" />
+      <div className="space-y-2">
+        <h1 className="font-display text-4xl tracking-tight">This page ran into a problem</h1>
         <p className="text-sm text-muted-foreground">
           Something went wrong while showing it. Your data is safe and nothing was changed. Try
           again, or go back to the start.

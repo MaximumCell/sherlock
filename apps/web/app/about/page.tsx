@@ -56,9 +56,9 @@ const STEPS: [title: string, body: string][] = [
 function Rule({ ok, children }: { ok: boolean; children: string }) {
   const Icon = ok ? Check : X;
   return (
-    <li className="flex items-start gap-3 text-base">
+    <li className="flex items-start gap-3 border-t border-border pt-3 text-base first:border-t-0 first:pt-0">
       <span
-        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${ok ? "bg-success/15 text-success" : "bg-danger/15 text-danger"}`}
+        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${ok ? "border-success/50 text-success" : "border-danger/50 text-danger"}`}
       >
         <Icon className="h-3 w-3" aria-hidden />
       </span>
@@ -71,7 +71,10 @@ export default function AboutPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-16 pb-8">
       <header className="space-y-5 pt-4 sm:pt-10">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">How Sherlock works</h1>
+        <p className="eyebrow">Method and limits</p>
+        <h1 className="font-display text-5xl leading-none tracking-tight sm:text-6xl">
+          How Sherlock works
+        </h1>
         <p className="max-w-2xl text-lg text-muted-foreground">
           Sherlock searches public sources for a username, email, website or other identifier,
           suggests which results belong together, and lets you decide what is real. It is built for
@@ -101,7 +104,7 @@ export default function AboutPage() {
         className="scroll-mt-20 space-y-5"
       >
         <div className="space-y-2">
-          <h2 id="responsible-use-title" className="text-2xl font-semibold tracking-tight">
+          <h2 id="responsible-use-title" className="font-display text-4xl tracking-tight">
             Responsible use
           </h2>
           <p className="max-w-2xl text-base text-muted-foreground">
@@ -115,8 +118,8 @@ export default function AboutPage() {
           </p>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-soft">
-            <h3 className="text-lg font-semibold">What it does</h3>
+          <div className="panel space-y-4 p-6">
+            <h3 className="eyebrow text-success">What it does</h3>
             <ul className="space-y-3">
               {DOES.map((text) => (
                 <Rule key={text} ok>
@@ -125,8 +128,8 @@ export default function AboutPage() {
               ))}
             </ul>
           </div>
-          <div className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-soft">
-            <h3 className="text-lg font-semibold">What it does not do</h3>
+          <div className="panel space-y-4 p-6">
+            <h3 className="eyebrow text-danger">What it does not do</h3>
             <ul className="space-y-3">
               {DOES_NOT.map((text) => (
                 <Rule key={text} ok={false}>
@@ -144,7 +147,7 @@ export default function AboutPage() {
         className="scroll-mt-20 space-y-5"
       >
         <div className="space-y-2">
-          <h2 id="architecture-title" className="text-2xl font-semibold tracking-tight">
+          <h2 id="architecture-title" className="font-display text-4xl tracking-tight">
             Under the hood
           </h2>
           <p className="max-w-2xl text-base text-muted-foreground">
@@ -153,16 +156,20 @@ export default function AboutPage() {
           </p>
         </div>
         <ArchitectureDiagram />
-        <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <ol className="relative space-y-6 pl-10 before:absolute before:bottom-3 before:left-[11px] before:top-3 before:w-px before:bg-border">
           {STEPS.map(([title, body], i) => (
-            <li key={title} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-              <p className="flex items-center gap-2 font-semibold">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/10 text-xs text-accent">
-                  {i + 1}
-                </span>
+            <li key={title} className="relative">
+              <span
+                className="absolute -left-10 top-0 flex h-6 w-6 items-center justify-center rounded-full border border-input bg-background font-mono text-2xs"
+                aria-hidden
+              >
+                {i + 1}
+              </span>
+              <p className="font-medium">
+                <span className="sr-only">Step {i + 1}: </span>
                 {title}
               </p>
-              <p className="mt-2 text-sm text-muted-foreground">{body}</p>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{body}</p>
             </li>
           ))}
         </ol>

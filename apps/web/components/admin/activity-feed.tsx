@@ -34,14 +34,14 @@ function FeedRow({
   return (
     <li
       className={cn(
-        "flex flex-col gap-1.5 p-3 transition-colors duration-1000 sm:flex-row sm:items-center sm:gap-3",
-        fresh && "bg-accent/10",
+        "relative flex flex-col gap-1.5 p-3 transition-colors duration-1000 sm:flex-row sm:items-center sm:gap-3",
+        fresh && "animate-rise-in bg-accent/[0.07] before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-accent",
       )}
     >
       <time
         dateTime={row.created_at}
         title={formatTime(row.created_at)}
-        className="w-20 shrink-0 text-xs tabular-nums text-muted-foreground"
+        className="w-20 shrink-0 font-mono text-2xs tabular-nums text-muted-foreground"
       >
         {relativeTime(row.created_at)}
       </time>
@@ -172,7 +172,7 @@ export function ActivityFeed({ onOpen }: { onOpen: (userId: string) => void }) {
       ) : (
         <>
           <ul
-            className="divide-y divide-border rounded-lg border border-border bg-card"
+            className="panel divide-y divide-border overflow-hidden"
             aria-label="Recent searches"
           >
             {feed.data.items.map((row) => (

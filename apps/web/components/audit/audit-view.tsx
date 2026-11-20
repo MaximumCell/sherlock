@@ -50,8 +50,9 @@ export function AuditView() {
   const [advanced] = useAdvanced();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <PageHeader
+        eyebrow="Record"
         title="Activity log"
         description="Every search, link check, decision and report is recorded here, newest first. Entries can never be edited or removed."
         actions={
@@ -73,7 +74,11 @@ export function AuditView() {
       {audit.isPending ? (
         <div className="space-y-2" aria-busy="true">
           {Array.from({ length: 8 }, (_, i) => (
-            <Skeleton key={i} className="h-10" />
+            <div key={i} className="flex gap-6">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="h-4 w-24" />
+            </div>
           ))}
         </div>
       ) : audit.isError ? (
@@ -86,7 +91,7 @@ export function AuditView() {
         </EmptyState>
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-lg border border-border bg-card md:block">
+          <div className="panel hidden overflow-hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -100,7 +105,7 @@ export function AuditView() {
               <TableBody>
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
-                    <TableCell className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                    <TableCell className="whitespace-nowrap font-mono text-2xs tabular-nums text-muted-foreground">
                       {formatDateTime(entry.created_at)}
                     </TableCell>
                     <TableCell>
@@ -141,7 +146,7 @@ export function AuditView() {
             {entries.map((entry) => (
               <li
                 key={entry.id}
-                className="space-y-1.5 rounded-lg border border-border bg-card p-3"
+                className="panel space-y-1.5 p-3"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span

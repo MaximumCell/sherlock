@@ -6,10 +6,13 @@ import {
   FolderSearch,
   PlayCircle,
   ScrollText,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useData } from "@/components/providers/data-provider";
+import { useAdminMe } from "@/lib/admin/hooks";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
@@ -92,5 +95,49 @@ export function NavLinks({
         );
       })}
     </ul>
+  );
+}
+
+const ADMIN_ITEM: NavItem = {
+  href: "/admin",
+  label: "Admin",
+  icon: ShieldCheck,
+  match: (p) => p.startsWith("/admin"),
+};
+
+/**
+ * The operator panel link. Rendered only for a signed-in session the gateway confirms as
+ * an operator; guests and other accounts never see it (and the demo's made-up operator
+ * does not count).
+ */
+export function AdminNavLink({
+  orientation = "horizontal",
+  onNavigate,
+}: {
+  orientation?: "horizontal" | "vertical";
+  onNavigate?: () => void;
+}) {
+  const { ds } = useData();
+  const operator = useAdminMe({ quiet: true }).data;
+  const pathname = usePathname() ?? "/";
+  if (!operator || ds.admin.demo) return null;
+  const active = ADMIN_ITEM.match(pathname);
+  const vertical = orientation === "vertical";
+  return (
+    <Link
+      href={ADMIN_ITEM.href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex items-center gap-2 rounded-md text-sm font-medium transition-colors",
+        vertical ? "px-3 py-2.5" : "px-3 py-1.5",
+        active
+          ? "bg-accent/15 text-foreground"
+          : "text-accent hover:bg-accent/10 hover:text-foreground",
+      )}
+    >
+      <ShieldCheck className="h-4 w-4" aria-hidden />
+      {ADMIN_ITEM.label}
+    </Link>
   );
 }

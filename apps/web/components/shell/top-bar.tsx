@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { AccountMenu } from "./account-menu";
 import { openCommandPalette } from "./command-palette";
 import { HelpMenu } from "./help-menu";
-import { Brand, MORE_ITEMS, NAV_ITEMS, NavLinks } from "./nav";
+import { AdminNavLink, Brand, MORE_ITEMS, NAV_ITEMS, NavLinks } from "./nav";
 import { ScanIndicator } from "./scan-indicator";
 
 export function ThemeToggle() {
@@ -55,8 +55,9 @@ export function TopBar() {
           <Menu aria-hidden />
         </Button>
         <Brand />
-        <nav aria-label="Main" className="ml-4 hidden md:block">
+        <nav aria-label="Main" className="ml-4 hidden items-center gap-1 md:flex">
           <NavLinks />
+          <AdminNavLink />
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
@@ -111,6 +112,7 @@ export function TopBar() {
               orientation="vertical"
               onNavigate={() => setMenuOpen(false)}
             />
+            <AdminNavLink orientation="vertical" onNavigate={() => setMenuOpen(false)} />
             <div className="border-t border-border pt-4">
               <NavLinks
                 items={MORE_ITEMS}

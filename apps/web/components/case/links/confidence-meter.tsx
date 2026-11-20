@@ -1,4 +1,8 @@
+"use client";
+
+import { m } from "motion/react";
 import { InfoHint } from "@/components/common/info-hint";
+import { usePrefersReducedMotion } from "@/components/motion/hooks";
 import { confidenceBand } from "@/lib/rules";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +32,7 @@ export function ConfidenceMeter({
   confidence: number;
   className?: string;
 }) {
+  const reduce = usePrefersReducedMotion();
   const pct = Math.round(confidence * 100);
   const band = BAND[confidenceBand(confidence)];
   return (
@@ -37,7 +42,7 @@ export function ConfidenceMeter({
           How sure we are
           <ConfidenceHint />
         </span>
-        <span className={cn("font-medium tabular-nums", band.text)}>{pct}%</span>
+        <span className={cn("font-mono tabular-nums", band.text)}>{pct}%</span>
       </div>
       <div
         role="meter"
@@ -48,9 +53,11 @@ export function ConfidenceMeter({
         aria-valuetext={`${pct}%, ${band.label.toLowerCase()}`}
         className="h-1.5 overflow-hidden rounded-full bg-muted"
       >
-        <div
+        <m.div
           className={cn("h-full rounded-full", band.bar)}
-          style={{ width: `${Math.max(pct, 3)}%` }}
+          initial={reduce ? false : { width: "0%" }}
+          animate={{ width: `${Math.max(pct, 3)}%` }}
+          transition={{ duration: 0.6, delay: 0.15 }}
         />
       </div>
       <p className={cn("text-xs", band.text)}>{band.label}</p>

@@ -46,18 +46,34 @@ import { SummarySection } from "./summary/summary-section";
 // React Flow measures the DOM, so the map only ever renders in the browser.
 const MapView = dynamic(() => import("./map/map-section").then((m) => m.MapView), {
   ssr: false,
-  loading: () => <Skeleton className="h-[65dvh] w-full rounded-2xl" />,
+  loading: () => <Skeleton className="h-[65dvh] w-full rounded-xl" />,
 });
 
 export function CaseSkeleton() {
   return (
     <div className="space-y-6" aria-busy="true" aria-label="Loading investigation">
       <Skeleton className="h-4 w-32" />
-      <Skeleton className="h-9 w-96 max-w-full" />
-      <Skeleton className="h-6 w-72 max-w-full" />
-      <Skeleton className="h-14 w-full" />
-      <Skeleton className="h-20 w-full rounded-2xl" />
-      <Skeleton className="h-64 w-full rounded-2xl" />
+      <Skeleton className="h-11 w-[28rem] max-w-full" />
+      <div className="flex gap-2">
+        <Skeleton className="h-6 w-28" />
+        <Skeleton className="h-6 w-44" />
+      </div>
+      <Skeleton className="h-12 w-full" />
+      <div className="grid gap-8 lg:grid-cols-[11rem_minmax(0,1fr)]">
+        <div className="hidden space-y-3 lg:block">
+          {Array.from({ length: 7 }, (_, i) => (
+            <Skeleton key={i} className="h-4 w-28" />
+          ))}
+        </div>
+        <div className="space-y-6">
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-8 w-2/3" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-48 rounded-xl" />
+            <Skeleton className="h-48 rounded-xl md:col-span-2" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -75,13 +91,13 @@ function MapSection(props: {
     <CaseSection
       id="map"
       title="Connections map"
-      description="Each box is something we found; lines show how they connect. Solid green lines are links you confirmed, dashed amber ones still need your decision. Click anything for its details."
+      description="Each circle is something we found; lines show how they connect. Solid green lines are links you confirmed, dashed amber ones still need your decision. Hover a circle to focus on its connections; click it for its details."
     >
       <div ref={ref}>
         {near && props.ready ? (
           <MapView {...props} />
         ) : (
-          <Skeleton className="h-[65dvh] w-full rounded-2xl" />
+          <Skeleton className="h-[65dvh] w-full rounded-xl" />
         )}
       </div>
     </CaseSection>
@@ -99,7 +115,7 @@ function LazyReport({ caseId }: { caseId: string }) {
 }
 
 /** The whole investigation on one guided, scrollable page. */
-export function CasePage({ caseId }: { caseId: string }) {
+export function CasePage({ caseId, replayScan = false }: { caseId: string; replayScan?: boolean }) {
   const { params } = useUrlState();
   const caseQuery = useCase(caseId);
   const jobs = useJobs(caseId);
@@ -194,11 +210,11 @@ export function CasePage({ caseId }: { caseId: string }) {
       <div
         data-print="hide"
         data-sticky
-        className="sticky top-14 z-30 -mx-4 mt-6 border-b border-border/80 bg-background/85 px-4 py-2.5 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:-mx-6 sm:px-6"
+        className="glass sticky top-14 z-30 -mx-4 mt-6 border-b border-border px-4 py-3 sm:-mx-6 sm:px-6"
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <p
-            className="hidden w-44 shrink-0 truncate text-sm font-semibold lg:block"
+            className="hidden w-44 shrink-0 truncate font-display text-lg lg:block"
             title={caseDisplayTitle(c)}
           >
             {caseDisplayTitle(c)}
@@ -219,7 +235,7 @@ export function CasePage({ caseId }: { caseId: string }) {
 
       <div className="mt-8 lg:grid lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10">
         <aside className="hidden lg:block" data-print="hide">
-          <div className="sticky top-40">
+          <div className="sticky top-44">
             <SectionNav
               sections={sections}
               active={active}
@@ -230,7 +246,14 @@ export function CasePage({ caseId }: { caseId: string }) {
         </aside>
         <div className="min-w-0 space-y-12">
           <div data-print-unless-report>
-            <ScanPanel caseId={caseId} jobs={jobList} loading={jobs.isPending} />
+            <ScanPanel
+              caseId={caseId}
+              jobs={jobList}
+              findings={findingList}
+              loading={jobs.isPending}
+              replay={replayScan}
+              target={c.identifiers[0] ?? null}
+            />
           </div>
           <SummarySection
             c={c}

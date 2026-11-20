@@ -157,7 +157,7 @@
 
   /* Glass is reserved for floating chrome (top bar, sticky rail, map controls, search). */
   .glass {
-    background: hsl(var(--background) / 0.72);
+    background: hsl(var(--background) / 0.94);
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
   }
@@ -165,6 +165,41 @@
   /* A small mono label above headings: "01 · SUMMARY". */
   .eyebrow {
     @apply font-mono text-2xs font-medium uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  /* Cards that lean a little towards the pointer (see components/motion/tilt.ts). */
+  .tilt {
+    transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+      translateY(var(--lift, 0px));
+    transition:
+      transform var(--dur-2) var(--ease-out),
+      border-color var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out);
+  }
+  .tilt:hover {
+    --lift: -2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tilt,
+    .tilt:hover {
+      transform: none;
+    }
+  }
+
+  /* Quick actions that appear on hover or keyboard focus, and always on touch screens. */
+  .reveal {
+    opacity: 0;
+    transition: opacity var(--dur-1) var(--ease-out);
+  }
+  .group:hover .reveal,
+  .group:focus-within .reveal,
+  .reveal[data-on] {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .reveal {
+      opacity: 1;
+    }
   }
 
   /* Shimmering placeholder (skeletons). */
@@ -281,6 +316,16 @@
 }
 .react-flow__node {
   transition: opacity var(--dur-2) var(--ease-out);
+}
+/* plain "found on" / "mentions" labels appear for the focused neighbourhood only */
+.edge-found .react-flow__edge-textwrapper,
+.edge-mentions .react-flow__edge-textwrapper {
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.edge-found.is-lit .react-flow__edge-textwrapper,
+.edge-mentions.is-lit .react-flow__edge-textwrapper {
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: no-preference) {

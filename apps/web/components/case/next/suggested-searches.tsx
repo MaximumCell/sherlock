@@ -77,7 +77,7 @@ export function SuggestedSearches({
         return (
           <li
             key={entity.id}
-            className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-soft"
+            className="panel group flex animate-rise-in flex-col gap-3 p-4 transition-[border-color,transform] duration-2 ease-out hover:-translate-y-0.5 hover:border-input"
           >
             <div className="flex items-start gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">

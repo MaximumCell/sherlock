@@ -73,15 +73,15 @@ export function CandidateCard({
     <article
       aria-labelledby={`cand-${candidate.candidate_id}`}
       className={cn(
-        "rounded-xl border bg-card p-5 shadow-soft transition-colors",
+        "animate-rise-in rounded-xl border bg-card p-5 transition-[border-color,opacity] duration-3",
         candidate.confirmed ? "border-success/60 ring-1 ring-success/30" : "border-border",
         anyConfirmed && !candidate.confirmed && "opacity-70",
       )}
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">
-          <p className="text-xs text-muted-foreground">Candidate {rank}</p>
-          <h3 id={`cand-${candidate.candidate_id}`} className="break-words text-base font-semibold">
+          <p className="eyebrow">Candidate {String(rank).padStart(2, "0")}</p>
+          <h3 id={`cand-${candidate.candidate_id}`} className="break-words font-display text-2xl tracking-tight">
             {candidate.label}
           </h3>
         </div>
@@ -111,12 +111,12 @@ export function CandidateCard({
             style={{ width: `${Math.max(pct, 2)}%` }}
           />
         </div>
-        <span className="w-10 text-right text-xs tabular-nums">{pct}%</span>
+        <span className="w-10 text-right font-mono text-xs tabular-nums">{pct}%</span>
       </div>
 
       {candidate.evidence.length ? (
         <div className="mt-4">
-          <h4 className="mb-1.5 text-2xs font-medium uppercase tracking-wider text-muted-foreground">
+          <h4 className="eyebrow mb-1.5">
             Why we think so
           </h4>
           <ul className="space-y-1 text-sm">

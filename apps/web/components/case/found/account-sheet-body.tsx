@@ -47,14 +47,14 @@ export function AccountSheetBody({
     : null;
   return (
     <>
-      <SheetHeader className="pr-8 text-left">
+      <SheetHeader className="-mx-5 -mt-5 border-b border-border bg-surface/70 px-5 pb-5 pt-7 pr-12 text-left">
         <div className="flex items-start gap-4">
           <ProfileAvatar
             src={view.avatarUrl}
             name={view.fullname ?? displayHandle(account)}
             platform={accountPlatform(account)}
             url={account.url}
-            size="lg"
+            size="xl"
           />
           <div className="min-w-0 flex-1 space-y-1">
             <SheetTitle className="break-words">{view.fullname ?? account.label}</SheetTitle>
@@ -114,7 +114,7 @@ export function AccountSheetBody({
               <li key={f.id}>
                 <details
                   open={f.id === openId && f.id !== account.primary.id}
-                  className="group rounded-lg border border-border bg-surface/60"
+                  className="group rounded-lg border border-border bg-card open:bg-surface/60"
                 >
                   <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm">
                     <ChevronRight

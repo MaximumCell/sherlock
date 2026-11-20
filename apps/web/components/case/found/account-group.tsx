@@ -35,7 +35,7 @@ export function ViewToggle({
       value={compact ? "list" : "cards"}
       onValueChange={(v) => v && onChange(v === "list")}
       aria-label="How to show accounts"
-      className="rounded-lg border border-border p-0.5"
+      className="rounded-md border border-border p-0.5"
     >
       <ToggleGroupItem value="cards" aria-label="Cards">
         <LayoutGrid aria-hidden />
@@ -114,9 +114,10 @@ export function AccountGroupBody({
     <div className="space-y-4">
       {rich.length ? (
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Profiles">
-          {rich.map((acc) => (
+          {rich.map((acc, i) => (
             <AccountCard
               key={acc.key}
+              index={i}
               account={acc}
               onOpen={() => onOpen(acc)}
               onPin={(p) => onPin(acc, p)}
@@ -126,7 +127,7 @@ export function AccountGroupBody({
       ) : null}
       {bare.length ? (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">
+          <p className="eyebrow">
             {BARE_NOTE} ({bare.length})
           </p>
           <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2" aria-label={BARE_NOTE}>

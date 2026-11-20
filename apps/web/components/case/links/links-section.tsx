@@ -1,6 +1,7 @@
 "use client";
 
 import { CircleCheckBig, CornerUpLeft, Link2, List, MessageCircleQuestion } from "lucide-react";
+import { AnimatePresence, m } from "motion/react";
 import { useMemo, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { InfoHint } from "@/components/common/info-hint";
@@ -16,6 +17,19 @@ import { CaseSection } from "../section";
 import { LinkList } from "./link-list";
 import { LinkQuestion } from "./link-question";
 import { useLinkKeys } from "./use-link-keys";
+
+/** The answered card flies off to its side with a tint; the next one rises in. */
+const CARD_MOTION = {
+  enter: { opacity: 0, y: 16, scale: 0.98 },
+  center: { opacity: 1, y: 0, x: 0, rotate: 0, scale: 1, transition: { duration: 0.3 } },
+  leave: (dir: number) => ({
+    opacity: 0,
+    x: dir * 240,
+    y: dir === 0 ? -12 : 0,
+    rotate: dir * 4,
+    transition: { duration: 0.32 },
+  }),
+};
 
 const UNDO: Record<CorrelationStatus, ReviewDecision> = {
   pending: "reset",
@@ -69,6 +83,8 @@ export function LinksSection({
   const [index, setIndex] = useState(0);
   const [decided, setDecided] = useState(0);
   const [history, setHistory] = useState<{ id: string; previous: CorrelationStatus }[]>([]);
+  // which way the answered card leaves: right for yes, left for no, up for skip
+  const [leaving, setLeaving] = useState<-1 | 0 | 1>(0);
 
   // automatic same_account merges are never questions and never count as "to check"
   const links = useMemo(() => linkRows(correlations), [correlations]);
@@ -84,6 +100,7 @@ export function LinksSection({
   const dialogOpen = Boolean(params.get("finding"));
 
   const decide = (c: Correlation, decision: ReviewDecision, note?: string) => {
+    setLeaving(decision === "approve" ? 1 : decision === "reject" ? -1 : 0);
     setHistory((h) => [...h, { id: c.id, previous: c.status }]);
     if (c.status === "pending" && decision !== "reset") setDecided((d) => d + 1);
     review.mutate({ id: c.id, decision, note });
@@ -95,7 +112,11 @@ export function LinksSection({
     if (last.previous === "pending") setDecided((d) => Math.max(0, d - 1));
     review.mutate({ id: last.id, decision: UNDO[last.previous] });
   };
-  const move = (delta: number) =>
+  const move = (delta: number) => {
+    setLeaving(0);
+    stepIndex(delta);
+  };
+  const stepIndex = (delta: number) =>
     setIndex((i) => (queue.length ? (i + delta + queue.length) % queue.length : 0));
 
   useLinkKeys({
@@ -130,7 +151,7 @@ export function LinksSection({
       {error ? (
         <ErrorState title="Could not load the links" error={error} onRetry={onRetry} />
       ) : loading ? (
-        <Skeleton className="h-72 w-full rounded-2xl" />
+        <Skeleton className="h-96 w-full rounded-xl" />
       ) : links.length === 0 && !listMode ? (
         <EmptyState icon={Link2} title={scanning ? "Looking for links" : "No possible links yet"}>
           {scanning
@@ -156,20 +177,30 @@ export function LinksSection({
           pendingId={review.isPending ? review.variables?.id : undefined}
         />
       ) : current ? (
-        <LinkQuestion
-          key={current.id}
-          correlation={current}
-          index={accounts}
-          position={decided + (index % queue.length) + 1}
-          total={decided + queue.length}
-          pending={review.isPending}
-          advanced={advanced}
-          canUndo={history.length > 0}
-          onDecide={(d, note) => decide(current, d, note)}
-          onSkip={() => move(1)}
-          onUndo={undo}
-          onOpenFinding={(id) => set({ finding: id })}
-        />
+        <AnimatePresence mode="popLayout" initial={false} custom={leaving}>
+          <m.div
+            key={current.id}
+            custom={leaving}
+            variants={CARD_MOTION}
+            initial="enter"
+            animate="center"
+            exit="leave"
+          >
+            <LinkQuestion
+              correlation={current}
+              index={accounts}
+              position={decided + (index % queue.length) + 1}
+              total={decided + queue.length}
+              pending={review.isPending}
+              advanced={advanced}
+              canUndo={history.length > 0}
+              onDecide={(d, note) => decide(current, d, note)}
+              onSkip={() => move(1)}
+              onUndo={undo}
+              onOpenFinding={(id) => set({ finding: id })}
+            />
+          </m.div>
+        </AnimatePresence>
       ) : (
         <EmptyState
           icon={CircleCheckBig}

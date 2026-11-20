@@ -11,7 +11,7 @@ export function DemoCase() {
   const caseId = params.get("case") ?? DEMO_CASE_ID;
   return (
     <>
-      <CasePage caseId={caseId} />
+      <CasePage caseId={caseId} replayScan={caseId === DEMO_CASE_ID} />
       {caseId === DEMO_CASE_ID ? <TourHost /> : null}
     </>
   );

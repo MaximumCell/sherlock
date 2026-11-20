@@ -12,7 +12,7 @@ const FILTERABLE = GRAPH_KINDS.filter((k) => k !== "seed");
 function LegendLine({ className, label }: { className: string; label: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <svg width="26" height="6" aria-hidden className="react-flow__edge">
+      <svg width="26" height="6" aria-hidden className="react-flow__edge shrink-0">
         <path d="M0 3 H26" className={`react-flow__edge-path ${className}`} />
       </svg>
       {label}

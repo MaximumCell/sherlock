@@ -46,7 +46,7 @@ export function TargetList({
     rows.push({ type: e.kind, value: e.value, origin: suggestionSource(e, byId, accounts) });
   }
   return (
-    <ul className="divide-y divide-border rounded-xl border border-border bg-card">
+    <ul className="panel divide-y divide-border">
       {rows.map((row) => {
         const mine = jobs.filter((j) => same(j.target_value, row.value));
         const running = mine.some((j) => j.status === "queued" || j.status === "running");

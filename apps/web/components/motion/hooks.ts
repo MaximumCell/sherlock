@@ -62,3 +62,11 @@ export function useOnScreen(ref: RefObject<Element | null>, margin = "0px"): boo
   }, [ref, margin]);
   return on;
 }
+
+const TOUCH = "(hover: none) and (pointer: coarse)";
+const subscribeTouch = subscribeMedia(TOUCH);
+
+/** True on touch-first devices (phones, tablets): enables swipe gestures. */
+export function useTouchDevice(): boolean {
+  return useSyncExternalStore(subscribeTouch, () => matches(TOUCH), () => false);
+}

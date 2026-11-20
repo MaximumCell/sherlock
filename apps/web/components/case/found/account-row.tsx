@@ -34,7 +34,7 @@ export function AccountRow({
     : [view.fullname, view.headline ?? view.bio ?? view.location].filter(Boolean).join(" · ");
 
   return (
-    <li className="group relative flex min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-input">
+    <li className="group relative flex min-w-0 animate-rise-in items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 transition-colors duration-1 hover:border-input hover:bg-muted/30">
       {bare ? (
         <PlatformIcon platform={platform} url={account.url} size="lg" />
       ) : (

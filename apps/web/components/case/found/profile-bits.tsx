@@ -36,7 +36,7 @@ export function LinkChips({ links, max = 4 }: { links: readonly string[]; max?: 
           </>
         );
         const chip =
-          "relative z-10 inline-flex max-w-[14rem] items-center gap-1.5 rounded-full border border-border bg-surface px-1.5 py-0.5 text-2xs";
+          "relative z-10 inline-flex max-w-[14rem] items-center gap-1.5 rounded-[5px] border border-border bg-surface px-1.5 py-0.5 text-2xs";
         return (
           <li key={link} className="min-w-0">
             {url ? (
@@ -63,7 +63,7 @@ export function LinkChips({ links, max = 4 }: { links: readonly string[]; max?: 
 
 function Fact({ icon: Icon, children }: { icon: typeof MapPin; children: ReactNode }) {
   return (
-    <li className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+    <li className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-[5px] bg-muted px-1.5 py-0.5">
       <Icon className="h-3 w-3 shrink-0" aria-hidden />
       <span className="truncate">{children}</span>
     </li>
@@ -111,7 +111,7 @@ export function ProfileFacts({ view, extra = [] }: { view: FindingView; extra?: 
     );
   for (const e of extra)
     items.push(
-      <li key={e} className="rounded-full bg-muted px-2 py-0.5">
+      <li key={e} className="rounded-[5px] bg-muted px-1.5 py-0.5">
         {e}
       </li>,
     );

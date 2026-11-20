@@ -35,7 +35,12 @@ export const KIND_META: Record<
   email: { label: "Emails", icon: Mail, ring: "border-success/70", dot: "bg-success" },
   infra: { label: "Websites and IPs", icon: Server, ring: "border-warning/70", dot: "bg-warning" },
   breach: { label: "Breaches", icon: ShieldAlert, ring: "border-danger/70", dot: "bg-danger" },
-  handle: { label: "Other identifiers", icon: AtSign, ring: "border-input", dot: "bg-muted-foreground" },
+  handle: {
+    label: "Other identifiers",
+    icon: AtSign,
+    ring: "border-input",
+    dot: "bg-muted-foreground",
+  },
   cluster: {
     label: "Grouped accounts",
     icon: Layers,
@@ -81,7 +86,13 @@ export const EntityNode = memo(function EntityNode({ data, selected }: NodeProps
         ) : node.kind === "account" && node.platform ? (
           <PlatformIcon platform={node.platform} size="md" className="rounded-full" />
         ) : (
-          <Icon className={cn("shrink-0", seed ? "h-6 w-6 text-accent" : "h-4 w-4 text-muted-foreground")} aria-hidden />
+          <Icon
+            className={cn(
+              "shrink-0",
+              seed ? "h-6 w-6 text-accent" : "h-4 w-4 text-muted-foreground",
+            )}
+            aria-hidden
+          />
         )}
         {node.sources > 1 ? (
           <span

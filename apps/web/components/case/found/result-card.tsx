@@ -1,7 +1,6 @@
 "use client";
 
 import { Layers, MapPin, Pin } from "lucide-react";
-import { m } from "motion/react";
 import { tiltHandlers } from "@/components/motion/tilt";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { sourcesLine, type CaseAccount } from "@/lib/accounts";
@@ -80,12 +79,9 @@ export function ResultCard({
   const shownId = account.handle ?? primary.identifier_value;
 
   return (
-    <m.li
-      layout="position"
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, delay: Math.min(index, 8) * 0.04 }}
-      className="min-w-0"
+    <li
+      className="min-w-0 animate-rise-in"
+      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
     >
       <div
         {...tiltHandlers}
@@ -156,6 +152,6 @@ export function ResultCard({
           </p>
         ) : null}
       </div>
-    </m.li>
+    </li>
   );
 }

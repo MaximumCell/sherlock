@@ -137,7 +137,12 @@ export function GraphCanvas({
       proOptions={{ hideAttribution: false }}
       aria-label="Connections map. Tab to a node, Enter for its details."
     >
-      <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="hsl(var(--muted-foreground) / 0.25)" />
+      <Background
+        variant={BackgroundVariant.Dots}
+        gap={24}
+        size={1}
+        color="hsl(var(--muted-foreground) / 0.25)"
+      />
       <Controls showInteractive={false} fitViewOptions={{ padding: 0.08, duration: 400 }} />
       <MiniMap
         pannable

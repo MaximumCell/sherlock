@@ -81,7 +81,10 @@ export function CandidateCard({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="eyebrow">Candidate {String(rank).padStart(2, "0")}</p>
-          <h3 id={`cand-${candidate.candidate_id}`} className="break-words font-display text-2xl tracking-tight">
+          <h3
+            id={`cand-${candidate.candidate_id}`}
+            className="break-words font-display text-2xl tracking-tight"
+          >
             {candidate.label}
           </h3>
         </div>
@@ -116,9 +119,7 @@ export function CandidateCard({
 
       {candidate.evidence.length ? (
         <div className="mt-4">
-          <h4 className="eyebrow mb-1.5">
-            Why we think so
-          </h4>
+          <h4 className="eyebrow mb-1.5">Why we think so</h4>
           <ul className="space-y-1 text-sm">
             {candidate.evidence.map((line) => (
               <li key={line} className="flex gap-2">

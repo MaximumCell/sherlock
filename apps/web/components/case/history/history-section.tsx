@@ -1,7 +1,6 @@
 "use client";
 
 import { Clock } from "lucide-react";
-import { m } from "motion/react";
 import { useMemo, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -52,12 +51,9 @@ function EventRow({
   onOpen: (id: string) => void;
 }) {
   return (
-    <m.li
-      initial={{ opacity: 0, x: -8 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.3, delay: Math.min(index, 10) * 0.035 }}
-      className="relative flex gap-4 pb-5 last:pb-0"
+    <li
+      className="relative flex animate-rise-in gap-4 pb-5 last:pb-0"
+      style={{ animationDelay: `${Math.min(index, 10) * 35}ms` }}
     >
       <time
         dateTime={event.at}
@@ -92,7 +88,7 @@ function EventRow({
           </button>
         ) : null}
       </div>
-    </m.li>
+    </li>
   );
 }
 
@@ -176,7 +172,9 @@ export function HistorySection({
               aria-label={formatDate(day)}
               className="grid gap-3 md:grid-cols-[9rem_minmax(0,1fr)] md:gap-6"
             >
-              <h3 className="eyebrow md:sticky md:top-48 md:self-start md:pt-0.5">{formatDate(day)}</h3>
+              <h3 className="eyebrow md:sticky md:top-48 md:self-start md:pt-0.5">
+                {formatDate(day)}
+              </h3>
               <ol className="relative before:absolute before:bottom-2 before:left-[64px] before:top-2 before:w-px before:bg-border">
                 {items.map((event, i) => (
                   <EventRow

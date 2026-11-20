@@ -16,7 +16,10 @@ export function ProgressRail({ steps, scanning }: { steps: ProgressStep[]; scann
   const reached = steps.reduce((n, s, i) => (s.state !== "upcoming" ? i : n), 0);
   return (
     <div className="relative" data-tour="rail">
-      <div aria-hidden className="absolute left-3 right-3 top-[13px] h-px bg-border sm:left-4 sm:right-4">
+      <div
+        aria-hidden
+        className="absolute left-3 right-3 top-[13px] h-px bg-border sm:left-4 sm:right-4"
+      >
         <div
           className="h-px bg-accent transition-[width] duration-4 ease-out"
           style={{ width: `${(reached / Math.max(1, steps.length - 1)) * 100}%` }}
@@ -27,7 +30,14 @@ export function ProgressRail({ steps, scanning }: { steps: ProgressStep[]; scann
           const done = step.state === "done";
           const current = step.state === "current";
           return (
-            <li key={step.id} className={cn("min-w-0", i === 1 && "justify-self-center", i === 2 && "justify-self-end")}>
+            <li
+              key={step.id}
+              className={cn(
+                "min-w-0",
+                i === 1 && "justify-self-center",
+                i === 2 && "justify-self-end",
+              )}
+            >
               <button
                 type="button"
                 onClick={() => goToSection(TARGET[step.id])}

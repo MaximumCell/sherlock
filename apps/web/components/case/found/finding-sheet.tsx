@@ -63,8 +63,12 @@ function SheetBody({
             size={view.avatarUrl || view.fullname ? "xl" : "md"}
           />
           <div className="min-w-0 flex-1 space-y-1">
-            <SheetTitle className="break-words">{view.fullname ?? findingTitle(finding)}</SheetTitle>
-            {view.fullname ? <p className="text-sm text-muted-foreground">{findingTitle(finding)}</p> : null}
+            <SheetTitle className="break-words">
+              {view.fullname ?? findingTitle(finding)}
+            </SheetTitle>
+            {view.fullname ? (
+              <p className="text-sm text-muted-foreground">{findingTitle(finding)}</p>
+            ) : null}
             <SheetDescription className="break-all font-mono text-xs">
               {finding.identifier_type}: {finding.identifier_value}
             </SheetDescription>

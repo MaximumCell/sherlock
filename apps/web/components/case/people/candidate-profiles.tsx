@@ -26,10 +26,7 @@ export function CandidateProfiles({
     .slice(0, MAX);
   if (items.length === 0) return null;
   return (
-    <ul
-      className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4"
-      aria-label="Profiles of this person"
-    >
+    <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Profiles of this person">
       {items.map(({ f, view, platform }) => {
         const info = resolvePlatform(platform, view.url);
         const label = info.known ? info.label : findingTitle(f);

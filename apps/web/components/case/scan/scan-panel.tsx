@@ -13,7 +13,13 @@ import { useCancelJob, useScan } from "@/lib/query/mutations";
 import { SCAN_ANCHOR } from "@/lib/sections";
 import { QUEUE_LABEL } from "@/lib/sources";
 import { QUEUES, TARGET_TYPES, type Finding, type Job, type TargetType } from "@/lib/types";
-import { deriveScanner, rankTiles, replayTiles, tileCounts, type TileState } from "@/lib/ui/scanner";
+import {
+  deriveScanner,
+  rankTiles,
+  replayTiles,
+  tileCounts,
+  type TileState,
+} from "@/lib/ui/scanner";
 import { cn } from "@/lib/utils";
 import { ScannerStage } from "./scanner-stage";
 import { SourceRow } from "./source-row";
@@ -92,7 +98,10 @@ export function ScanPanel({
   const state = useMemo(() => deriveScanner(jobs, findings), [jobs, findings]);
   const t = useReplay(replay && jobs.length > 0 && !loading);
   const replaying = t < 1;
-  const tiles = useMemo(() => (replaying ? replayTiles(state.tiles, t) : state.tiles), [state.tiles, replaying, t]);
+  const tiles = useMemo(
+    () => (replaying ? replayTiles(state.tiles, t) : state.tiles),
+    [state.tiles, replaying, t],
+  );
   const counts = replaying ? tileCounts(tiles) : state;
   const stage = !loading && jobs.length > 0 && (p.scanning || replaying);
   const listOpen = listChoice ?? false;
@@ -135,7 +144,10 @@ export function ScanPanel({
           onClick={() => setListChoice(!listOpen)}
         >
           {listOpen ? "Hide sources" : "Show sources"}
-          <ChevronDown className={cn("transition-transform duration-2", listOpen && "rotate-180")} aria-hidden />
+          <ChevronDown
+            className={cn("transition-transform duration-2", listOpen && "rotate-180")}
+            aria-hidden
+          />
         </Button>
       ) : null}
     </>
@@ -187,7 +199,9 @@ export function ScanPanel({
             {jobs.length ? (
               <p className="text-sm text-muted-foreground" aria-hidden>
                 {jobs.length} source{jobs.length === 1 ? "" : "s"} checked · {state.found} found
-                {p.failed ? <span className="text-warning"> · {p.failed} could not be checked</span> : null}
+                {p.failed ? (
+                  <span className="text-warning"> · {p.failed} could not be checked</span>
+                ) : null}
               </p>
             ) : null}
           </div>

@@ -38,7 +38,7 @@ export function ScoreCard({
   onRetry: () => void;
 }) {
   return (
-    <div className="panel relative flex h-full flex-col items-center gap-3 overflow-hidden p-6 text-center">
+    <div className="panel relative flex h-full flex-col items-center justify-center gap-3 overflow-hidden p-6 text-center">
       <p className="eyebrow flex items-center gap-1">
         Exposure score
         <ScoreHint />

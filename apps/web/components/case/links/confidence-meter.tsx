@@ -1,8 +1,7 @@
 "use client";
 
-import { m } from "motion/react";
 import { InfoHint } from "@/components/common/info-hint";
-import { usePrefersReducedMotion } from "@/components/motion/hooks";
+import { useEffect, useState } from "react";
 import { confidenceBand } from "@/lib/rules";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +31,13 @@ export function ConfidenceMeter({
   confidence: number;
   className?: string;
 }) {
-  const reduce = usePrefersReducedMotion();
   const pct = Math.round(confidence * 100);
+  // the bar fills from empty once shown (a CSS transition; instant with reduced motion)
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setShown(pct));
+    return () => cancelAnimationFrame(frame);
+  }, [pct]);
   const band = BAND[confidenceBand(confidence)];
   return (
     <div className={cn("w-full space-y-1.5 sm:w-48", className)}>
@@ -53,11 +57,12 @@ export function ConfidenceMeter({
         aria-valuetext={`${pct}%, ${band.label.toLowerCase()}`}
         className="h-1.5 overflow-hidden rounded-full bg-muted"
       >
-        <m.div
-          className={cn("h-full rounded-full", band.bar)}
-          initial={reduce ? false : { width: "0%" }}
-          animate={{ width: `${Math.max(pct, 3)}%` }}
-          transition={{ duration: 0.6, delay: 0.15 }}
+        <div
+          className={cn(
+            "h-full rounded-full transition-[width] duration-[600ms] ease-out",
+            band.bar,
+          )}
+          style={{ width: `${shown ? Math.max(shown, 3) : 0}%` }}
         />
       </div>
       <p className={cn("text-xs", band.text)}>{band.label}</p>

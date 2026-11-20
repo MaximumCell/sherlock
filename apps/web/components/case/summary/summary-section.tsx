@@ -37,7 +37,10 @@ function KeyNumber({
         onClick={() => goToSection(target)}
         className="group block h-full w-full p-4 text-left transition-colors duration-1 hover:bg-muted/50"
       >
-        <CountUp value={value} className="block font-display text-5xl leading-none tracking-tight" />
+        <CountUp
+          value={value}
+          className="block font-display text-5xl leading-none tracking-tight"
+        />
         <span className="mt-2 block text-sm font-medium">{label}</span>
         <span className="block text-xs text-muted-foreground">{hint}</span>
       </button>
@@ -105,19 +108,31 @@ export function SummarySection({
             />
           </div>
           <ul className="panel grid grid-cols-2 divide-x divide-y divide-border overflow-hidden xl:col-span-5 [&>li:nth-child(2)]:border-t-0 [&>li:nth-child(3)]:border-l-0">
-            <KeyNumber label="Accounts found" value={accounts} hint="Profiles and sign-ups" target="found" />
+            <KeyNumber
+              label="Accounts found"
+              value={accounts}
+              hint="Profiles and sign-ups"
+              target="found"
+            />
             <KeyNumber
               label="Sites checked"
               value={stats.platformsChecked}
               hint="Across every data source"
               target="scan"
             />
-            <KeyNumber label="Breach listings" value={stats.breaches} hint="Names and dates only" target="found" />
+            <KeyNumber
+              label="Breach listings"
+              value={stats.breaches}
+              hint="Names and dates only"
+              target="found"
+            />
             <KeyNumber
               label="Linked accounts"
               value={linkedAccounts}
               hint={
-                stats.pendingReviews ? `${stats.pendingReviews} more links to check` : "In links you confirmed"
+                stats.pendingReviews
+                  ? `${stats.pendingReviews} more links to check`
+                  : "In links you confirmed"
               }
               target="links"
             />

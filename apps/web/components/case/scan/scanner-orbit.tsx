@@ -37,7 +37,10 @@ export const SourceTile = memo(function SourceTile({
         <span className="absolute -inset-px rounded-lg border-2 border-transparent border-t-accent motion-safe:animate-spin" />
       ) : null}
       {tile.state === "found" ? (
-        <span key="burst" className="absolute inset-0 animate-burst rounded-lg border border-accent" />
+        <span
+          key="burst"
+          className="absolute inset-0 animate-burst rounded-lg border border-accent"
+        />
       ) : null}
       <PlatformIcon platform={tile.module} size="sm" className="relative border-0 bg-transparent" />
       {tile.state === "found" ? (
@@ -94,7 +97,11 @@ export function ScannerOrbit({
               y2={p.y * 88}
               className={cn(
                 "transition-[stroke,stroke-opacity] duration-4 ease-out",
-                lit ? "stroke-accent" : t.state === "checking" ? "stroke-accent/25" : "stroke-border",
+                lit
+                  ? "stroke-accent"
+                  : t.state === "checking"
+                    ? "stroke-accent/25"
+                    : "stroke-border",
               )}
               strokeWidth={lit ? 1 : 0.6}
             />

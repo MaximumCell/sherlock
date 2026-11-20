@@ -1,7 +1,6 @@
 "use client";
 
 import { CircleCheckBig, CornerUpLeft, Link2, List, MessageCircleQuestion } from "lucide-react";
-import { AnimatePresence, m } from "motion/react";
 import { useMemo, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { InfoHint } from "@/components/common/info-hint";
@@ -15,21 +14,14 @@ import type { Correlation, CorrelationStatus, Finding, ReviewDecision } from "@/
 import { useUrlState } from "@/lib/use-url-state";
 import { CaseSection } from "../section";
 import { LinkList } from "./link-list";
-import { LinkQuestion } from "./link-question";
+import dynamic from "next/dynamic";
 import { useLinkKeys } from "./use-link-keys";
 
-/** The answered card flies off to its side with a tint; the next one rises in. */
-const CARD_MOTION = {
-  enter: { opacity: 0, y: 16, scale: 0.98 },
-  center: { opacity: 1, y: 0, x: 0, rotate: 0, scale: 1, transition: { duration: 0.3 } },
-  leave: (dir: number) => ({
-    opacity: 0,
-    x: dir * 240,
-    y: dir === 0 ? -12 : 0,
-    rotate: dir * 4,
-    transition: { duration: 0.32 },
-  }),
-};
+// the link flow carries the motion library: loaded on demand, with a card-shaped placeholder
+const LinkFlow = dynamic(() => import("./link-flow"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-96 w-full rounded-xl" />,
+});
 
 const UNDO: Record<CorrelationStatus, ReviewDecision> = {
   pending: "reset",
@@ -177,30 +169,20 @@ export function LinksSection({
           pendingId={review.isPending ? review.variables?.id : undefined}
         />
       ) : current ? (
-        <AnimatePresence mode="popLayout" initial={false} custom={leaving}>
-          <m.div
-            key={current.id}
-            custom={leaving}
-            variants={CARD_MOTION}
-            initial="enter"
-            animate="center"
-            exit="leave"
-          >
-            <LinkQuestion
-              correlation={current}
-              index={accounts}
-              position={decided + (index % queue.length) + 1}
-              total={decided + queue.length}
-              pending={review.isPending}
-              advanced={advanced}
-              canUndo={history.length > 0}
-              onDecide={(d, note) => decide(current, d, note)}
-              onSkip={() => move(1)}
-              onUndo={undo}
-              onOpenFinding={(id) => set({ finding: id })}
-            />
-          </m.div>
-        </AnimatePresence>
+        <LinkFlow
+          leaving={leaving}
+          correlation={current}
+          index={accounts}
+          position={decided + (index % queue.length) + 1}
+          total={decided + queue.length}
+          pending={review.isPending}
+          advanced={advanced}
+          canUndo={history.length > 0}
+          onDecide={(d, note) => decide(current, d, note)}
+          onSkip={() => move(1)}
+          onUndo={undo}
+          onOpenFinding={(id) => set({ finding: id })}
+        />
       ) : (
         <EmptyState
           icon={CircleCheckBig}

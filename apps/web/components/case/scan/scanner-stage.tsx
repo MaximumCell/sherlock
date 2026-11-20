@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, m } from "motion/react";
 import { useMemo } from "react";
 import { CountUp } from "@/components/motion/count-up";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
@@ -17,45 +16,34 @@ function Ticker({ items, findings }: { items: TickerItem[]; findings: Map<string
     <div className="min-w-0 space-y-3">
       <p className="eyebrow">Just found</p>
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Results appear here the moment a source finds one.</p>
+        <p className="text-sm text-muted-foreground">
+          Results appear here the moment a source finds one.
+        </p>
       ) : (
         <ul className="space-y-2" aria-label="Most recent results">
-          <AnimatePresence initial={false}>
-            {items.map((item) => {
-              const f = findings.get(item.id);
-              const view = f ? parseFinding(f) : null;
-              const platform = resolvePlatform(f ? findingPlatform(f) : item.platform);
-              const label = platform.known || !f ? platform.label : findingTitle(f);
-              return (
-                <m.li
-                  key={item.id}
-                  layout="position"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex min-w-0 items-center gap-2.5"
-                >
-                  <m.span
-                    initial={{ scale: 0.6 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 420, damping: 22 }}
-                  >
-                    <ProfileAvatar
-                      src={view?.avatarUrl}
-                      name={view?.fullname ?? label}
-                      platform={f ? findingPlatform(f) : item.platform}
-                      size="xs"
-                      decorative
-                    />
-                  </m.span>
-                  <span className="min-w-0 truncate text-sm">
-                    <span className="font-medium">{label}</span>
-                    <span className="text-muted-foreground"> · {item.what}</span>
-                  </span>
-                </m.li>
-              );
-            })}
-          </AnimatePresence>
+          {items.map((item) => {
+            const f = findings.get(item.id);
+            const view = f ? parseFinding(f) : null;
+            const platform = resolvePlatform(f ? findingPlatform(f) : item.platform);
+            const label = platform.known || !f ? platform.label : findingTitle(f);
+            return (
+              <li key={item.id} className="flex min-w-0 animate-rise-in items-center gap-2.5">
+                <span className="animate-tick-in">
+                  <ProfileAvatar
+                    src={view?.avatarUrl}
+                    name={view?.fullname ?? label}
+                    platform={f ? findingPlatform(f) : item.platform}
+                    size="xs"
+                    decorative
+                  />
+                </span>
+                <span className="min-w-0 truncate text-sm">
+                  <span className="font-medium">{label}</span>
+                  <span className="text-muted-foreground"> · {item.what}</span>
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -93,7 +81,10 @@ export function ScannerStage({
     <div className="grid grid-cols-1 gap-8 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)_minmax(0,1fr)] lg:items-center">
       <div className="space-y-5">
         <p className="eyebrow flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent motion-safe:animate-pulse" aria-hidden />
+          <span
+            className="h-1.5 w-1.5 rounded-full bg-accent motion-safe:animate-pulse"
+            aria-hidden
+          />
           Scanning public sources
         </p>
         <p className="font-display leading-none tracking-tight" aria-hidden>
@@ -109,7 +100,13 @@ export function ScannerStage({
           </div>
           <div className="border-l border-border pl-3">
             <dt className="text-muted-foreground">Could not check</dt>
-            <dd className={failed ? "font-mono text-lg tabular-nums text-warning" : "font-mono text-lg tabular-nums"}>
+            <dd
+              className={
+                failed
+                  ? "font-mono text-lg tabular-nums text-warning"
+                  : "font-mono text-lg tabular-nums"
+              }
+            >
               {failed}
             </dd>
           </div>

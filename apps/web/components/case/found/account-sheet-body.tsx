@@ -59,8 +59,7 @@ export function AccountSheetBody({
           <div className="min-w-0 flex-1 space-y-1">
             <SheetTitle className="break-words">{view.fullname ?? account.label}</SheetTitle>
             <p className="text-sm text-muted-foreground">
-              <span className="font-mono text-xs">{displayHandle(account)}</span> ·{" "}
-              {account.label}
+              <span className="font-mono text-xs">{displayHandle(account)}</span> · {account.label}
             </p>
             <SheetDescription className="flex items-start gap-1.5 text-sm">
               <Layers className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />

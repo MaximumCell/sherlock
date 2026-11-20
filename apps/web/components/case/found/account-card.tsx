@@ -1,7 +1,6 @@
 "use client";
 
 import { ExternalLink, PanelRightOpen, Pin } from "lucide-react";
-import { m } from "motion/react";
 import { tiltHandlers } from "@/components/motion/tilt";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProvenanceLabel } from "@/components/common/provenance-label";
@@ -91,13 +90,9 @@ export function AccountCard({
   const bio = view.bio ?? (view.headline ? null : view.snippet);
 
   return (
-    <m.li
-      layout="position"
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.97 }}
-      transition={{ duration: 0.32, delay: Math.min(index, 8) * 0.04 }}
-      className="min-w-0"
+    <li
+      className="min-w-0 animate-rise-in"
+      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
     >
       <div
         {...tiltHandlers}
@@ -144,7 +139,10 @@ export function AccountCard({
         <LinkChips links={view.links} />
         <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
           <ProvenanceLabel preview={view.preview} platform={platform} />
-          <div className="reveal relative z-10 ml-auto flex items-center gap-0.5" data-on={pinned || undefined}>
+          <div
+            className="reveal relative z-10 ml-auto flex items-center gap-0.5"
+            data-on={pinned || undefined}
+          >
             {account.url ? (
               <a
                 href={account.url}
@@ -169,6 +167,6 @@ export function AccountCard({
           </div>
         </div>
       </div>
-    </m.li>
+    </li>
   );
 }

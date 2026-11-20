@@ -41,8 +41,8 @@ export function FacesStrip({
           Faces of this identity
         </h3>
         <p className="text-sm text-muted-foreground">
-          The {faces.length} different profile pictures found. The same image used on several
-          sites is shown once. Open one to see its account.
+          The {faces.length} different profile pictures found. The same image used on several sites
+          is shown once. Open one to see its account.
         </p>
       </div>
       {/* stacked like a hand of cards; spreads out on hover or keyboard focus */}

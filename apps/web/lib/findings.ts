@@ -13,6 +13,7 @@ import {
   type NetworkInfo,
   type WalletInfo,
 } from "./finding-extras";
+import { platformLabel } from "./platforms";
 import type { Finding, FindingStatus, JsonObject, JsonValue } from "./types";
 
 export interface BreachInfo {
@@ -157,13 +158,13 @@ export function parseFinding(f: Finding): FindingView {
   };
 }
 
-/** Short human label for a finding: breach name for breaches, otherwise the platform. */
+/** Short human label for a finding: breach name for breaches, otherwise the platform's one label. */
 export function findingTitle(f: Finding): string {
   if (f.platform === "breach") {
     const name = f.extra_metadata.breach_name;
     return typeof name === "string" && name ? name : "Breach";
   }
-  return f.platform;
+  return platformLabel(f.platform);
 }
 
 export interface FindingFilters {
@@ -240,8 +241,10 @@ const ACCOUNT_ID_TYPES = new Set(["username", "email", "name", "phone"]);
 
 export function computeStats(
   findings: readonly Finding[],
-  correlations: readonly { status: string; entities_involved: string[] }[],
+  allCorrelations: readonly { status: string; type?: string; entities_involved: string[] }[],
 ): CaseStats {
+  // automatic `same_account` merges are not links between accounts
+  const correlations = allCorrelations.filter((c) => c.type !== "same_account");
   const found = findings.filter((f) => f.status === "found");
   const breaches = found.filter((f) => f.platform === "breach").length;
   const linked = new Set<string>();

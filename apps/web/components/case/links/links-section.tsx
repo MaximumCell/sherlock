@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdvanced } from "@/lib/preferences";
 import { useReview } from "@/lib/query/mutations";
+import { buildAccounts, isSameAccount, linkRows } from "@/lib/accounts";
 import { countByStatus, filterQueue } from "@/lib/review";
 import type { Correlation, CorrelationStatus, Finding, ReviewDecision } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
@@ -32,6 +33,10 @@ function LinksHint() {
       <p>
         Each one is only a suggestion. Your yes or no decides what goes into the score and the
         report.
+      </p>
+      <p>
+        When several sources report the same account, it is shown once instead of being asked about.
+        Those are listed under Merged automatically, where you can split them.
       </p>
     </InfoHint>
   );
@@ -65,8 +70,15 @@ export function LinksSection({
   const [decided, setDecided] = useState(0);
   const [history, setHistory] = useState<{ id: string; previous: CorrelationStatus }[]>([]);
 
-  const queue = useMemo(() => filterQueue(correlations, "pending"), [correlations]);
-  const counts = useMemo(() => countByStatus(correlations), [correlations]);
+  // automatic same_account merges are never questions and never count as "to check"
+  const links = useMemo(() => linkRows(correlations), [correlations]);
+  const merges = useMemo(() => correlations.filter(isSameAccount), [correlations]);
+  const accounts = useMemo(() => buildAccounts(findings, correlations), [findings, correlations]);
+  const queue = useMemo(() => filterQueue(links, "pending"), [links]);
+  const counts = useMemo(
+    () => ({ ...countByStatus(links), merged: merges.length }),
+    [links, merges],
+  );
   const byId = useMemo(() => new Map(findings.map((f) => [f.id, f])), [findings]);
   const current = queue.length ? queue[index % queue.length] : undefined;
   const dialogOpen = Boolean(params.get("finding"));
@@ -103,7 +115,7 @@ export function LinksSection({
       onClick={() => setListMode((v) => !v)}
     >
       {listMode ? <MessageCircleQuestion aria-hidden /> : <List aria-hidden />}
-      {listMode ? "One at a time" : `See all links (${counts.all})`}
+      {listMode ? "One at a time" : `See all links (${counts.all + counts.merged})`}
     </Button>
   );
 
@@ -112,22 +124,27 @@ export function LinksSection({
       id="links"
       title="Possible links"
       hint={<LinksHint />}
-      description="Results that may belong to the same person. Nothing is treated as connected until you say so."
+      description="Accounts that may belong to the same person. Nothing is treated as connected until you say so."
       actions={correlations.length ? toggle : null}
     >
       {error ? (
         <ErrorState title="Could not load the links" error={error} onRetry={onRetry} />
       ) : loading ? (
         <Skeleton className="h-72 w-full rounded-2xl" />
-      ) : correlations.length === 0 ? (
+      ) : links.length === 0 && !listMode ? (
         <EmptyState icon={Link2} title={scanning ? "Looking for links" : "No possible links yet"}>
           {scanning
             ? "Links are suggested as results arrive. Questions will appear here when there is something to check."
             : "Nothing here looks connected yet. Searching another identifier from Next steps can surface links."}
+          {merges.length
+            ? ` ${merges.length} account${merges.length === 1 ? " was" : "s were"} merged automatically; see all links to check them.`
+            : ""}
         </EmptyState>
       ) : listMode ? (
         <LinkList
-          correlations={correlations}
+          correlations={links}
+          merges={merges}
+          accounts={accounts}
           findings={byId}
           counts={counts}
           filter={params.get("status")}
@@ -142,7 +159,7 @@ export function LinksSection({
         <LinkQuestion
           key={current.id}
           correlation={current}
-          findings={byId}
+          index={accounts}
           position={decided + (index % queue.length) + 1}
           total={decided + queue.length}
           pending={review.isPending}

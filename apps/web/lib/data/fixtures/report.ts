@@ -12,16 +12,22 @@ export function renderFixtureReport(
   now: number = Date.now(),
 ): string {
   const found = findings.filter((f) => f.status === "found");
-  const accounts = found.filter((f) => f.module === "user_scanner");
+  const accounts = found.filter(
+    (f) => f.module === "user_scanner" && f.identifier_type === "username",
+  );
   const breaches = found.filter((f) => f.platform === "breach");
   const infra = found.filter((f) => ["domain", "ip"].includes(f.identifier_type));
-  const approved = correlations.filter((x) => x.status === "approved");
-  const pending = correlations.filter((x) => x.status === "pending");
+  const links = correlations.filter((x) => x.type !== "same_account");
+  const approved = links.filter((x) => x.status === "approved");
+  const pending = links.filter((x) => x.status === "pending");
   const byId = new Map(findings.map((f) => [f.id, f]));
   const lines: string[] = [];
 
   lines.push(`# ${caseDisplayTitle(c)}`, "");
-  lines.push(`_Generated ${new Date(now).toISOString().slice(0, 16).replace("T", " ")} UTC from fixture data. Every subject and value in this report is fictional._`, "");
+  lines.push(
+    `_Generated ${new Date(now).toISOString().slice(0, 16).replace("T", " ")} UTC from fixture data. Every subject and value in this report is fictional._`,
+    "",
+  );
   lines.push("## Targets", "");
   for (const id of c.identifiers) lines.push(`- **${id.type}**: \`${id.value}\``);
   lines.push("", "## Summary", "");
@@ -37,7 +43,8 @@ export function renderFixtureReport(
   else {
     lines.push("| Platform | Handle | Category | Shortlisted |", "|---|---|---|---|");
     for (const f of accounts) {
-      const category = typeof f.extra_metadata.category === "string" ? f.extra_metadata.category : "";
+      const category =
+        typeof f.extra_metadata.category === "string" ? f.extra_metadata.category : "";
       lines.push(
         `| ${cell(f.platform)} | \`${cell(f.identifier_value)}\` | ${category} | ${f.curated ? "yes" : ""} |`,
       );
@@ -45,17 +52,23 @@ export function renderFixtureReport(
   }
 
   lines.push("", "## Breach exposure", "");
-  lines.push("Exposure metadata only: breach name, date and data classes. No leaked records are stored.", "");
+  lines.push(
+    "Exposure metadata only: breach name, date and data classes. No leaked records are stored.",
+    "",
+  );
   if (breaches.length === 0) lines.push("No breach exposure found.");
   for (const f of breaches) {
     const m = f.extra_metadata;
     const classes = Array.isArray(m.data_classes) ? m.data_classes.join(", ") : "";
-    lines.push(`- **${String(m.breach_name ?? "Unknown")}** (${String(m.breach_date ?? "n/a")}): ${classes}`);
+    lines.push(
+      `- **${String(m.breach_name ?? "Unknown")}** (${String(m.breach_date ?? "n/a")}): ${classes}`,
+    );
   }
 
   lines.push("", "## Infrastructure", "");
   if (infra.length === 0) lines.push("No infrastructure findings.");
-  for (const f of infra) lines.push(`- \`${f.identifier_value}\` via ${f.module ?? f.source_tool} (${f.platform})`);
+  for (const f of infra)
+    lines.push(`- \`${f.identifier_value}\` via ${f.module ?? f.source_tool} (${f.platform})`);
 
   lines.push("", "## Confirmed links", "");
   if (approved.length === 0) lines.push("No links have been approved yet.");
@@ -65,7 +78,9 @@ export function renderFixtureReport(
       .filter((f): f is Finding => f !== undefined)
       .map((f) => `${f.platform} (\`${f.identifier_value}\`)`)
       .join(", ");
-    lines.push(`- **${describeRule(x.type).title}**, ${Math.round(x.confidence * 100)}% confidence: ${who}`);
+    lines.push(
+      `- **${describeRule(x.type).title}**, ${Math.round(x.confidence * 100)}% confidence: ${who}`,
+    );
     if (x.review_note) lines.push(`  - Reviewer note: ${x.review_note}`);
   }
 

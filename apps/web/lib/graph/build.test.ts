@@ -52,12 +52,15 @@ describe("buildGraph on the demo case", () => {
   it("uses node kinds for breaches, infrastructure and discovered emails", () => {
     expect(model.nodes.filter((n) => n.kind === "breach")).toHaveLength(3);
     expect(model.nodes.some((n) => n.kind === "infra" && n.label === "dns")).toBe(true);
-    expect(model.nodes.some((n) => n.kind === "email" && n.label === "ada@fixture-labs.example")).toBe(true);
+    expect(
+      model.nodes.some((n) => n.kind === "email" && n.label === "ada@fixture-labs.example"),
+    ).toBe(true);
   });
 
   it("links findings to their identifier with found_on edges", () => {
     const edge = model.edges.find(
-      (e) => e.source === identifierNodeId("username", HANDLE) && e.target === findingNodeId(fid(1)),
+      (e) =>
+        e.source === identifierNodeId("username", HANDLE) && e.target === findingNodeId(fid(1)),
     );
     expect(edge?.kind).toBe("found_on");
   });
@@ -65,9 +68,27 @@ describe("buildGraph on the demo case", () => {
   it("hides rejected correlations by default and labels the rest with rule and confidence", () => {
     const corr = model.edges.filter((e) => e.kind === "correlation");
     expect(corr.every((e) => e.status !== "rejected")).toBe(true);
-    expect(corr.some((e) => e.label === "shared email 95%" && e.status === "approved")).toBe(true);
+    expect(corr.some((e) => e.label === "Same email address 95%" && e.status === "approved")).toBe(
+      true,
+    );
     const withRejected = buildGraph(demo, { showRejected: true });
     expect(withRejected.edges.some((e) => e.status === "rejected")).toBe(true);
+  });
+
+  it("draws one node per account, never one per source, and labels edges in plain words", () => {
+    const github = model.nodes.filter((n) => n.memberIds.includes(fid(90)));
+    expect(github).toHaveLength(1);
+    expect(github[0]!.sources).toBe(3);
+    expect(github[0]!.memberIds).toHaveLength(4);
+    for (const n of [fid(91), fid(92)]) expect(ids.has(findingNodeId(n))).toBe(false);
+    const target = github[0]!.id;
+    const into = model.edges.filter((e) => e.target === target && e.kind === "found_on");
+    expect(into.map((e) => e.label).sort()).toEqual(["found on", "registered with"]);
+    expect(model.edges.some((e) => e.source === target && e.label === "shows this email")).toBe(
+      true,
+    );
+    expect(model.edges.every((e) => e.label !== "same account")).toBe(true);
+    expect(new Set(model.edges.map((e) => e.id)).size).toBe(model.edges.length);
   });
 
   it("applies the minimum confidence filter", () => {

@@ -60,12 +60,16 @@ function GroupBlock({
         ) : null}
       </div>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {shown.map((f) => (
+        {shown.map((acc) => (
           <ResultCard
-            key={f.id}
-            finding={f}
-            onOpen={() => onOpen(f.id)}
-            onPin={(p) => onPin(f.id, p)}
+            key={acc.key}
+            account={acc}
+            onOpen={() => onOpen(acc.primary.id)}
+            onPin={(p) =>
+              (p ? [acc.primary] : acc.findings.filter((f) => f.curated)).forEach((f) =>
+                onPin(f.id, p),
+              )
+            }
           />
         ))}
       </ul>
@@ -96,7 +100,7 @@ export function FoundSection({
   const groups = useMemo(() => groupFindings(findings, correlations), [findings, correlations]);
   const explorerOpen = FILTER_KEYS.some((k) => params.get(k));
   const pinned = findings.filter((f) => f.curated).length;
-  const found = findings.filter((f) => f.status === "found").length;
+  const found = groups.reduce((n, g) => n + g.items.length, 0);
 
   const openExplorer = (patch: Record<string, string | null> = {}) => {
     set({ ...CLEAR_RESULT_FILTERS, results: "1", ...patch });
@@ -111,7 +115,7 @@ export function FoundSection({
       title="What we found"
       description={
         found
-          ? `${found} public result${found === 1 ? "" : "s"}, grouped by kind. Open any card for every detail, or pin the ones that matter.`
+          ? `${found} public result${found === 1 ? "" : "s"}, grouped by kind. An account several sources confirmed is one card. Open any card for every detail, or pin the ones that matter.`
           : undefined
       }
       actions={
@@ -155,7 +159,9 @@ export function FoundSection({
         </EmptyState>
       ) : (
         <div className="space-y-10">
-          {explorerOpen ? <ResultsExplorer caseId={caseId} findings={findings} /> : null}
+          {explorerOpen ? (
+            <ResultsExplorer caseId={caseId} findings={findings} correlations={correlations} />
+          ) : null}
           <div className={cn("space-y-10", explorerOpen && "border-t border-border pt-8")}>
             {groups.length === 0 ? (
               <p className="text-sm text-muted-foreground">

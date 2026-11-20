@@ -72,6 +72,18 @@ function demoCorrelations(now: number): Correlation[] {
     reviewed_at: status === "pending" ? null : iso(now, 45 - n),
     created_at: iso(now, 120 - n),
   });
+  const contributed = (
+    n: number,
+    platform: string,
+    module: string,
+    value: string,
+  ): EvidenceItem => ({
+    finding_id: fid(n),
+    platform,
+    module,
+    field: "contributed",
+    value,
+  });
   const ev = (n: number, field: string, value: string): EvidenceItem => ({
     finding_id: fid(n),
     field,
@@ -82,9 +94,14 @@ function demoCorrelations(now: number): Correlation[] {
       1,
       "shared_email",
       EMAIL,
-      [1, 10, 60],
+      [1, 10, 60, 90, 91, 92],
       0.95,
-      [ev(1, "email", EMAIL), ev(10, "email", EMAIL), ev(60, "email (lookup key)", EMAIL)],
+      [
+        `Email ${EMAIL} appears on 3 platforms: GitHub, Gravatar, PyPI`,
+        ev(90, "extra.email", EMAIL),
+        ev(10, "extra.email", EMAIL),
+        ev(60, "identifier_value", EMAIL),
+      ],
       "approved",
       "Same mailbox published on all three profiles.",
     ),
@@ -102,7 +119,7 @@ function demoCorrelations(now: number): Correlation[] {
     ),
     corr(
       3,
-      "shared_avatar",
+      "avatar_match",
       "c3d4e1f0a9b8776x",
       [80, 81],
       0.9,
@@ -153,7 +170,7 @@ function demoCorrelations(now: number): Correlation[] {
     ),
     corr(
       7,
-      "shared_bio",
+      "shared_bio_text",
       "Writing about queues, retries and other ways things fail.",
       [11, 12],
       0.6,
@@ -177,6 +194,47 @@ function demoCorrelations(now: number): Correlation[] {
       "rejected",
       "Different avatar and interests; a naming coincidence is likely.",
     ),
+    {
+      ...corr(
+        9,
+        "same_account",
+        `github:${HANDLE}`,
+        [1, 90, 91, 92],
+        1,
+        [
+          `4 findings describe one GitHub account ${HANDLE}, confirmed by github, user_scanner, whatsmyname. ` +
+            `The GitHub profile ${HANDLE} publishes ${EMAIL}, and ${EMAIL} is registered on GitHub.`,
+          contributed(
+            1,
+            "Github",
+            "user_scanner",
+            "profile details: name, bio, location, email, links",
+          ),
+          contributed(90, "github", "github", "profile details: name, bio, location, email, links"),
+          contributed(91, "GitHub", "whatsmyname", "confirms the account exists"),
+          contributed(92, "github", "user_scanner", `${EMAIL} is registered here`),
+        ],
+        "approved",
+      ),
+      priority: 0,
+    },
+    {
+      ...corr(
+        10,
+        "same_account",
+        `steam:${HANDLE}`,
+        [18, 93],
+        1,
+        [
+          `2 findings describe one Steam account ${HANDLE}, confirmed by user_scanner, whatsmyname.`,
+          contributed(18, "Steam", "user_scanner", "profile details: name, location"),
+          contributed(93, "Steam", "whatsmyname", "confirms the account exists"),
+        ],
+        "rejected",
+        "Two different Steam profiles: the avatars and play history do not match.",
+      ),
+      priority: 0,
+    },
   ];
 }
 
@@ -236,7 +294,9 @@ function demoJobs(now: number): Job[] {
       result: { findings: 3, found: 3 },
       attempts: 2,
     }),
-    job(7, 1, "infra", "rdap", "domain", DOMAIN, "succeeded", { result: { findings: 1, found: 1 } }),
+    job(7, 1, "infra", "rdap", "domain", DOMAIN, "succeeded", {
+      result: { findings: 1, found: 1 },
+    }),
     job(8, 1, "infra", "wayback", "domain", DOMAIN, "failed", {
       attempts: 3,
       progress: 40,
@@ -261,16 +321,20 @@ function demoJobs(now: number): Job[] {
       attempts: 1,
       progress_note: "Listing snapshots",
     }),
+    job(16, 1, "identity", "github", "username", HANDLE, "succeeded", {
+      result: { findings: 1, found: 1 },
+    }),
+    job(17, 1, "identity", "whatsmyname", "username", HANDLE, "succeeded", {
+      result: { findings: 2, found: 2 },
+    }),
+    job(18, 1, "identity", "user_scanner", "email", EMAIL, "succeeded", {
+      result: { findings: 1, found: 1 },
+    }),
   ];
 }
 
 function demoEntities(now: number): Entity[] {
-  const ent = (
-    n: number,
-    kind: string,
-    value: string,
-    over: Partial<Entity> = {},
-  ): Entity => ({
+  const ent = (n: number, kind: string, value: string, over: Partial<Entity> = {}): Entity => ({
     id: uid("e1", n),
     case_id: DEMO_CASE_ID,
     kind,
@@ -309,7 +373,14 @@ function demoAudit(now: number): AuditEntry[] {
     action: string,
     actor: string,
     detail: JsonObject,
-  ): AuditEntry => ({ id: id++, case_id: caseId, action, actor, detail, created_at: iso(now, minutesAgo) });
+  ): AuditEntry => ({
+    id: id++,
+    case_id: caseId,
+    action,
+    actor,
+    detail,
+    created_at: iso(now, minutesAgo),
+  });
   const C = DEMO_CASE_ID;
   return [
     entry(C, 196, "case_created", "investigator", {
@@ -322,7 +393,11 @@ function demoAudit(now: number): AuditEntry[] {
     entry(C, 170, "collector_run", "xposedornot", { target: EMAIL, breaches: 3 }),
     entry(C, 142, "collector_run", "dns_records", { target: DOMAIN, records: 6 }),
     entry(C, 140, "collector_run", "crtsh", { target: DOMAIN, certificates: 3 }),
-    entry(C, 138, "collector_failed", "wayback", { target: DOMAIN, error: "HTTP 503", attempts: 3 }),
+    entry(C, 138, "collector_failed", "wayback", {
+      target: DOMAIN,
+      error: "HTTP 503",
+      attempts: 3,
+    }),
     entry(C, 120, "correlation", "engine", { rules: 6, correlations: 8 }),
     entry(C, 100, "scan_requested", "investigator", { target: ALT_HANDLE, reason: "pivot" }),
     entry(C, 95, "collector_run", "user_scanner", { target: ALT_HANDLE, found: 3 }),
@@ -332,7 +407,10 @@ function demoAudit(now: number): AuditEntry[] {
     entry(C, 37, "review", "investigator", { rule: "username_variation", decision: "reject" }),
     entry(C, 4, "scan_requested", "investigator", { target: IMAGE_URL, jobs: 3 }),
     entry(INFRA_CASE_ID, 2900, "case_created", "investigator", { identifiers: 2 }),
-    entry(INFRA_CASE_ID, 2890, "collector_run", "dns_records", { target: "example.org", records: 5 }),
+    entry(INFRA_CASE_ID, 2890, "collector_run", "dns_records", {
+      target: "example.org",
+      records: 5,
+    }),
     entry(INFRA_CASE_ID, 2880, "report", "investigator", { format: "markdown" }),
     entry(REVIEW_CASE_ID, 1500, "case_created", "investigator", { identifiers: 1 }),
     entry(REVIEW_CASE_ID, 1490, "correlation", "engine", { correlations: 2 }),

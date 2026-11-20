@@ -94,6 +94,8 @@ function summaryLine(finding: Finding): string {
 
 interface Props {
   rows: Finding[];
+  /** Per-row note, e.g. "Same account as above" when rows are grouped by account. */
+  notes?: ReadonlyMap<string, string>;
   onOpen: (id: string) => void;
   onCurate: (id: string, curated: boolean) => void;
   sourceLabel: (name: string) => string;
@@ -101,7 +103,7 @@ interface Props {
 }
 
 /** Table on desktop, cards on small screens. The row opens the detail sheet. */
-export function ResultsTable({ rows, onOpen, onCurate, sourceLabel, advanced }: Props) {
+export function ResultsTable({ rows, notes, onOpen, onCurate, sourceLabel, advanced }: Props) {
   return (
     <>
       <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
@@ -144,7 +146,7 @@ export function ResultsTable({ rows, onOpen, onCurate, sourceLabel, advanced }: 
                       <span>
                         {findingTitle(f)}
                         <span className="block text-2xs font-normal text-muted-foreground">
-                          {view.category}
+                          {notes?.get(f.id) ?? view.category}
                         </span>
                       </span>
                     </button>
@@ -202,6 +204,9 @@ export function ResultsTable({ rows, onOpen, onCurate, sourceLabel, advanced }: 
                 <p className="truncate font-mono text-xs text-muted-foreground">
                   {f.identifier_value}
                 </p>
+                {notes?.get(f.id) ? (
+                  <p className="text-2xs text-muted-foreground">{notes.get(f.id)}</p>
+                ) : null}
                 <p className="line-clamp-2 text-xs text-muted-foreground">{summaryLine(f)}</p>
               </div>
               <PinButton finding={f} onCurate={onCurate} />

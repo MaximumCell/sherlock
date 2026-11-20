@@ -31,8 +31,12 @@ function edgeClass(edge: GraphEdge): string {
   return edge.kind === "mentions" ? "edge-mentions" : "edge-found";
 }
 
+/** Edge labels in plain words; on a crowded map the plain "found on" ones are left out. */
+const MAX_LABELLED_EDGES = 60;
+
 export function toFlow(model: GraphModel): { nodes: EntityFlowNode[]; edges: Edge[] } {
   const positions = layoutRadial(model.nodes, model.edges);
+  const crowded = model.edges.length > MAX_LABELLED_EDGES;
   return {
     nodes: model.nodes.map((node) => ({
       id: node.id,
@@ -46,7 +50,10 @@ export function toFlow(model: GraphModel): { nodes: EntityFlowNode[]; edges: Edg
       source: edge.source,
       target: edge.target,
       type: "straight",
-      label: edge.kind === "correlation" ? (edge.label ?? undefined) : undefined,
+      label:
+        crowded && edge.kind === "found_on" && edge.label === "found on"
+          ? undefined
+          : (edge.label ?? undefined),
       className: edgeClass(edge),
       labelBgPadding: [4, 2] as [number, number],
       labelBgBorderRadius: 3,

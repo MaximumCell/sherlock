@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { sourceProgress } from "@/lib/case-progress";
 import { buildSummarySentence } from "@/lib/case-summary";
 import { caseDisplayTitle } from "@/lib/case-status";
+import { accountsInLink, buildAccounts, linkRows } from "@/lib/accounts";
 import { countAccounts } from "@/lib/finding-groups";
 import { computeStats } from "@/lib/findings";
 import { useExposure } from "@/lib/query/hooks";
@@ -57,7 +58,15 @@ export function SummarySection({
 }) {
   const exposure = useExposure(c.id);
   const stats = useMemo(() => computeStats(findings, correlations), [findings, correlations]);
-  const accounts = useMemo(() => countAccounts(findings), [findings]);
+  const accounts = useMemo(() => countAccounts(findings, correlations), [findings, correlations]);
+  const linkedAccounts = useMemo(() => {
+    const index = buildAccounts(findings, correlations);
+    const keys = new Set<string>();
+    for (const c of linkRows(correlations)) {
+      if (c.status === "approved") accountsInLink(c, index).forEach((a) => keys.add(a.key));
+    }
+    return keys.size;
+  }, [findings, correlations]);
   const progress = sourceProgress(jobs);
   const results = findings.filter((f) => f.status === "found").length;
   const sentence = buildSummarySentence({
@@ -112,7 +121,7 @@ export function SummarySection({
             />
             <KeyNumber
               label="Linked accounts"
-              value={stats.linkedIdentities}
+              value={linkedAccounts}
               hint={
                 stats.pendingReviews
                   ? `${stats.pendingReviews} more links to check`

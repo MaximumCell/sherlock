@@ -42,7 +42,7 @@ function ExternalLinkText({ href }: { href: string }) {
   );
 }
 
-function ProfileSection({ view }: { view: FindingView }) {
+export function ProfileSection({ view, title = "Profile" }: { view: FindingView; title?: string }) {
   const hasFacts =
     view.location ||
     view.emails.length ||
@@ -51,7 +51,7 @@ function ProfileSection({ view }: { view: FindingView }) {
     view.links.length;
   if (!view.fullname && !view.bio && !hasFacts) return null;
   return (
-    <Section title="Profile">
+    <Section title={title}>
       {view.fullname ? <p className="font-medium">{view.fullname}</p> : null}
       {view.bio ? (
         <p className="whitespace-pre-line text-sm text-muted-foreground">{view.bio}</p>
@@ -83,14 +83,51 @@ function ProfileSection({ view }: { view: FindingView }) {
   );
 }
 
+export function RelatedLinks({ related }: { related: Correlation[] }) {
+  if (related.length === 0) return null;
+  return (
+    <Section title="Possible links">
+      <ul className="space-y-1.5">
+        {related.map((c) => (
+          <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
+            <span className="min-w-0 break-words">{describeRule(c.type).title}</span>
+            <span className="flex shrink-0 items-center gap-2">
+              <span className="font-mono text-xs text-muted-foreground">
+                {percent(c.confidence)}
+              </span>
+              <Badge
+                variant={
+                  c.status === "approved"
+                    ? "success"
+                    : c.status === "rejected"
+                      ? "muted"
+                      : "warning"
+                }
+              >
+                {c.status === "approved"
+                  ? "confirmed"
+                  : c.status === "rejected"
+                    ? "rejected"
+                    : "to check"}
+              </Badge>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
 export function FindingDetail({
   finding,
   view,
   related,
+  profileTitle = "Profile",
 }: {
   finding: Finding;
   view: FindingView;
   related: Correlation[];
+  profileTitle?: string;
 }) {
   return (
     <div className="space-y-5">
@@ -124,7 +161,7 @@ export function FindingDetail({
           </p>
         </Section>
       ) : null}
-      <ProfileSection view={view} />
+      <ProfileSection view={view} title={profileTitle} />
       {view.dns ? <DnsSection dns={view.dns} /> : null}
       {view.network ? <NetworkSection network={view.network} /> : null}
       {view.wallet ? <WalletSection wallet={view.wallet} /> : null}
@@ -142,37 +179,7 @@ export function FindingDetail({
           </dl>
         </Section>
       ) : null}
-      {related.length > 0 ? (
-        <Section title="Possible links">
-          <ul className="space-y-1.5">
-            {related.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                <span className="min-w-0 break-words">{describeRule(c.type).title}</span>
-                <span className="flex shrink-0 items-center gap-2">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {percent(c.confidence)}
-                  </span>
-                  <Badge
-                    variant={
-                      c.status === "approved"
-                        ? "success"
-                        : c.status === "rejected"
-                          ? "muted"
-                          : "warning"
-                    }
-                  >
-                    {c.status === "approved"
-                      ? "confirmed"
-                      : c.status === "rejected"
-                        ? "rejected"
-                        : "to check"}
-                  </Badge>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      ) : null}
+      <RelatedLinks related={related} />
       <Provenance finding={finding} />
     </div>
   );

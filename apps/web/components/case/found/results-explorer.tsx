@@ -1,16 +1,17 @@
 "use client";
 
-import { SearchX } from "lucide-react";
+import { Layers, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
+import { buildAccounts, type AccountIndex } from "@/lib/accounts";
 import { groupOf, isFindingGroupId } from "@/lib/finding-groups";
 import { facet, filterFindings, findingCategory, type FindingFilters } from "@/lib/findings";
 import { useAdvanced } from "@/lib/preferences";
 import { useModules } from "@/lib/query/hooks";
 import { useCurate } from "@/lib/query/mutations";
 import { sourceTitle } from "@/lib/sources";
-import type { Finding } from "@/lib/types";
+import type { Correlation, Finding } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
 import { ResultsFilters, type ResultFilterState, type ResultStatusFilter } from "./results-filters";
 import { ResultsTable } from "./results-table";
@@ -49,7 +50,38 @@ export const CLEAR_RESULT_FILTERS = {
   misses: null,
   show: null,
   page: null,
+  byaccount: null,
 };
+
+/** Rows of one account side by side (in list order of their first row), with a note per row. */
+export function groupRowsByAccount(
+  rows: readonly Finding[],
+  index: AccountIndex,
+): { rows: Finding[]; notes: Map<string, string> } {
+  const visible = new Set(rows.map((f) => f.id));
+  const out: Finding[] = [];
+  const notes = new Map<string, string>();
+  const done = new Set<string>();
+  for (const f of rows) {
+    if (done.has(f.id)) continue;
+    const acc = index.byFinding.get(f.id);
+    const members =
+      acc && acc.findings.length > 1 ? acc.findings.filter((m) => visible.has(m.id)) : [f];
+    members.forEach((m, i) => {
+      done.add(m.id);
+      out.push(m);
+      if (acc && members.length > 1) {
+        notes.set(
+          m.id,
+          i === 0
+            ? `One ${acc.label} account · ${acc.sources.length} sources`
+            : "Same account as above",
+        );
+      }
+    });
+  }
+  return { rows: out, notes };
+}
 
 function toFindingFilters(f: ResultFilterState): FindingFilters {
   return {
@@ -64,7 +96,15 @@ function toFindingFilters(f: ResultFilterState): FindingFilters {
 }
 
 /** The complete, searchable list of everything checked, with the detail sheet one click away. */
-export function ResultsExplorer({ caseId, findings }: { caseId: string; findings: Finding[] }) {
+export function ResultsExplorer({
+  caseId,
+  findings,
+  correlations,
+}: {
+  caseId: string;
+  findings: Finding[];
+  correlations: Correlation[];
+}) {
   const { params, set } = useUrlState();
   const curate = useCurate(caseId);
   const catalogue = useModules();
@@ -105,9 +145,17 @@ export function ResultsExplorer({ caseId, findings }: { caseId: string; findings
     [inGroup, filters],
   );
 
+  const byAccount = params.get("byaccount") !== "0";
+  const index = useMemo(() => buildAccounts(findings, correlations), [findings, correlations]);
+  const grouped = useMemo(
+    () =>
+      byAccount ? groupRowsByAccount(rows, index) : { rows, notes: new Map<string, string>() },
+    [byAccount, rows, index],
+  );
+
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const page = Math.min(pageCount, Math.max(1, Number(params.get("page")) || 1));
-  const pageRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pageRows = grouped.rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const clear = () => {
     setResetKey((k) => k + 1);
     set({ ...CLEAR_RESULT_FILTERS, results: "1" });
@@ -123,6 +171,15 @@ export function ResultsExplorer({ caseId, findings }: { caseId: string; findings
         sourceLabel={label}
         onChange={(patch) => set({ ...patch, page: null, results: "1" })}
       />
+      <Button
+        variant={byAccount ? "secondary" : "outline"}
+        size="sm"
+        aria-pressed={byAccount}
+        onClick={() => set({ byaccount: byAccount ? "0" : null, page: null, results: "1" })}
+      >
+        <Layers aria-hidden />
+        Group by account
+      </Button>
       {rows.length === 0 ? (
         <EmptyState
           icon={SearchX}
@@ -138,6 +195,7 @@ export function ResultsExplorer({ caseId, findings }: { caseId: string; findings
       ) : (
         <ResultsTable
           rows={pageRows}
+          notes={grouped.notes}
           sourceLabel={label}
           advanced={advanced}
           onOpen={(id) => set({ finding: id })}

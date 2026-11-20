@@ -30,12 +30,7 @@ export type CorrelationStatus = (typeof CORRELATION_STATUSES)[number];
 export type ReviewDecision = "approve" | "reject" | "reset";
 
 export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 export type JsonObject = { [key: string]: JsonValue };
 
 export interface Identifier {
@@ -135,6 +130,10 @@ export interface EvidenceRef {
   finding_id: string;
   field: string;
   value: string;
+  /** Platform as stored, the account the finding belongs to, the module (same_account rows). */
+  platform?: string;
+  account_key?: string;
+  module?: string;
 }
 export type EvidenceItem = string | EvidenceRef;
 

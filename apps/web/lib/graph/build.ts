@@ -2,7 +2,9 @@
  * Builds the entity graph model from case data. Pure and framework-free so it
  * can be unit-tested; `components/case/map` maps it onto React Flow.
  */
-import { findingCategory, findingTitle, safeImageUrl } from "../findings";
+import { buildAccounts, isSameAccount, type CaseAccount } from "../accounts";
+import { findingCategory, findingTitle } from "../findings";
+import { describeRule } from "../rules";
 import type { Case, Correlation, CorrelationStatus, Entity, Finding } from "../types";
 
 export const GRAPH_KINDS = [
@@ -21,10 +23,12 @@ export interface GraphNode {
   kind: GraphNodeKind;
   label: string;
   sublabel: string | null;
-  /** Set for nodes that represent one finding. */
+  /** Set for nodes that represent an account: its primary finding. */
   findingId: string | null;
-  /** Set for cluster nodes: the findings folded into it. */
+  /** Cluster nodes: the findings folded into it. Account nodes: every finding of the account. */
   memberIds: string[];
+  /** Account nodes: how many data sources reported the account (badge). */
+  sources: number;
   avatarUrl: string | null;
   curated: boolean;
 }
@@ -88,7 +92,18 @@ function findingSublabel(f: Finding): string {
   return f.identifier_value;
 }
 
-const shortRule = (type: string) => type.replace(/_/g, " ");
+/** Plain words for "identifier -> result" edges. */
+function foundLabel(f: Finding, kind: GraphNodeKind): string {
+  if (kind === "breach") return "listed in";
+  if (kind === "account" && f.identifier_type === "email") return "registered with";
+  return "found on";
+}
+
+const MENTION_LABEL: Record<string, string> = {
+  email: "shows this email",
+  domain: "links to this site",
+  username: "names this account",
+};
 
 export function buildGraph(input: GraphInput, options: GraphOptions = {}): GraphModel {
   const minConfidence = options.minConfidence ?? 0;
@@ -108,54 +123,67 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
       sublabel,
       findingId: null,
       memberIds: [],
+      sources: 0,
       avatarUrl: null,
       curated: false,
     });
+  const edgeIds = new Set<string>();
+  const addEdge = (edge: GraphEdge) => {
+    if (edgeIds.has(edge.id) || edge.source === edge.target) return;
+    edgeIds.add(edge.id);
+    edges.push(edge);
+  };
 
   // 1. seed targets
   for (const idf of input.case.identifiers) {
     plain(identifierNodeId(idf.type, idf.value), "seed", idf.value, idf.type);
   }
 
-  // 2. correlations that survive the filters
+  // 2. correlations that survive the filters (automatic same_account merges are not edges:
+  //    they decide which findings are one account node)
   const found = input.findings.filter((f) => f.status === "found");
-  const foundIds = new Set(found.map((f) => f.id));
+  const index = buildAccounts(found, input.correlations);
   const correlations = input.correlations.filter(
-    (c) => c.confidence >= minConfidence && (showRejected || c.status !== "rejected"),
+    (c) =>
+      !isSameAccount(c) &&
+      c.confidence >= minConfidence &&
+      (showRejected || c.status !== "rejected"),
   );
   const important = new Set<string>();
   for (const c of correlations) c.entities_involved.forEach((id) => important.add(id));
   for (const e of input.entities) if (e.source_finding_id) important.add(e.source_finding_id);
   for (const f of found) if (f.curated) important.add(f.id);
+  const isImportant = (acc: CaseAccount) => acc.findings.some((f) => important.has(f.id));
+  const accountNodeId = (acc: CaseAccount) => findingNodeId(acc.primary.id);
 
-  // 3. findings, clustered per identifier when there are many low-value accounts
-  const byIdentifier = new Map<string, Finding[]>();
-  for (const f of found) {
-    const key = identifierNodeId(f.identifier_type, f.identifier_value);
-    // an image URL that is not a seed adds nothing next to its own finding node
-    const standalone = f.identifier_type === "image" && !nodes.has(key);
-    if (!standalone && !nodes.has(key)) {
-      plain(key, kindForType(f.identifier_type), f.identifier_value, f.identifier_type);
+  // 3. one node per ACCOUNT, clustered per identifier when there are many low-value ones
+  const byIdentifier = new Map<string, CaseAccount[]>();
+  for (const acc of index.accounts) {
+    for (const f of acc.findings) {
+      const key = identifierNodeId(f.identifier_type, f.identifier_value);
+      // an image URL that is not a seed adds nothing next to its own finding node
+      const standalone = f.identifier_type === "image" && !nodes.has(key);
+      if (!standalone && !nodes.has(key)) {
+        plain(key, kindForType(f.identifier_type), f.identifier_value, f.identifier_type);
+      }
     }
-    const list = byIdentifier.get(key) ?? [];
-    list.push(f);
-    byIdentifier.set(key, list);
+    const home = identifierNodeId(acc.primary.identifier_type, acc.primary.identifier_value);
+    byIdentifier.set(home, [...(byIdentifier.get(home) ?? []), acc]);
   }
 
   let clustered = 0;
+  const folded = new Set<string>();
   for (const [identifierId, list] of byIdentifier) {
-    const accounts = list.filter((f) => findingKind(f) === "account");
-    const foldable =
-      accounts.length > maxAccounts ? accounts.filter((f) => !important.has(f.id)) : [];
-    const groups = new Map<string, Finding[]>();
-    for (const f of foldable) {
-      const category = findingCategory(f);
-      groups.set(category, [...(groups.get(category) ?? []), f]);
+    const accounts = list.filter((a) => findingKind(a.primary) === "account");
+    const foldable = accounts.length > maxAccounts ? accounts.filter((a) => !isImportant(a)) : [];
+    const groups = new Map<string, CaseAccount[]>();
+    for (const a of foldable) {
+      const category = findingCategory(a.primary);
+      groups.set(category, [...(groups.get(category) ?? []), a]);
     }
-    const folded = new Set<string>();
     for (const [category, members] of groups) {
       if (members.length < 2) continue;
-      members.forEach((m) => folded.add(m.id));
+      members.forEach((m) => folded.add(m.key));
       clustered += members.length;
       const id = `cluster:${identifierId}:${category}`;
       addNode({
@@ -164,66 +192,97 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
         label: `+${members.length} more on ${category}`,
         sublabel: members
           .slice(0, 3)
-          .map((m) => m.platform)
+          .map((m) => m.label)
           .join(", "),
         findingId: null,
-        memberIds: members.map((m) => m.id),
+        memberIds: members.flatMap((m) => m.findings.map((f) => f.id)),
+        sources: 0,
         avatarUrl: null,
         curated: false,
       });
-      edges.push({
+      addEdge({
         id: `e:${identifierId}>${id}`,
         source: identifierId,
         target: id,
         kind: "found_on",
-        label: null,
-        status: null,
-        confidence: null,
-        correlationId: null,
-      });
-    }
-    for (const f of list) {
-      if (folded.has(f.id)) continue;
-      const id = findingNodeId(f.id);
-      const avatar = f.extra_metadata.extra?.avatar_url;
-      addNode({
-        id,
-        kind: findingKind(f),
-        label: findingTitle(f),
-        sublabel: findingSublabel(f),
-        findingId: f.id,
-        memberIds: [],
-        avatarUrl: safeImageUrl(typeof avatar === "string" ? avatar : null),
-        curated: f.curated,
-      });
-      if (!nodes.has(identifierId)) continue;
-      edges.push({
-        id: `e:${identifierId}>${id}`,
-        source: identifierId,
-        target: id,
-        kind: "found_on",
-        label: null,
+        label: "found on",
         status: null,
         confidence: null,
         correlationId: null,
       });
     }
   }
+  for (const acc of index.accounts) {
+    if (folded.has(acc.key)) continue;
+    const id = accountNodeId(acc);
+    const kind = findingKind(acc.primary);
+    addNode({
+      id,
+      kind,
+      label: acc.findings.length > 1 ? acc.label : findingTitle(acc.primary),
+      sublabel: acc.handle ?? findingSublabel(acc.primary),
+      findingId: acc.primary.id,
+      memberIds: acc.findings.map((f) => f.id),
+      sources: acc.sources.length,
+      avatarUrl: acc.view.avatarUrl,
+      curated: acc.findings.some((f) => f.curated),
+    });
+    // every identifier that found this account points at its ONE node
+    for (const f of acc.findings) {
+      const identifierId = identifierNodeId(f.identifier_type, f.identifier_value);
+      if (!nodes.has(identifierId)) continue;
+      addEdge({
+        id: `e:${identifierId}>${id}`,
+        source: identifierId,
+        target: id,
+        kind: "found_on",
+        label: foundLabel(f, kind),
+        status: null,
+        confidence: null,
+        correlationId: null,
+      });
+    }
+  }
+  const nodeOfFinding = (findingId: string): string | null => {
+    const acc = index.byFinding.get(findingId);
+    if (!acc) return null;
+    const id = accountNodeId(acc);
+    return nodes.has(id) ? id : null;
+  };
 
-  // 4. discovered entities (emails, domains, IPs, handles) and where they were mentioned
+  // 4. discovered entities (emails, domains, IPs, handles) and where they were shown
   for (const e of input.entities) {
     if (e.is_seed || e.kind === "url" || e.kind === "image") continue;
     const id = identifierNodeId(e.kind, e.value);
     if (!nodes.has(id))
       plain(id, kindForType(e.kind), e.value, e.scanned ? e.kind : `${e.kind} · not scanned`);
-    const source = e.source_finding_id ? findingNodeId(e.source_finding_id) : null;
-    if (source && nodes.has(source)) {
-      edges.push({
+    const source = e.source_finding_id ? nodeOfFinding(e.source_finding_id) : null;
+    if (source) {
+      addEdge({
         id: `m:${source}>${id}`,
         source,
         target: id,
         kind: "mentions",
-        label: "mentions",
+        label: MENTION_LABEL[e.kind] ?? "mentions",
+        status: null,
+        confidence: null,
+        correlationId: null,
+      });
+    }
+  }
+  // an account that publishes an email that is itself on the map (searched or suggested)
+  for (const acc of index.accounts) {
+    const source = nodes.has(accountNodeId(acc)) ? accountNodeId(acc) : null;
+    if (!source) continue;
+    for (const email of acc.view.emails) {
+      const id = identifierNodeId("email", email);
+      if (!nodes.has(id)) continue;
+      addEdge({
+        id: `m:${source}>${id}`,
+        source,
+        target: id,
+        kind: "mentions",
+        label: "shows this email",
         status: null,
         confidence: null,
         correlationId: null,
@@ -231,21 +290,20 @@ export function buildGraph(input: GraphInput, options: GraphOptions = {}): Graph
     }
   }
 
-  // 5. correlation edges: star from the first involved finding
+  // 5. links between ACCOUNTS: star from the first account involved
   for (const c of correlations) {
-    const members = c.entities_involved
-      .filter((id) => foundIds.has(id))
-      .map(findingNodeId)
-      .filter((id) => nodes.has(id));
+    const members = [
+      ...new Set(c.entities_involved.map(nodeOfFinding).filter((id): id is string => id !== null)),
+    ];
     const [hub, ...rest] = members;
     if (!hub) continue;
     for (const target of rest) {
-      edges.push({
+      addEdge({
         id: `c:${c.id}:${target}`,
         source: hub,
         target,
         kind: "correlation",
-        label: `${shortRule(c.type)} ${Math.round(c.confidence * 100)}%`,
+        label: `${describeRule(c.type).title} ${Math.round(c.confidence * 100)}%`,
         status: c.status,
         confidence: c.confidence,
         correlationId: c.id,

@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink, Pin } from "lucide-react";
+import { useMemo } from "react";
 import { Avatar } from "@/components/common/bits";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,20 +11,41 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { buildAccounts, linkRows } from "@/lib/accounts";
 import { findingTitle, parseFinding } from "@/lib/findings";
 import { useCorrelations, useFindings } from "@/lib/query/hooks";
 import { useCurate } from "@/lib/query/mutations";
 import type { Finding } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
 import { cn } from "@/lib/utils";
+import { AccountSheetBody } from "./account-sheet-body";
 import { FindingDetail } from "./finding-detail";
 import { FindingStatusBadge } from "./results-table";
 
-function SheetBody({ caseId, finding }: { caseId: string; finding: Finding }) {
+function SheetBody({
+  caseId,
+  finding,
+  findings,
+}: {
+  caseId: string;
+  finding: Finding;
+  findings: Finding[];
+}) {
   const curate = useCurate(caseId);
   const correlations = useCorrelations(caseId);
+  const all = useMemo(() => correlations.data ?? [], [correlations.data]);
+  const account = useMemo(
+    () => buildAccounts(findings, all).byFinding.get(finding.id),
+    [findings, all, finding.id],
+  );
   const view = parseFinding(finding);
-  const related = (correlations.data ?? []).filter((c) => c.entities_involved.includes(finding.id));
+  const mine = new Set(account ? account.findings.map((f) => f.id) : [finding.id]);
+  const related = linkRows(all).filter((c) => c.entities_involved.some((id) => mine.has(id)));
+  if (account && account.findings.length > 1) {
+    return (
+      <AccountSheetBody caseId={caseId} account={account} related={related} openId={finding.id} />
+    );
+  }
   return (
     <>
       <SheetHeader className="pr-8 text-left">
@@ -77,7 +99,7 @@ export function FindingSheet({ caseId }: { caseId: string }) {
     <Sheet open={open} onOpenChange={(next) => !next && set({ finding: null })}>
       <SheetContent className="sm:max-w-xl">
         {finding ? (
-          <SheetBody caseId={caseId} finding={finding} />
+          <SheetBody caseId={caseId} finding={finding} findings={findings.data ?? []} />
         ) : (
           <SheetHeader>
             <SheetTitle>This result is gone</SheetTitle>

@@ -85,6 +85,15 @@ export const EntityNode = memo(function EntityNode({ data, selected }: NodeProps
           </span>
         ) : null}
       </span>
+      {node.sources > 1 ? (
+        <span
+          className="shrink-0 rounded-full bg-success/15 px-1.5 text-[10px] font-semibold tabular-nums text-success"
+          title={`One account, confirmed by ${node.sources} sources`}
+          aria-label={`${node.sources} sources`}
+        >
+          {node.sources}
+        </span>
+      ) : null}
       {node.curated ? (
         <Pin className="h-3 w-3 shrink-0 fill-current text-accent" aria-label="pinned" />
       ) : null}

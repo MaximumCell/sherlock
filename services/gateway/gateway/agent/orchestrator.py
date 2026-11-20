@@ -21,6 +21,7 @@ from sherlock_core.store import Store, get_store
 from gateway.agent.llm import LLMClient, default_client
 from gateway.auth import Principal
 from gateway.service import start_scan
+from gateway.visitors import Origin
 
 SYSTEM_PROMPT = (Path(__file__).parent / "system_prompt.md").read_text()
 
@@ -72,8 +73,9 @@ _SCAN_TOOLS = {"run_username_scan": "username", "run_email_scan": "email", "run_
 
 class Agent:
     def __init__(self, case_id: str, llm: LLMClient | None = None, *,
-                 principal: Principal | None = None, store: Store | None = None):
+                 principal: Principal | None = None, store: Store | None = None, origin: Origin | None = None):
         self.case_id = case_id
+        self.origin = origin
         self.llm = llm or default_client()
         self.store = store or get_store()
         self.principal = principal
@@ -86,7 +88,8 @@ class Agent:
         if self.principal is None:
             return {"scanned": value, "error": "scans need an authenticated session"}
         try:
-            jobs = start_scan(self.store, self.principal, self.case_id, target_type, value, actor="agent")
+            jobs = start_scan(self.store, self.principal, self.case_id, target_type, value, actor="agent",
+                              origin=self.origin)
         except HTTPException as e:
             return {"scanned": value, "error": str(e.detail)}
         self.queues_to_wake.update(j["queue"] for j in jobs)

@@ -64,6 +64,10 @@ export function AckDialog({
               .
             </Label>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Searches are logged with an anonymised origin and reviewed by the operator to prevent
+            misuse. The log is kept for 90 days.
+          </p>
           {error ? (
             <p id="ack-error" role="alert" className="text-sm text-danger">
               Tick the box to confirm, then start the search.

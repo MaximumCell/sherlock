@@ -109,6 +109,10 @@ export default function AboutPage() {
             authorised to investigate it. Searches are rate-limited, and name search needs a
             signed-in account. These limits are part of the product, not settings.
           </p>
+          <p className="max-w-2xl text-base text-muted-foreground">
+            Searches are logged (what was searched, when, and an anonymised origin) and reviewed by
+            the operator to prevent misuse. The log is kept for 90 days.
+          </p>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-soft">

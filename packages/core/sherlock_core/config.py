@@ -22,6 +22,9 @@ WORKER_URLS = {q: env(f"WORKER_URL_{q.upper()}") for q in ("identity", "infra", 
 # Which queue this worker process serves.
 WORKER_QUEUE = env("WORKER_QUEUE", "identity")
 FRONTEND_ORIGINS = [o.strip() for o in env("FRONTEND_ORIGINS").split(",") if o.strip()]
+# Operator panel (/admin): comma-separated emails of signed-in, verified accounts that may use it.
+# Case-insensitive. Empty means nobody is an operator.
+ADMIN_EMAILS = frozenset(e.strip().lower() for e in env("ADMIN_EMAILS").split(",") if e.strip())
 
 # --- LLM
 MODEL_NAME = env("MODEL_NAME", "gemma-4-26b-a4b-it")

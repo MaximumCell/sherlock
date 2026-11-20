@@ -8,12 +8,15 @@ Use `get_store()` in application code; tests call `set_store(MemoryStore())`.
 from __future__ import annotations
 
 import copy
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sherlock_core import config
 from sherlock_core.models import finding_key, now_iso
+
+log = logging.getLogger("sherlock.store")
 
 Row = dict[str, Any]
 PAGE = 1000  # PostgREST caps responses at 1000 rows
@@ -111,6 +114,135 @@ class Store:
     def hit_rate_limit(self, key: str, window_s: int, limit: int) -> bool:
         """Count one hit; True while the caller is within `limit` for the window."""
         raise NotImplementedError
+    def rate_limit_count(self, key: str, window_s: int) -> int:
+        """Hits counted so far for `key` in the current window (0 when none). Counts nothing."""
+        raise NotImplementedError
+
+    # ---- operator panel: visitor_sessions, search_log, app_settings (service key only, never browsers)
+    def touch_session(self, user_id: str, *, is_anonymous: bool, email: str | None = None,
+                      ip_hash: str | None = None, country: str | None = None,
+                      user_agent: str | None = None) -> None:
+        """Create or refresh one visitor row. Sets `last_seen` (and `first_seen` on insert only),
+        `is_anonymous` and `email`; `ip_hash`, `country` and `user_agent` are updated only when given
+        (None keeps the stored value). Never changes counters or the blocked state. `user_agent` is
+        truncated to 300 characters. Raw IP addresses are never passed here."""
+        raise NotImplementedError
+    def get_session(self, user_id: str) -> Row | None:
+        """One visitor row, or None."""
+        raise NotImplementedError
+    def list_sessions(self, *, q: str | None = None, blocked: bool | None = None,
+                      user_ids: list[str] | None = None, active_since: str | None = None,
+                      limit: int = 50, offset: int = 0) -> list[Row]:
+        """Visitor rows, most recently seen first. `q` matches part of the email, or the exact
+        `ip_hash` or `user_id`; `blocked` filters on the flag; `user_ids` restricts to those rows;
+        `active_since` (ISO time) keeps rows with `last_seen >= active_since`."""
+        raise NotImplementedError
+    def set_session_blocked(self, user_id: str, blocked: bool, reason: str | None = None) -> Row | None:
+        """Block (sets `blocked_at`, `blocked_reason`) or unblock (clears both) a visitor.
+        Returns the row, or None when there is no such visitor."""
+        raise NotImplementedError
+    def log_search(self, row: Row) -> Row:
+        """Append one search_log row (`user_id, target_type, target_value, outcome` required; optional
+        `case_id, modules, detail, ip_hash, country, is_anonymous`). `outcome` is one of
+        SEARCH_OUTCOMES. Bumps the visitor's `search_count` (accepted) or `refused_count` (any other
+        outcome). Returns the stored row with `id` and `created_at`; ids increase with time."""
+        raise NotImplementedError
+    def list_searches(self, *, since: str | None = None, outcome: str | None = None,
+                      target_type: str | None = None, q: str | None = None, user_id: str | None = None,
+                      before_id: int | None = None, limit: int = 50) -> list[Row]:
+        """search_log rows, newest first (by id). `q` matches part of `target_value`
+        (case-insensitive); `before_id` returns rows with a smaller id (keyset pagination)."""
+        raise NotImplementedError
+    def detach_case_searches(self, case_id: str) -> None:
+        """Set `case_id` to null on the case's search_log rows (the log outlives the case)."""
+        raise NotImplementedError
+    def purge_search_log(self, days: int = 90) -> int:
+        """Delete search_log rows older than `days` days. Returns how many were deleted."""
+        raise NotImplementedError
+    def get_setting(self, key: str, default: Any = None) -> Any:
+        """The JSON value of an app_settings key, or `default` when unset."""
+        raise NotImplementedError
+    def set_setting(self, key: str, value: Any, updated_by: str | None = None) -> None:
+        """Insert or replace an app_settings value (records `updated_at`, `updated_by`)."""
+        raise NotImplementedError
+    def case_overview(self, owner_id: str) -> list[Row]:
+        """The owner's cases as METADATA only (`id, title, identifiers, status, created_at,
+        archived_at, job_count, found_count`), newest first. Never findings."""
+        raise NotImplementedError
+    def count_cases(self) -> int:
+        """Number of non-demo cases."""
+        raise NotImplementedError
+    def count_active_jobs(self) -> int:
+        """Number of queued or running jobs."""
+        raise NotImplementedError
+
+    def search_stats(self, since: str, *, max_rows: int = 20000) -> Row:
+        """Aggregates of search_log rows created since `since` (UTC days):
+        `{rows, sessions (distinct user ids), truncated, by_day: {YYYY-MM-DD: {outcome: n}}, by_type: {type: n},
+        by_outcome: {outcome: n}, targets: [{target_type, target_value, count, sessions}]}`.
+        `targets` lists every target with its search count and distinct-session count,
+        most searched first. At most `max_rows` rows are read (`truncated` says so)."""
+        rows = self.list_searches(since=since, limit=max_rows)
+        return aggregate_searches(rows, truncated=len(rows) >= max_rows)
+
+
+SEARCH_OUTCOMES = ("accepted", "rate_limited", "blocked", "paused", "forbidden", "invalid")
+USER_AGENT_MAX = 300
+TARGET_MAX = 300
+
+
+def aggregate_searches(rows: list[Row], *, truncated: bool = False) -> Row:
+    """Pure aggregation behind `Store.search_stats` (shared by both stores)."""
+    by_day: dict[str, dict[str, int]] = {}
+    by_type: dict[str, int] = {}
+    by_outcome: dict[str, int] = {}
+    targets: dict[tuple[str, str], dict[str, Any]] = {}
+    for r in rows:
+        day = str(r["created_at"])[:10]
+        by_day.setdefault(day, {})
+        by_day[day][r["outcome"]] = by_day[day].get(r["outcome"], 0) + 1
+        by_type[r["target_type"]] = by_type.get(r["target_type"], 0) + 1
+        by_outcome[r["outcome"]] = by_outcome.get(r["outcome"], 0) + 1
+        t = targets.setdefault((r["target_type"], r["target_value"]), {"count": 0, "sessions": set()})
+        t["count"] += 1
+        t["sessions"].add(str(r["user_id"]))
+    ranked = sorted(targets.items(), key=lambda kv: (-kv[1]["count"], kv[0]))
+    return {
+        "rows": len(rows), "sessions": len({str(r["user_id"]) for r in rows}), "truncated": truncated, "by_day": by_day, "by_type": by_type, "by_outcome": by_outcome,
+        "targets": [{"target_type": k[0], "target_value": k[1], "count": v["count"], "sessions": len(v["sessions"])}
+                    for k, v in ranked],
+    }
+
+
+def _window_start(window_s: int) -> datetime:
+    return datetime.fromtimestamp(int(datetime.now(UTC).timestamp() // window_s) * window_s, UTC)
+
+
+def _search_row(row: Row) -> Row:
+    if row.get("outcome") not in SEARCH_OUTCOMES:
+        raise ValueError(f"unknown search outcome: {row.get('outcome')!r}")
+    out = {k: row.get(k) for k in ("user_id", "case_id", "target_type", "target_value", "modules", "detail",
+                                   "ip_hash", "country")}
+    out.update(outcome=row["outcome"], is_anonymous=bool(row.get("is_anonymous", True)),
+               target_value=str(row["target_value"])[:TARGET_MAX],
+               detail=str(row["detail"])[:500] if row.get("detail") else None)
+    return out
+
+
+_SAFE_Q = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@._+-")
+
+
+def safe_query(q: str | None) -> str:
+    """A search box value reduced to characters that are safe inside a PostgREST filter."""
+    return "".join(ch for ch in (q or "") if ch in _SAFE_Q)[:120]
+
+
+def _is_uuid(value: str) -> bool:
+    try:
+        uuid.UUID(value)
+    except (ValueError, AttributeError, TypeError):
+        return False
+    return True
 
 
 _CORR_ENGINE_FIELDS = ("type", "matched_value", "entities_involved", "confidence", "evidence", "priority")
@@ -173,6 +305,10 @@ class SupabaseStore(Store):
 
     def delete_case(self, case_id):
         self._t("cases").delete().eq("id", case_id).execute()
+        try:
+            self.detach_case_searches(case_id)
+        except Exception as e:  # search_log missing (0002_admin.sql not applied yet): deletion still counts
+            log.warning("could not detach search_log rows of case %s: %s", case_id, type(e).__name__)
 
     # ---- findings
     def upsert_findings(self, findings, case_id, job_id=None):
@@ -325,6 +461,117 @@ class SupabaseStore(Store):
         res = self.c.rpc("hit_rate_limit", {"p_key": key, "p_window_seconds": window_s, "p_limit": limit}).execute()
         return bool(res.data)
 
+    def rate_limit_count(self, key, window_s):
+        row = self._one(self._t("rate_limits").select("count").eq("key", key)
+                        .eq("window_start", _window_start(window_s).isoformat()).execute())
+        return int(row["count"]) if row else 0
+
+    # ---- operator panel
+    def touch_session(self, user_id, *, is_anonymous, email=None, ip_hash=None, country=None, user_agent=None):
+        row: Row = {"user_id": user_id, "is_anonymous": is_anonymous, "email": email, "last_seen": now_iso()}
+        for k, v in (("ip_hash", ip_hash), ("country", country),
+                     ("user_agent", user_agent[:USER_AGENT_MAX] if user_agent else None)):
+            if v is not None:
+                row[k] = v
+        self._t("visitor_sessions").upsert(row, on_conflict="user_id", default_to_null=False).execute()
+
+    def get_session(self, user_id):
+        if not _is_uuid(user_id):
+            return None
+        return self._one(self._t("visitor_sessions").select("*").eq("user_id", user_id).execute())
+
+    def list_sessions(self, *, q=None, blocked=None, user_ids=None, active_since=None, limit=50, offset=0):
+        query = self._t("visitor_sessions").select("*")
+        q = safe_query(q)
+        if q:
+            ors = [f"email.ilike.*{q}*", f"ip_hash.eq.{q}"]
+            if _is_uuid(q):
+                ors.append(f"user_id.eq.{q}")
+            query = query.or_(",".join(ors))
+        if blocked is not None:
+            query = query.eq("blocked", blocked)
+        if user_ids is not None:
+            if not user_ids:
+                return []
+            query = query.in_("user_id", user_ids)
+        if active_since:
+            query = query.gte("last_seen", active_since)
+        query = query.order("last_seen", desc=True)
+        if limit > PAGE:
+            return self._all(query)[offset:offset + limit]
+        return query.range(offset, offset + limit - 1).execute().data or []
+
+    def set_session_blocked(self, user_id, blocked, reason=None):
+        if not _is_uuid(user_id):
+            return None
+        upd: Row = ({"blocked": True, "blocked_at": now_iso(), "blocked_reason": reason} if blocked
+                    else {"blocked": False, "blocked_at": None, "blocked_reason": None})
+        return self._one(self._t("visitor_sessions").update(upd).eq("user_id", user_id).execute())
+
+    def log_search(self, row):
+        # visitor counters are kept by the trg_search_log_counts trigger (0002_admin.sql)
+        return self._t("search_log").insert(_search_row(row)).execute().data[0]
+
+    def list_searches(self, *, since=None, outcome=None, target_type=None, q=None, user_id=None,
+                      before_id=None, limit=50):
+        query = self._t("search_log").select("*")
+        if since:
+            query = query.gte("created_at", since)
+        if outcome:
+            query = query.eq("outcome", outcome)
+        if target_type:
+            query = query.eq("target_type", target_type)
+        q = safe_query(q)
+        if q:
+            query = query.ilike("target_value", f"%{q}%")
+        if user_id:
+            if not _is_uuid(user_id):
+                return []
+            query = query.eq("user_id", user_id)
+        if before_id is not None:
+            query = query.lt("id", before_id)
+        query = query.order("id", desc=True)
+        if limit > PAGE:
+            return self._all(query)[:limit]
+        return query.limit(limit).execute().data or []
+
+    def detach_case_searches(self, case_id):
+        self._t("search_log").update({"case_id": None}).eq("case_id", case_id).execute()
+
+    def purge_search_log(self, days=90):
+        res = self.c.rpc("purge_old_search_log", {"p_days": days}).execute()
+        return int(res.data or 0)
+
+    def get_setting(self, key, default=None):
+        row = self._one(self._t("app_settings").select("value").eq("key", key).execute())
+        return default if row is None or row.get("value") is None else row["value"]
+
+    def set_setting(self, key, value, updated_by=None):
+        self._t("app_settings").upsert({"key": key, "value": value, "updated_at": now_iso(),
+                                        "updated_by": updated_by}, on_conflict="key").execute()
+
+    def case_overview(self, owner_id):
+        cases = self._all(self._t("cases").select("id,title,identifiers,status,created_at,archived_at")
+                          .eq("owner_id", owner_id).order("created_at", desc=True))
+        ids = [c["id"] for c in cases]
+        jobs: dict[str, int] = {}
+        found: dict[str, int] = {}
+        for i in range(0, len(ids), 100):
+            chunk = ids[i:i + 100]
+            for r in self._all(self._t("jobs").select("case_id").in_("case_id", chunk)):
+                jobs[r["case_id"]] = jobs.get(r["case_id"], 0) + 1
+            for r in self._all(self._t("raw_findings").select("case_id").in_("case_id", chunk).eq("status", "found")):
+                found[r["case_id"]] = found.get(r["case_id"], 0) + 1
+        return [{**c, "job_count": jobs.get(c["id"], 0), "found_count": found.get(c["id"], 0)} for c in cases]
+
+    def count_cases(self):
+        res = self._t("cases").select("id", count="exact").eq("is_demo", False).limit(1).execute()
+        return int(res.count or 0)
+
+    def count_active_jobs(self):
+        res = self._t("jobs").select("id", count="exact").in_("status", ["queued", "running"]).limit(1).execute()
+        return int(res.count or 0)
+
 
 class MemoryStore(Store):
     """In-memory Store with the same semantics, for offline tests."""
@@ -337,6 +584,10 @@ class MemoryStore(Store):
         self.jobs: dict[str, Row] = {}
         self.audit: list[Row] = []
         self.rate: dict[tuple[str, int], int] = {}
+        self.sessions: dict[str, Row] = {}
+        self.search_log: list[Row] = []
+        self.settings: dict[str, Row] = {}
+        self._purged = 0
         self.stale_seconds = config.JOB_STALE_SECONDS
 
     @staticmethod
@@ -377,6 +628,7 @@ class MemoryStore(Store):
                 del table[k]
         for k in [k for k in self.entities if k[0] == case_id]:
             del self.entities[k]
+        self.detach_case_searches(case_id)
 
     # ---- findings
     def upsert_findings(self, findings, case_id, job_id=None):
@@ -559,6 +811,103 @@ class MemoryStore(Store):
         bucket = (key, int(datetime.now(UTC).timestamp() // window_s))
         self.rate[bucket] = self.rate.get(bucket, 0) + 1
         return self.rate[bucket] <= limit
+
+    def rate_limit_count(self, key, window_s):
+        return self.rate.get((key, int(datetime.now(UTC).timestamp() // window_s)), 0)
+
+    # ---- operator panel
+    def touch_session(self, user_id, *, is_anonymous, email=None, ip_hash=None, country=None, user_agent=None):
+        now = now_iso()
+        row = self.sessions.setdefault(user_id, {
+            "user_id": user_id, "first_seen": now, "ip_hash": None, "country": None, "user_agent": None,
+            "search_count": 0, "refused_count": 0, "blocked": False, "blocked_at": None, "blocked_reason": None,
+        })
+        row.update(is_anonymous=is_anonymous, email=email, last_seen=now)
+        for k, v in (("ip_hash", ip_hash), ("country", country),
+                     ("user_agent", user_agent[:USER_AGENT_MAX] if user_agent else None)):
+            if v is not None:
+                row[k] = v
+
+    def get_session(self, user_id):
+        return self._cp(self.sessions.get(user_id))
+
+    def list_sessions(self, *, q=None, blocked=None, user_ids=None, active_since=None, limit=50, offset=0):
+        q = safe_query(q)
+        wanted = set(user_ids) if user_ids is not None else None
+
+        def keep(r: Row) -> bool:
+            if q and not (q.lower() in (r.get("email") or "").lower() or q in (r.get("ip_hash"), r["user_id"])):
+                return False
+            if blocked is not None and r["blocked"] != blocked:
+                return False
+            if wanted is not None and r["user_id"] not in wanted:
+                return False
+            return not (active_since and r["last_seen"] < active_since)
+
+        rows = sorted((r for r in self.sessions.values() if keep(r)), key=lambda r: r["last_seen"], reverse=True)
+        return copy.deepcopy(rows[offset:offset + limit])
+
+    def set_session_blocked(self, user_id, blocked, reason=None):
+        r = self.sessions.get(user_id)
+        if r is None:
+            return None
+        r.update({"blocked": True, "blocked_at": now_iso(), "blocked_reason": reason} if blocked
+                 else {"blocked": False, "blocked_at": None, "blocked_reason": None})
+        return copy.deepcopy(r)
+
+    def log_search(self, row):
+        out = {"id": len(self.search_log) + 1 + self._purged, "created_at": now_iso(), **_search_row(row)}
+        self.search_log.append(out)
+        s = self.sessions.get(out["user_id"])
+        if s is not None:
+            s["search_count" if out["outcome"] == "accepted" else "refused_count"] += 1
+        return copy.deepcopy(out)
+
+    def list_searches(self, *, since=None, outcome=None, target_type=None, q=None, user_id=None,
+                      before_id=None, limit=50):
+        q = safe_query(q).lower()
+        rows = [r for r in reversed(self.search_log)
+                if (not since or r["created_at"] >= since) and (not outcome or r["outcome"] == outcome)
+                and (not target_type or r["target_type"] == target_type)
+                and (not q or q in r["target_value"].lower()) and (not user_id or r["user_id"] == user_id)
+                and (before_id is None or r["id"] < before_id)]
+        return copy.deepcopy(rows[:limit])
+
+    def detach_case_searches(self, case_id):
+        for r in self.search_log:
+            if r["case_id"] == case_id:
+                r["case_id"] = None
+
+    def purge_search_log(self, days=90):
+        cutoff = (datetime.now(UTC) - timedelta(days=max(days, 1))).isoformat()
+        keep = [r for r in self.search_log if r["created_at"] >= cutoff]
+        removed = len(self.search_log) - len(keep)
+        self._purged += removed
+        self.search_log = keep
+        return removed
+
+    def get_setting(self, key, default=None):
+        row = self.settings.get(key)
+        return default if row is None or row["value"] is None else copy.deepcopy(row["value"])
+
+    def set_setting(self, key, value, updated_by=None):
+        self.settings[key] = {"key": key, "value": copy.deepcopy(value), "updated_at": now_iso(),
+                              "updated_by": updated_by}
+
+    def case_overview(self, owner_id):
+        out = []
+        for c in self.list_cases(owner_id):
+            out.append({**{k: c.get(k) for k in ("id", "title", "identifiers", "status", "created_at", "archived_at")},
+                        "job_count": sum(1 for j in self.jobs.values() if j["case_id"] == c["id"]),
+                        "found_count": sum(1 for f in self.findings.values()
+                                           if f["case_id"] == c["id"] and f["status"] == "found")})
+        return out
+
+    def count_cases(self):
+        return sum(1 for c in self.cases.values() if not c.get("is_demo"))
+
+    def count_active_jobs(self):
+        return sum(1 for j in self.jobs.values() if j["status"] in ("queued", "running"))
 
 
 _store: Store | None = None

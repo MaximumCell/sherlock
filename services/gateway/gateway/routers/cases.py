@@ -32,6 +32,7 @@ from gateway.schemas import (
 )
 from gateway.service import (
     StoreDep,
+    check_scans_allowed,
     check_target_allowed,
     consume_llm_quota,
     consume_scan_quota,
@@ -41,14 +42,17 @@ from gateway.service import (
     name_params,
     normalize_or_400,
     plan_or_400,
+    search_attempt,
     start_scan,
 )
+from gateway.visitors import Origin, get_origin
 from gateway.wake import Waker, get_waker
 
 log = logging.getLogger("sherlock.gateway.cases")
 router = APIRouter(prefix="/cases", tags=["cases"])
 
 WakerDep = Annotated[Waker, Depends(get_waker)]
+OriginDep = Annotated[Origin, Depends(get_origin)]
 
 
 def get_llm_client() -> LLMClient:
@@ -65,34 +69,44 @@ LLMDep = Annotated[LLMClient, Depends(get_llm_client)]
 # ----------------------------------------------------------------------------- cases
 @router.post("", response_model=CaseCreated, status_code=201)
 def create_case(body: CaseCreate, principal: CurrentPrincipal, store: StoreDep,
-                background: BackgroundTasks, waker: WakerDep):
-    identifiers: list[dict] = []
-    for ident in body.identifiers:
-        check_target_allowed(principal, ident.type)
-        value = normalize_or_400(ident.type, ident.value)
-        if not any(i["type"] == ident.type and i["value"] == value for i in identifiers):
-            identifiers.append({"type": ident.type, "value": value})
+                background: BackgroundTasks, waker: WakerDep, origin: OriginDep):
+    # A case created with scan=True is a search: every target is logged with the outcome.
+    raw = [{"type": i.type, "value": i.value} for i in body.identifiers] if body.scan else []
+    with search_attempt(store, principal, origin, raw) as attempt:
+        if body.scan:
+            check_scans_allowed(store, principal)
+        identifiers: list[dict] = []
+        for ident in body.identifiers:
+            check_target_allowed(principal, ident.type)
+            value = normalize_or_400(ident.type, ident.value)
+            if not any(i["type"] == ident.type and i["value"] == value for i in identifiers):
+                identifiers.append({"type": ident.type, "value": value})
 
-    if body.hints is not None and not any(i["type"] == "name" for i in identifiers):
-        raise HTTPException(400, "hints are only accepted together with a name identifier")
-    # Plan before anything is written, so an unusable request leaves nothing behind.
-    batches = [plan_or_400("", i["type"], i["value"], params=name_params(i["type"], body.hints)
-                           if i["type"] == "name" else None)
-               for i in identifiers] if body.scan else []
-    for i in identifiers if body.scan else []:
-        consume_scan_quota(store, principal, i["type"])
+        if body.hints is not None and not any(i["type"] == "name" for i in identifiers):
+            raise HTTPException(400, "hints are only accepted together with a name identifier")
+        # Plan before anything is written, so an unusable request leaves nothing behind.
+        batches = [plan_or_400("", i["type"], i["value"], params=name_params(i["type"], body.hints)
+                               if i["type"] == "name" else None)
+                   for i in identifiers] if body.scan else []
+        if body.scan:
+            attempt.targets = [{"type": i["type"], "value": i["value"], "modules": [j["module"] for j in b]}
+                               for i, b in zip(identifiers, batches, strict=True)]
+        for i in identifiers if body.scan else []:
+            consume_scan_quota(store, principal, i["type"])
 
-    title = (body.title or "").strip() or identifiers[0]["value"]
-    case = store.create_case(identifiers, owner_id=principal.user_id, title=title,
-                             tags=[t.strip() for t in body.tags if t.strip()])
-    store.upsert_entities(case["id"], [{"kind": i["type"], "value": i["value"], "is_seed": True} for i in identifiers])
-    store.log(case["id"], "case_created", "user", {"user": principal.user_id, "identifiers": identifiers})
+        title = (body.title or "").strip() or identifiers[0]["value"]
+        case = store.create_case(identifiers, owner_id=principal.user_id, title=title,
+                                 tags=[t.strip() for t in body.tags if t.strip()])
+        attempt.case_id = case["id"]
+        store.upsert_entities(case["id"], [{"kind": i["type"], "value": i["value"], "is_seed": True}
+                                           for i in identifiers])
+        store.log(case["id"], "case_created", "user", {"user": principal.user_id, "identifiers": identifiers})
 
-    jobs: list[dict] = []
-    for planned in batches:
-        for row in planned:
-            row["case_id"] = case["id"]
-        jobs.extend(enqueue_planned(store, principal, case["id"], planned, actor="user"))
+        jobs: list[dict] = []
+        for planned in batches:
+            for row in planned:
+                row["case_id"] = case["id"]
+            jobs.extend(enqueue_planned(store, principal, case["id"], planned, actor="user"))
     if jobs:
         background.add_task(waker, {j["queue"] for j in jobs})
     return {"case": case, "jobs": jobs}
@@ -125,10 +139,10 @@ def delete_case(case_id: str, principal: CurrentPrincipal, store: StoreDep):
 # ----------------------------------------------------------------------------- scans and jobs
 @router.post("/{case_id}/scan", response_model=ScanAccepted, status_code=202)
 def scan(case_id: str, body: ScanRequest, principal: CurrentPrincipal, store: StoreDep,
-         background: BackgroundTasks, waker: WakerDep):
+         background: BackgroundTasks, waker: WakerDep, origin: OriginDep):
     load_case(store, case_id, principal, write=True)
     jobs = start_scan(store, principal, case_id, body.type, body.value, body.modules,
-                      params=name_params(body.type, body.hints))
+                      hints=body.hints, origin=origin)
     background.add_task(waker, {j["queue"] for j in jobs})
     return {"batch_id": jobs[0]["batch_id"], "jobs": jobs}
 
@@ -342,10 +356,10 @@ def variations(case_id: str, principal: CurrentPrincipal, store: StoreDep, llm: 
 
 @router.post("/{case_id}/chat", response_model=ChatOut)
 def chat(case_id: str, body: ChatRequest, principal: CurrentPrincipal, store: StoreDep, llm: LLMDep,
-         background: BackgroundTasks, waker: WakerDep):
+         background: BackgroundTasks, waker: WakerDep, origin: OriginDep):
     load_case(store, case_id, principal, write=True)
     consume_llm_quota(store, principal)
-    agent = Agent(case_id, llm=llm, principal=principal, store=store)
+    agent = Agent(case_id, llm=llm, principal=principal, store=store, origin=origin)
     try:
         out = agent.chat(body.message)
     except Exception as e:

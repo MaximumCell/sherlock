@@ -11,6 +11,15 @@ HUDSON = "https://cavalier.hudsonrock.com/api/json/v2/osint-tools"
 
 
 # ------------------------------------------------------------------ user_scanner
+def test_user_scanner_username_sweep_is_opt_in():
+    """~2,500 sites cannot finish on a 0.1-CPU host, so usernames are off unless enabled."""
+    pytest.importorskip("user_scanner")
+    import sherlock_core.modules.user_scanner as mod
+
+    assert mod._USERNAME_SWEEP is False
+    assert mod.UserScanner.inputs == ("email",)
+
+
 async def test_user_scanner_maps_library_results(monkeypatch, run, meta):
     pytest.importorskip("user_scanner")
     import sherlock_core.modules.user_scanner as mod
@@ -27,6 +36,8 @@ async def test_user_scanner_maps_library_results(monkeypatch, run, meta):
         ]
 
     monkeypatch.setattr(mod, "check_all", fake_check_all)
+    # the username sweep is opt-in (USER_SCANNER_USERNAMES=1); switch it on for this test
+    monkeypatch.setattr(mod.UserScanner, "inputs", ("username", "email"))
     rows = await run("user_scanner", "username", "exampleuser", include_all=True)
     assert [(r["platform"], r["status"]) for r in rows] == [
         ("GitHub", "found"), ("GitLab", "not_found"), ("Reddit", "error"),

@@ -9,6 +9,7 @@ registry skips this file.
 """
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from user_scanner.core.engine import check_all  # optional dep: ImportError => module skipped
@@ -40,15 +41,22 @@ def result_to_finding(module: Module, target: Target, ctx: ModuleContext, result
     )
 
 
+_USERNAME_SWEEP = os.getenv("USER_SCANNER_USERNAMES", "").strip().lower() in ("1", "true", "yes")
+
+
 @register
 class UserScanner(Module):
     name = "user_scanner"
     title = "Account sweep (user-scanner)"
     description = "Checks whether a username or email is registered on a few thousand public sites."
-    inputs = ("username", "email")
+    # The username sweep covers ~2,500 sites and cannot finish on a 0.1-CPU host (measured:
+    # it hits the timeout on every attempt and blocks the queue), so it is opt-in. The
+    # 690-site WhatsMyName check and the profile modules cover usernames by default. The
+    # email sweep (~200 sites) is small enough to stay on.
+    inputs = ("username", "email") if _USERNAME_SWEEP else ("email",)
     queue = "identity"
     source_url = "https://github.com/kaifcodec/user-scanner"
-    timeout_s = 300.0
+    timeout_s = 420.0
 
     async def run(self, target: Target, ctx: ModuleContext) -> list[dict[str, Any]]:
         await ctx.progress(5, "sweeping sites")

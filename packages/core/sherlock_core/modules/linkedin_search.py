@@ -54,7 +54,7 @@ MIN_NAME_SCORE = 0.5
 
 _SLUG = re.compile(r"^/in/([^/?#]+)/?$")
 _POLLUTED = re.compile(r"(?:\|\s*LinkedIn|\.\.\.|…)\s*\S")           # text continues after an end marker
-_TITLE_END = re.compile(r"\s*(?:\|\s*LinkedIn\b|\.\.\.|…).*$", re.S)
+_TITLE_END = re.compile(r"\s*(?:\|\s*LinkedIn|\.\.\.|…).*$", re.S)    # no \b: "| LinkedInReid Hoffman - ..."
 _TITLE_SPLIT = re.compile(r"\s+[-–—]\s+")
 _PROFILE_SUFFIX = re.compile(r"\s*\|\s*([^|]*)$")
 _FIELD = re.compile(

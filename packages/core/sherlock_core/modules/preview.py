@@ -288,6 +288,12 @@ def _fold(s: str) -> str:
     return re.sub(r"[^a-z0-9]", "", s.casefold())
 
 
+# "Profile of <name>" in a few languages (seen on WhatsMyName sites in the 2026-11-20 smoke run).
+_NAME_PREFIX = re.compile(
+    r"^(?:profile of|user profile of|личный профиль|профиль(?: пользователя)?|лоты пользователя|"
+    r"блог(?: пользователя)?|pliki użytkownika|profil użytkownika|profil von|profil de|perfil de)\s+", re.I)
+_NAME_SUFFIX = re.compile(
+    r"[’']s\s+(?:\w+\s+)?(?:profile|page|channel|collection|portfolio|account|blog|photos|music)\s*$", re.I)
 _GENERIC_PIECES = frozenset({"profile", "home", "userprofile", "overview", "about", "officialsite", "channel",
                              "photosandvideos", "stories", "community"})
 
@@ -301,8 +307,8 @@ def clean_title(title: str, host: str, site_name: str, handle: str) -> str:
     on_site = re.search(r"\s+on\s+(\S+(?:\s+\S+)?)\s*$", t)       # "NASA (@NASA) on X", "Tony on about.me"
     if on_site and (f := _fold(on_site.group(1))) and any(w == f or w.startswith(f) for w in site):
         t = t[: on_site.start()]
-    t = re.sub(r"[’']s\s+(?:profile|page|channel)\s*$", "", t, flags=re.I)
-    pieces = [x.strip() for x in _TITLE_SEP.split(t) if x and x.strip()]
+    pieces = [_NAME_PREFIX.sub("", _NAME_SUFFIX.sub("", x.strip())).lstrip("/").strip()
+              for x in _TITLE_SEP.split(t) if x and x.strip()]
     name = ""
     for piece in pieces:
         f = _fold(piece)
@@ -340,11 +346,31 @@ _BOILERPLATE = [re.compile(p, re.I) for p in (
 )]
 
 
+# Descriptions that are the site's own marketing / default text, not something the person wrote.
+_GENERIC_BIO = re.compile(
+    r"\b(?:just created a page|create (?:a|your) (?:free )?(?:account|page|profile|link)|link in bio|bio link|"
+    r"links? to everywhere|is a (?:\w+ )?(?:platform|community|website|site|"
+    r"service|network|marketplace|tool)|the world.s (?:leading|largest|most)|official (?:site|website)|"
+    r"(?:user|member|developer) profile|profile (?:of|for)|view (?:the )?profile|discover the|"
+    r"explore .{0,40}photos|a network for|accessible to all)\b", re.I)
+
+
 def clean_bio(text: str, site: set[str]) -> str:
+    """A description with the site's boilerplate removed; '' when what is left is the site talking.
+
+    Text that names the site itself ("Explore Lungle's 63 photos on Flickr!", "AtCoder is a
+    programming contest site ...") is the site describing the page, not the person's bio.
+    """
     for rx in _BOILERPLATE:
         text = rx.sub(" ", text)
     text = " ".join(text.split()).lstrip(" -·•.,").rstrip(" -·•,")
-    if _fold(text) in site or len(_fold(text)) < 3:
+    if _fold(text) in site or len(_fold(text)) < 3 or _GENERIC_BIO.search(text):
+        return ""
+    # the site naming itself early in a short text; a long bio may mention it ("Chief Scientist of Kaggle")
+    head = text if len(text) < 120 else text[:80]
+    words = re.findall(r"[a-z0-9]+", head.casefold())
+    tokens = set(words) | {a + b for a, b in zip(words, words[1:], strict=False)}
+    if any(len(w) >= 4 and w in tokens for w in site):
         return ""
     return text[:BIO_MAX]
 
@@ -453,6 +479,8 @@ def gate(raw: dict[str, Any], *, profile_url: str, handle: str, status: int,
     }.items() if v}
     if not out:
         return None, "nothing personal on the page"
+    if set(out) == {"fullname"} and _fold(name) == _fold(handle):
+        return None, "nothing beyond the handle"
     # a description alone is often the site's boilerplate; demand the page names the account
     if set(out) <= {"bio", "links"} and not (_fold(handle) and _fold(handle) in _fold(bio)):
         return None, "only a generic description"

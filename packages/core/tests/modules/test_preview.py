@@ -75,6 +75,38 @@ def test_boilerplate_is_removed_from_bios():
     assert bio("twitter", "https://x.com/NASA", "NASA") == "Making the seemingly impossible, possible. ✨"
 
 
+@pytest.mark.parametrize("text,host,kept", [
+    # seen on WhatsMyName sites in the 2026-11-20 smoke run
+    ("AtCoder is a programming contest site for anyone from beginners to experts.", "atcoder.jp", False),
+    ("Explore Lungle’s 63 photos on Flickr!", "flickr.com", False),
+    ("Hey 👋 I just created a page here. You can now buy me a coffee!", "buymeacoffee.com", False),
+    ("Create a free link in bio with Bio Sites by Square", "bio.site", False),
+    ("View the profile of Na Sa on Codementor.", "codementor.io", False),
+    ("NASA's AniList user profile", "anilist.co", False),
+    # real bios stay, including a long one that mentions the site late
+    ("Founding Researcher at fast.ai. Hon Professor at University of Queensland. Previously: Distinguished "
+     "Research Scientist at University of San Francisco. President/Chief Scientist of Kaggle.", "kaggle.com", True),
+    ("Making the seemingly impossible, possible. ✨", "x.com", True),
+])
+def test_site_text_is_not_a_bio(text, host, kept):
+    assert bool(pv.clean_bio(text, pv._site_words(host, ""))) is kept
+
+
+@pytest.mark.parametrize("title,host,expected", [
+    ("Личный профиль Ivan", "championat.com", "Ivan"),
+    ("smythe's collection | Bandcamp", "bandcamp.com", "smythe"),
+    ("Na Sa's Developer Profile | Codementor", "codementor.io", "Na Sa"),
+])
+def test_profile_of_wrappers_are_removed_from_names(title, host, expected):
+    assert pv.clean_title(title, host, "", "nasa") == expected
+
+
+def test_a_name_equal_to_the_handle_alone_is_not_a_preview():
+    fields, reason = pv.gate({"title": "nasa | Arduino Project Hub"}, profile_url="https://projecthub.arduino.cc/nasa",
+                             handle="nasa", status=200, hops=["https://projecthub.arduino.cc/nasa"])
+    assert fields is None and "handle" in reason
+
+
 def test_cross_links_come_from_rel_me_and_json_ld():
     fields, _ = pv.gate(pv.parse_page(page("devto"), "https://dev.to/ben"), profile_url="https://dev.to/ben",
                         handle="ben", status=200, hops=["https://dev.to/ben"])

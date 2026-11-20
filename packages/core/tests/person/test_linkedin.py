@@ -103,6 +103,9 @@ def test_concatenated_ddgs_rows_are_cut_and_their_snippet_ignored():
     f = parse_hit(h)
     assert f["polluted"] and f["name"] == "Jane Example" and f["headline"] == "CTO at Examplecorp"
     assert f["employer"] == "Examplecorp" and "location" not in f       # Othercorp / Elsewhere are someone else's
+    g = parse_hit(SearchHit(title="Jane Example - RN, BSN | LinkedInJane Example - Student at Example U | LinkedIn",
+                            url="https://www.linkedin.com/in/jane-example-1", snippet="", source="ddgs-google"))
+    assert g["polluted"] and g["headline"] == "RN, BSN"
 
 
 def test_snippet_fields_and_localised_titles():

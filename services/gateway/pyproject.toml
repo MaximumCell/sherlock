@@ -4,7 +4,10 @@ version = "2.0.0"
 description = "Sherlock API gateway: commands, validation, rate limits"
 requires-python = ">=3.11"
 dependencies = [
-    "sherlock-core[search]",   # person_web availability is decided where scans are planned
+    # Scans are planned here from the module registry, and a module whose optional library
+    # is missing is skipped. Install every extra the workers use, or those sources are never
+    # scheduled (image metadata, phone metadata and the email sweep were silently missing).
+    "sherlock-core[identity,infra,media,phone,search]",
     "fastapi>=0.115",
     "uvicorn>=0.32",
     "google-genai>=0.3",

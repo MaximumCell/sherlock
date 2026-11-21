@@ -2166,7 +2166,7 @@ source = { editable = "services/gateway" }
 dependencies = [
     { name = "fastapi" },
     { name = "google-genai" },
-    { name = "sherlock-core", extra = ["search"] },
+    { name = "sherlock-core", extra = ["identity", "infra", "media", "phone", "search"] },
     { name = "uvicorn" },
 ]
 
@@ -2174,7 +2174,7 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "google-genai", specifier = ">=0.3" },
-    { name = "sherlock-core", extras = ["search"], editable = "packages/core" },
+    { name = "sherlock-core", extras = ["identity", "infra", "media", "phone", "search"], editable = "packages/core" },
     { name = "uvicorn", specifier = ">=0.32" },
 ]
 

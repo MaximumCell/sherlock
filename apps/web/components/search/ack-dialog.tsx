@@ -65,8 +65,9 @@ export function AckDialog({
             </Label>
           </div>
           <p className="border-l-2 border-border pl-3 text-xs text-muted-foreground">
-            Searches are logged with an anonymised origin and reviewed by the operator to prevent
-            misuse. The log is kept for 90 days.
+            Searches are logged with an anonymised origin and kept for 90 days. To prevent misuse,
+            the operator can review searches and their results; each review is recorded in the
+            case&apos;s history.
           </p>
           {error ? (
             <p id="ack-error" role="alert" className="text-sm text-danger">

@@ -48,3 +48,26 @@ describe("gateway admin source", () => {
     expect(calls[3]?.[1]?.body).toEqual({ reason: "spam" });
   });
 });
+
+describe("read-only case view", () => {
+  it("joins every page of findings and maps the rows", async () => {
+    const calls: string[] = [];
+    const page = (n: number, next: number | null) => ({
+      case: { id: "c1", identifiers: [], tags: [] },
+      findings: [{ id: `f${n}`, case_id: "c1", status: "found" }],
+      findings_next_offset: next,
+      correlations: [],
+      entities: [],
+      jobs: [],
+      audit: [{ id: 1, case_id: "c1", action: "admin_case_viewed", actor: "operator", detail: {} }],
+    });
+    const command = async <T,>(path: string): Promise<T> => {
+      calls.push(path);
+      return (path.includes("findings_offset=1") ? page(2, null) : page(1, 1)) as T;
+    };
+    const view = await createGatewayAdminSource(command).viewCase("c1");
+    expect(calls).toEqual(["/admin/cases/c1", "/admin/cases/c1?findings_offset=1"]);
+    expect(view.findings.map((f) => f.id)).toEqual(["f1", "f2"]);
+    expect(view.audit[0]?.action).toBe("admin_case_viewed");
+  });
+});

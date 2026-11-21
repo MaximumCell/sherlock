@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
 import { ExternalLink, PanelRightOpen, Pin } from "lucide-react";
 import { tiltHandlers } from "@/components/motion/tilt";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
@@ -21,6 +22,8 @@ export function PinToggle({
   label: string;
   onPin: (pinned: boolean) => void;
 }) {
+  const readOnly = useReadOnly();
+  if (readOnly) return <PinMark pinned={pinned} />;
   return (
     <button
       type="button"
@@ -34,6 +37,19 @@ export function PinToggle({
     >
       <Pin className={cn("h-4 w-4", pinned && "fill-current")} aria-hidden />
     </button>
+  );
+}
+
+/** Read-only: shows that the owner pinned it, without a control. */
+export function PinMark({ pinned }: { pinned: boolean }) {
+  if (!pinned) return null;
+  return (
+    <span
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-accent"
+      title="Pinned by the owner"
+    >
+      <Pin className="h-4 w-4 fill-current" aria-label="Pinned" />
+    </span>
   );
 }
 

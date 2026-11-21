@@ -11,6 +11,11 @@
  * status colours (confirmed green, pending amber, risk red). Everything else is neutral.
  */
 @layer base {
+  /* The hidden attribute always wins over display utilities (used by the read-only case view). */
+  [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
+  }
+
   :root {
     /* light: case file */
     --background: 40 20% 97%;

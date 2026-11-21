@@ -2,7 +2,7 @@
  * Operator panel types: a hand-written mirror of the `/admin/*` response models in
  * `services/gateway/gateway/schemas.py`. Field names must match.
  */
-import type { Identifier } from "../types";
+import type { AuditEntry, Case, Correlation, Entity, Finding, Identifier, Job } from "../types";
 
 export const SEARCH_OUTCOMES = [
   "accepted",
@@ -152,4 +152,16 @@ export interface AdminSource {
   unblock(userId: string): Promise<VisitorSession>;
   setPaused(paused: boolean): Promise<boolean>;
   deleteCase(caseId: string): Promise<void>;
+  /** Any visitor's case in full, read-only, for abuse review. Each opening is logged on the case. */
+  viewCase(caseId: string): Promise<AdminCaseView>;
+}
+
+/** `GET /admin/cases/{id}` (every page of findings joined). */
+export interface AdminCaseView {
+  case: Case;
+  findings: Finding[];
+  correlations: Correlation[];
+  entities: Entity[];
+  jobs: Job[];
+  audit: AuditEntry[];
 }

@@ -7,6 +7,7 @@ import { GatewayError } from "../data/gateway";
 import type { TargetType } from "../types";
 import { DEMO_SESSIONS, LIVE_POOL, demoCases, demoSearchSeeds } from "./demo-data";
 import type {
+  AdminCaseView,
   AdminSource,
   CaseMeta,
   DayPoint,
@@ -21,6 +22,11 @@ export interface DemoAdminOptions {
   latencyMs?: number;
   /** Minimum gap between invented live searches (0 disables them). */
   liveEveryMs?: number;
+  /**
+   * Full contents for the read-only case view (the fixture data source provides them). `meta` is
+   * the invented visitor case, when the id is one; null means unknown (404).
+   */
+  caseContent?: (caseId: string, meta: CaseMeta | null) => AdminCaseView | null;
 }
 
 const DAY_MS = 86_400_000;
@@ -295,6 +301,12 @@ export function createDemoAdminSource(options: DemoAdminOptions = {}): AdminSour
     setPaused(next) {
       paused = next;
       return wait(paused);
+    },
+
+    viewCase(caseId) {
+      const meta = Object.values(cases).flat().find((c) => c.id === caseId) ?? null;
+      const view = options.caseContent?.(caseId, meta) ?? null;
+      return view ? wait(view) : Promise.reject(new GatewayError(404, "case not found"));
     },
 
     deleteCase(caseId) {

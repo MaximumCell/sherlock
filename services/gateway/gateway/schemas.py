@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
-from sherlock_core.models import Case, Entity, Identifier, Job, TargetType
+from sherlock_core.models import Case, Correlation, Entity, Finding, Identifier, Job, TargetType
 
 # ----------------------------------------------------------------------------- requests
 _Hint = Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)]
@@ -350,3 +350,15 @@ class Overview(BaseModel):
 
 class PauseState(BaseModel):
     scans_paused: bool
+
+
+class AdminCaseView(BaseModel):
+    """`GET /admin/cases/{id}`: one visitor's case in full, read-only, for abuse review."""
+    case: Case
+    findings: list[Finding]
+    findings_total: int
+    findings_next_offset: int | None
+    correlations: list[Correlation]
+    entities: list[Entity]
+    jobs: list[Job]
+    audit: list[dict[str, Any]]

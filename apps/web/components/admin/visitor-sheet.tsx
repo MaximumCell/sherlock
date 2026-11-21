@@ -27,7 +27,14 @@ import { sessionName, userAgentLabel } from "@/lib/admin/logic";
 import type { CaseMeta, SessionDetail } from "@/lib/admin/types";
 import { describeError } from "@/lib/data/gateway";
 import { useAdvanced } from "@/lib/preferences";
-import { FlagBadge, OutcomeBadge, SensitiveTarget, SessionLabel, formatTime } from "./admin-bits";
+import {
+  FlagBadge,
+  OutcomeBadge,
+  SensitiveTarget,
+  SessionLabel,
+  ViewCaseLink,
+  formatTime,
+} from "./admin-bits";
 
 function BlockForm({ detail }: { detail: SessionDetail }) {
   const [reason, setReason] = useState("");
@@ -130,6 +137,7 @@ function CaseList({ cases }: { cases: CaseMeta[] }) {
                 {formatTime(c.created_at)} · {c.job_count} scans · {c.found_count} found
               </p>
             </div>
+            <ViewCaseLink caseId={c.id} label={c.title ?? undefined} />
             <Button
               variant="ghost"
               size="icon"

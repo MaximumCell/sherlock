@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
 import { Check, RotateCcw, X } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,7 @@ export function ReviewCard({
   advanced,
 }: ReviewCardProps) {
   const [note, setNote] = useState("");
+  const readOnly = useReadOnly();
   const rule = describeRule(c.type);
   const badge = STATUS_BADGE[c.status];
   const linked = accountsInLink(c, index);
@@ -125,7 +127,10 @@ export function ReviewCard({
         </p>
       ) : null}
 
-      <footer className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center">
+      <footer
+        hidden={readOnly}
+        className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center"
+      >
         <Input
           aria-label="Note for this decision (optional)"
           placeholder="Note (optional)"

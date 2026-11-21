@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
 import {
   Ban,
   ChevronDown,
@@ -61,6 +62,7 @@ export function SourceRow({
   onRetry: () => void;
   busy: boolean;
 }) {
+  const readOnly = useReadOnly();
   const [open, setOpen] = useState(false);
   const panel = useId();
   const meta = STATE[job.status];
@@ -103,7 +105,7 @@ export function SourceRow({
             {job.progress}%
           </span>
         ) : null}
-        {active ? (
+        {active && !readOnly ? (
           <Button
             variant="ghost"
             size="sm"
@@ -114,7 +116,7 @@ export function SourceRow({
             {busy ? "Stopping…" : "Stop"}
           </Button>
         ) : null}
-        {job.status === "failed" || job.status === "cancelled" ? (
+        {!readOnly && (job.status === "failed" || job.status === "cancelled") ? (
           <Button
             variant="outline"
             size="sm"

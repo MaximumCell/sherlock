@@ -3,7 +3,18 @@
  * by the service key only; the browser never queries them through Supabase.
  */
 import { GatewayError, type GatewayRequest } from "../data/gateway";
+import {
+  isRecord,
+  toAuditEntry,
+  toCase,
+  toCorrelation,
+  toEntity,
+  toFinding,
+  toJob,
+  toList,
+} from "../data/mappers";
 import type {
+  AdminCaseView,
   AdminMe,
   AdminSource,
   Overview,
@@ -104,6 +115,29 @@ export function createGatewayAdminSource(command: Command): AdminSource {
         method: "DELETE",
         parse: "none",
       });
+    },
+
+    async viewCase(caseId): Promise<AdminCaseView> {
+      const path = `/admin/cases/${encodeURIComponent(caseId)}`;
+      const first = await command<unknown>(path);
+      const r = isRecord(first) ? first : {};
+      const findings = toList(r.findings, toFinding);
+      // findings come in pages; later pages are not logged again by the gateway
+      let next = typeof r.findings_next_offset === "number" ? r.findings_next_offset : null;
+      for (let guard = 0; next !== null && guard < 50; guard++) {
+        const page = await command<unknown>(`${path}${queryString({ findings_offset: next })}`);
+        const p = isRecord(page) ? page : {};
+        findings.push(...toList(p.findings, toFinding));
+        next = typeof p.findings_next_offset === "number" ? p.findings_next_offset : null;
+      }
+      return {
+        case: toCase(r.case),
+        findings,
+        correlations: toList(r.correlations, toCorrelation),
+        entities: toList(r.entities, toEntity),
+        jobs: toList(r.jobs, toJob),
+        audit: toList(r.audit, toAuditEntry),
+      };
     },
   };
 }

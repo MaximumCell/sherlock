@@ -28,6 +28,7 @@ from gateway.insights import (
     target_session_counts,
 )
 from gateway.schemas import (
+    AdminCaseView,
     AdminMe,
     BlockRequest,
     Overview,
@@ -255,6 +256,32 @@ def pause(body: PauseRequest, admin: Admin, store: StoreDep):
     store.set_setting("scans_paused", body.paused, admin.email)
     _audit(store, admin, "scans_paused" if body.paused else "scans_resumed", {})
     return {"scans_paused": scans_paused(store)}
+
+
+ADMIN_CASE_FINDINGS_MAX = 2000
+
+
+@router.get("/cases/{case_id}", response_model=AdminCaseView)
+def view_case(case_id: str, admin: Admin, store: StoreDep,
+              findings_limit: Annotated[int, Query(ge=1, le=ADMIN_CASE_FINDINGS_MAX)] = 1000,
+              findings_offset: Annotated[int, Query(ge=0)] = 0):
+    """Any visitor's case in full (findings, links, entities, jobs, history), READ-ONLY, for abuse review.
+    Every opening (the first page) is written to the case's own audit log (`admin_case_viewed`),
+    which its owner can see."""
+    case = store.get_case(case_id) if is_uuid(case_id) else None
+    if case is None:
+        raise HTTPException(404, "case not found")
+    if findings_offset == 0:          # one entry per opening, not per page of findings
+        store.log(case_id, "admin_case_viewed", "operator", {"admin": admin.email})
+    findings = store.list_findings(case_id)
+    page = findings[findings_offset:findings_offset + findings_limit]
+    end = findings_offset + len(page)
+    return {
+        "case": case, "findings": page, "findings_total": len(findings),
+        "findings_next_offset": end if end < len(findings) else None,
+        "correlations": store.list_correlations(case_id), "entities": store.list_entities(case_id),
+        "jobs": store.list_jobs(case_id), "audit": store.list_audit(case_id, limit=500),
+    }
 
 
 @router.delete("/cases/{case_id}", status_code=204, response_class=Response, response_model=None)

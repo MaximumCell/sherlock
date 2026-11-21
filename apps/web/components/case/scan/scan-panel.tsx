@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
 import { ChevronDown, CircleCheck, Radar, Square } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { usePrefersReducedMotion } from "@/components/motion/hooks";
@@ -93,6 +94,7 @@ export function ScanPanel({
   const [advanced] = useAdvanced();
   const catalogue = useModules();
   const cancel = useCancelJob(caseId);
+  const readOnly = useReadOnly();
   const scan = useScan(caseId);
   const [listChoice, setListChoice] = useState<boolean | null>(null);
   const p = sourceProgress(jobs);
@@ -125,7 +127,7 @@ export function ScanPanel({
 
   const actions = (
     <>
-      {active.length > 0 ? (
+      {active.length > 0 && !readOnly ? (
         <Button
           variant="outline"
           size="sm"

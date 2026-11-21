@@ -7,6 +7,7 @@ import { NotFoundView } from "@/components/common/not-found-view";
 import { SignInDialog } from "@/components/shell/sign-in-dialog";
 import { Button } from "@/components/ui/button";
 import { useAdminMe } from "@/lib/admin/hooks";
+import { AdminCaseView } from "./admin-case-view";
 import { AdminPanel } from "./admin-panel";
 import { AdminSkeleton } from "./admin-skeleton";
 
@@ -32,12 +33,12 @@ function SignInGate() {
 }
 
 /**
- * `/admin` and `/demo/admin`. Anonymous: sign-in gate. Signed in but not an operator: the
+ * `/admin` and `/demo/admin` (with `caseId`: the read-only case view under the same gate). Anonymous: sign-in gate. Signed in but not an operator: the
  * ordinary not-found page (the panel does not admit it exists). Operator: the panel.
  */
 const noop = () => () => {};
 
-export function AdminPage() {
+export function AdminPage({ caseId }: { caseId?: string } = {}) {
   const me = useAdminMe();
   // The session can settle before this page hydrates; render the server's skeleton first either way.
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
@@ -53,5 +54,5 @@ export function AdminPage() {
     );
   }
   if (!me.data) return <NotFoundView />;
-  return <AdminPanel email={me.data.email} />;
+  return caseId ? <AdminCaseView caseId={caseId} /> : <AdminPanel email={me.data.email} />;
 }

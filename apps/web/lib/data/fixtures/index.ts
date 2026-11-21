@@ -4,6 +4,8 @@
  * emitting the same change events Supabase Realtime would.
  */
 import { createDemoAdminSource } from "../../admin/demo-source";
+import type { AdminCaseView, CaseMeta } from "../../admin/types";
+import { DEMO_CASE_ID } from "./demo-case";
 import type { Case, Correlation, Finding, Job, JsonObject, NameHints } from "../../types";
 import { GatewayError } from "../gateway";
 import { decisionStatus } from "../../review";
@@ -60,6 +62,31 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
   const needsAccount = options.requireSignIn ?? fixtureSignInRequired(env.fixtureRequireSignIn);
   /** Cases whose search waits behind invented searches (`demo-queued`): ticks left. */
   const held = new Map<string, number>();
+
+  /**
+   * The operator's read-only view: a sandbox case as it is, or for an invented visitor case of
+   * the demo panel, the bundled demo case under that visitor's title and targets.
+   */
+  function adminCaseContent(caseId: string, meta: CaseMeta | null): AdminCaseView | null {
+    const own = state.cases.find((c) => c.id === caseId);
+    const sourceId = own ? caseId : meta ? DEMO_CASE_ID : null;
+    const source = sourceId ? state.cases.find((c) => c.id === sourceId) : undefined;
+    if (!sourceId || !source) return null;
+    audit(caseId, "admin_case_viewed", "operator", { admin: "operator@example.com" });
+    const c: Case = own
+      ? own
+      : { ...source, id: caseId, title: meta?.title ?? source.title, identifiers: meta?.identifiers ?? source.identifiers, is_demo: false };
+    return clone({
+      case: c,
+      findings: byCase(state.findings, sourceId),
+      correlations: byCase(state.correlations, sourceId),
+      entities: byCase(state.entities, sourceId),
+      jobs: byCase(state.jobs, sourceId),
+      audit: state.audit
+        .filter((a) => a.case_id === caseId || a.case_id === sourceId)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    });
+  }
 
   /** The gateway's checks that the demo can show: sign-in, then the refusal triggers. */
   function checkSearch(values: string[]) {
@@ -264,7 +291,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
   return {
     mode: "fixtures",
     searchNeedsAccount: needsAccount,
-    admin: createDemoAdminSource(),
+    admin: createDemoAdminSource({ caseContent: adminCaseContent }),
     state,
     tick,
 

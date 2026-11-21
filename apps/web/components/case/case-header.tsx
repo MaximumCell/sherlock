@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { TargetChip } from "@/components/common/bits";
 import { Badge } from "@/components/ui/badge";
+import { useReadOnly } from "@/components/providers/read-only";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,16 +71,17 @@ export function CaseHeader({ c }: { c: Case }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const inDemo = pathname?.startsWith("/demo") ?? false;
+  const readOnly = useReadOnly();
 
   return (
     <header className="space-y-4">
       <Link
-        href="/"
+        href={readOnly ? (inDemo ? "/demo/admin" : "/admin") : "/"}
         data-print="hide"
         className="inline-flex items-center gap-1 rounded-sm text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
-        All investigations
+        {readOnly ? "Operator panel" : "All investigations"}
       </Link>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1 space-y-3">
@@ -90,15 +92,17 @@ export function CaseHeader({ c }: { c: Case }) {
               <h1 className="min-w-0 break-words font-display text-4xl tracking-tight sm:text-5xl">
                 {caseDisplayTitle(c)}
               </h1>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Rename"
-                onClick={() => setEditing(true)}
-                data-print="hide"
-              >
-                <Pencil aria-hidden />
-              </Button>
+              {readOnly ? null : (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Rename"
+                  onClick={() => setEditing(true)}
+                  data-print="hide"
+                >
+                  <Pencil aria-hidden />
+                </Button>
+              )}
               {c.archived_at ? <Badge variant="muted">Archived</Badge> : null}
             </div>
           )}
@@ -114,7 +118,7 @@ export function CaseHeader({ c }: { c: Case }) {
                 {tag}
               </Badge>
             ))}
-            <TagEditor c={c} />
+            {readOnly ? null : <TagEditor c={c} />}
           </div>
           <p className="font-mono text-2xs uppercase tracking-[0.12em] text-muted-foreground">
             <span title={formatDateTime(c.created_at)}>Started {timeAgo(c.created_at)}</span>
@@ -126,23 +130,32 @@ export function CaseHeader({ c }: { c: Case }) {
         <div className="flex shrink-0 flex-wrap items-center gap-2" data-print="hide">
           <AdvancedSwitch />
           <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-          <Button variant="outline" size="sm" onClick={() => setNotesOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setNotesOpen(true)}
+            hidden={readOnly && !c.notes.trim()}
+          >
             <NotebookPen aria-hidden />
             Notes
             {c.notes.trim() ? (
               <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-label="has notes" />
             ) : null}
           </Button>
-          <CaseMenu
-            c={c}
-            afterDeleteHref={inDemo ? "/demo" : "/"}
-            onAddTarget={() => setAddOpen(true)}
-            onRescan={() => goToSection("targets")}
-          />
+          {readOnly ? null : (
+            <CaseMenu
+              c={c}
+              afterDeleteHref={inDemo ? "/demo" : "/"}
+              onAddTarget={() => setAddOpen(true)}
+              onRescan={() => goToSection("targets")}
+            />
+          )}
         </div>
       </div>
       <NotesDrawer c={c} open={notesOpen} onOpenChange={setNotesOpen} />
-      <AddTargetDialog caseId={c.id} open={addOpen} onOpenChange={setAddOpen} />
+      {readOnly ? null : (
+        <AddTargetDialog caseId={c.id} open={addOpen} onOpenChange={setAddOpen} />
+      )}
     </header>
   );
 }

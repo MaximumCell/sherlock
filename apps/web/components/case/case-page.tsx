@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 import { EmptyState, ErrorState } from "@/components/common/states";
+import { useReadOnly } from "@/components/providers/read-only";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { deriveSteps, sourceProgress } from "@/lib/case-progress";
@@ -107,7 +108,9 @@ export function CasePage({ caseId, replayScan = false }: { caseId: string; repla
   const hasPeople =
     (c?.identifiers.some((i) => i.type === "name") ?? false) ||
     jobList.some((j) => j.target_type === "name");
-  const sections = visibleSections(hasPeople);
+  const readOnly = useReadOnly();
+  // Next steps only offers actions (new searches), so the read-only view leaves it out.
+  const sections = visibleSections(hasPeople).filter((s) => !readOnly || s !== "next");
   const active = useScrollSpy(sections);
   const foundCount = useMemo(
     () => groupFindings(findingList, correlationList).reduce((n, g) => n + g.items.length, 0),
@@ -263,14 +266,16 @@ export function CasePage({ caseId, replayScan = false }: { caseId: string; repla
             entities={entityList}
             ready={ready && !entities.isPending}
           />
-          <NextStepsSection
-            c={c}
-            entities={entityList}
-            findings={findingList}
-            correlations={correlationList}
-            jobs={jobList}
-            loading={entities.isPending}
-          />
+          {readOnly ? null : (
+            <NextStepsSection
+              c={c}
+              entities={entityList}
+              findings={findingList}
+              correlations={correlationList}
+              jobs={jobList}
+              loading={entities.isPending}
+            />
+          )}
           <HistorySection c={c} jobs={jobList} findings={findingList} loading={!ready} />
           <LazyReport caseId={caseId} />
         </div>

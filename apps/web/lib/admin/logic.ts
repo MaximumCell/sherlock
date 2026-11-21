@@ -221,3 +221,9 @@ export function relativeTime(iso: string | null | undefined, now: number = Date.
   if (s < 86400) return `${Math.round(s / 3600)} h ago`;
   return new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
+
+/** Where the read-only case view lives (`/demo/admin/cases/...` inside the demo). */
+export function adminCaseHref(pathname: string | null, caseId: string): string {
+  const base = pathname?.startsWith("/demo") ? "/demo/admin" : "/admin";
+  return `${base}/cases/${encodeURIComponent(caseId)}`;
+}

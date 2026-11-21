@@ -46,6 +46,11 @@ def get_module(name: str) -> Module | None:
     return _REGISTRY.get(name)
 
 
+def heavy_module_names() -> frozenset[str]:
+    """Registry names of memory-heavy modules (at most one runs at a time per worker)."""
+    return frozenset(m.name for m in all_modules() if m.heavy)
+
+
 def modules_for(target_type: str, *, only_available: bool = True) -> list[Module]:
     return [
         m for m in all_modules()
@@ -55,5 +60,5 @@ def modules_for(target_type: str, *, only_available: bool = True) -> list[Module
 
 __all__ = [
     "Module", "ModuleContext", "Target", "all_modules", "get_module",
-    "load_builtin", "modules_for", "new_http_client", "register",
+    "heavy_module_names", "load_builtin", "modules_for", "new_http_client", "register",
 ]

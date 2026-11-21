@@ -9,6 +9,7 @@ This is image similarity only (same or near-identical picture). It is not face r
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import copy
 import io
 import logging
@@ -51,11 +52,13 @@ def phash_hex(data: bytes) -> str:
         raise ValueError(f"image could not be decoded: {type(e).__name__}") from None
 
 
-async def hash_avatars(findings: list[dict[str, Any]], http: httpx.AsyncClient) -> list[dict[str, Any]]:
+async def hash_avatars(findings: list[dict[str, Any]], http: httpx.AsyncClient, *,
+                       shared: asyncio.Semaphore | None = None) -> list[dict[str, Any]]:
     """Return updated copies of the found findings that gained `extra.avatar_phash`.
 
     Considers findings with `extra.avatar_url` and no `extra.avatar_phash`; downloads at most
-    `MAX_AVATARS` images of at most `MAX_AVATAR_BYTES` each, a few at a time. Findings whose
+    `MAX_AVATARS` images of at most `MAX_AVATAR_BYTES` each, a few at a time (and within
+    `shared`, the worker-wide download limiter, when given). Findings whose
     avatar cannot be fetched or decoded are left out of the result (nothing to update).
     """
     todo = []
@@ -71,7 +74,7 @@ async def hash_avatars(findings: list[dict[str, Any]], http: httpx.AsyncClient) 
     cache: dict[str, asyncio.Task[str | None]] = {}
 
     async def hash_url(url: str) -> str | None:
-        async with sem:
+        async with sem, shared or contextlib.nullcontext():
             try:
                 data, _ = await fetch_capped(http, url, max_bytes=MAX_AVATAR_BYTES, timeout=10.0)
                 return await asyncio.to_thread(phash_hex, data)

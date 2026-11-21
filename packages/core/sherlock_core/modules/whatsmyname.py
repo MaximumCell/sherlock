@@ -82,6 +82,7 @@ class WhatsMyName(Module):
     queue = "identity"
     source_url = "https://github.com/WebBreacher/WhatsMyName"
     timeout_s = 600.0
+    heavy = True  # measured peak ~360-410 MB of a 512 MB worker
 
     async def _check(self, site: dict[str, Any], username: str, http: httpx.AsyncClient) -> tuple[str, str]:
         method, url, headers, body = build_request(site, username)

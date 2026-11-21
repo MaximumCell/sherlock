@@ -11,6 +11,10 @@ export const SEARCH_OUTCOMES = [
   "paused",
   "forbidden",
   "invalid",
+  "burst_limited",
+  "active_search",
+  "busy",
+  "sign_in_required",
 ] as const;
 export type SearchOutcome = (typeof SEARCH_OUTCOMES)[number];
 

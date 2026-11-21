@@ -135,7 +135,7 @@ const STEPS = [
   {
     art: SearchArt,
     title: "Search",
-    body: "Type a username, email, website, IP, phone, wallet, image link or name.",
+    body: "Sign in with a free account, then type a username, email, website, IP, phone, wallet, image link or name. The live demo needs no account.",
   },
   {
     art: SourcesArt,

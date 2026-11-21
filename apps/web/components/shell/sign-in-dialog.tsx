@@ -41,9 +41,12 @@ function GoogleMark() {
 export function SignInDialog({
   open,
   onOpenChange,
+  reason = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Why sign-in was asked for (e.g. a search needs an account), shown above the options. */
+  reason?: string | null;
 }) {
   const { ds } = useData();
   const [email, setEmail] = useState("");
@@ -58,7 +61,7 @@ export function SignInDialog({
       const outcome = await action();
       if (outcome === "email_sent") setSent(true);
       if (outcome === "signed_in") {
-        toast.success("Signed in", { description: "Name search is now available." });
+        toast.success("Signed in", { description: "You can run searches now." });
         onOpenChange(false);
       }
     } catch (err) {
@@ -87,10 +90,16 @@ export function SignInDialog({
           <BrandMark className="mb-2 h-8 w-8 text-foreground" />
           <DialogTitle>Sign in</DialogTitle>
           <DialogDescription>
-            A guest session is enough for most scans. Signing in upgrades this session, keeps your
-            cases, and enables name search.
+            {ds.searchNeedsAccount
+              ? "Searches need a free account. Signing in keeps the cases from this browser. The demo needs no account."
+              : "A guest session is enough for most scans. Signing in upgrades this session, keeps your cases, and enables name search."}
           </DialogDescription>
         </DialogHeader>
+        {reason ? (
+          <p role="status" className="rounded-md border border-accent/30 bg-accent/[0.08] p-3 text-sm">
+            {reason}
+          </p>
+        ) : null}
         {sent ? (
           <p role="status" className="animate-fade-in rounded-md border border-success/30 bg-success/10 p-3 text-sm">
             Check your inbox: we sent a sign-in link to <span className="font-mono">{email}</span>.

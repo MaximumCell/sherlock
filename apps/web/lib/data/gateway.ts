@@ -5,14 +5,30 @@
  */
 import { gatewayStatus, type GatewayStatusStore } from "./gateway-status";
 
+/** The search a session still has running, sent with the gateway's `active_search` refusal. */
+export interface ActiveSearch {
+  caseId: string;
+  batchIds: string[];
+}
+
+export interface GatewayErrorInfo {
+  /** Seconds from the `Retry-After` header, when the gateway knows how long to wait. */
+  retryAfterS?: number | null;
+  activeSearch?: ActiveSearch | null;
+}
+
 export class GatewayError extends Error {
   readonly status: number;
   readonly detail: string;
-  constructor(status: number, detail: string) {
+  readonly retryAfterS: number | null;
+  readonly activeSearch: ActiveSearch | null;
+  constructor(status: number, detail: string, info: GatewayErrorInfo = {}) {
     super(detail);
     this.name = "GatewayError";
     this.status = status;
     this.detail = detail;
+    this.retryAfterS = info.retryAfterS ?? null;
+    this.activeSearch = info.activeSearch ?? null;
   }
   /** The service never answered (asleep, offline, or blocked). */
   get unreachable(): boolean {
@@ -58,6 +74,29 @@ export function isGatewayRefusal(status: number, body: string): boolean {
     );
   } catch {
     return false;
+  }
+}
+
+/** `Retry-After` in seconds (the gateway sends seconds, never an HTTP date). */
+export function parseRetryAfter(value: string | null): number | null {
+  if (!value) return null;
+  const n = Number(value.trim());
+  return Number.isFinite(n) && n > 0 ? Math.ceil(n) : null;
+}
+
+/** `active_search: {case_id, batch_ids}` from a refusal body, when present and well formed. */
+export function parseActiveSearch(body: string): ActiveSearch | null {
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const raw: unknown = (parsed as { active_search?: unknown }).active_search;
+    if (typeof raw !== "object" || raw === null) return null;
+    const { case_id, batch_ids } = raw as { case_id?: unknown; batch_ids?: unknown };
+    if (typeof case_id !== "string" || !case_id) return null;
+    const ids = Array.isArray(batch_ids) ? batch_ids.filter((b): b is string => typeof b === "string") : [];
+    return { caseId: case_id, batchIds: ids };
+  } catch {
+    return null;
   }
 }
 
@@ -120,7 +159,10 @@ export function createGateway(deps: GatewayDeps) {
             return (await res.json()) as T;
           }
           const text = await res.text();
-          failure = new GatewayError(res.status, parseErrorDetail(res.status, text));
+          failure = new GatewayError(res.status, parseErrorDetail(res.status, text), {
+            retryAfterS: parseRetryAfter(res.headers?.get("retry-after") ?? null),
+            activeSearch: parseActiveSearch(text),
+          });
           if (!RETRY_STATUSES.has(res.status) || isGatewayRefusal(res.status, text)) throw new FinalError(failure);
         } catch (err) {
           if (err instanceof FinalError) throw err.error;

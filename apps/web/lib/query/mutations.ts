@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { useData } from "@/components/providers/data-provider";
 import { GatewayError, describeError } from "../data/gateway";
 import { applyReview } from "../review";
+import { requestActiveSearchDialog } from "../active-search-prompt";
+import { SIGN_IN_REASON, classifyRefusal } from "../search-refusal";
 import { requestSignIn } from "../sign-in-prompt";
 import type {
   Candidate,
@@ -20,8 +22,25 @@ import type {
 } from "../types";
 import { applyChange, keys } from "./cache";
 
-/** Every command failure surfaces as a toast; nothing fails silently. */
+/**
+ * Every command failure surfaces somewhere; nothing fails silently. Search refusals get their
+ * own treatment: sign-in opens the sign-in dialog, an unfinished search opens the dialog that
+ * offers to open or stop it, limits and "busy" say how long to wait.
+ */
 function reportError(title: string, err: unknown) {
+  const refusal = classifyRefusal(err);
+  if (refusal?.kind === "sign_in") {
+    requestSignIn(SIGN_IN_REASON);
+    return;
+  }
+  if (refusal?.kind === "active_search" && refusal.activeSearch) {
+    requestActiveSearchDialog(refusal.activeSearch);
+    return;
+  }
+  if (refusal && refusal.kind !== "forbidden") {
+    toast.error(refusal.title, { description: refusal.description, duration: 10000 });
+    return;
+  }
   const signIn =
     err instanceof GatewayError && err.status === 403 && /sign|anonymous|account/i.test(err.detail);
   toast.error(title, {
@@ -133,6 +152,25 @@ export function useCancelJob(caseId: string) {
       );
     },
     onError: (err) => reportError("Could not stop that source", err),
+  });
+}
+
+/** Stop whole searches (every batch given), e.g. "Stop it" on the previous-search dialog. */
+export function useCancelSearch() {
+  const { ds, mode } = useData();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ caseId, batchIds }: { caseId: string; batchIds: string[] }) => {
+      const results = await Promise.all(batchIds.map((b) => ds.cancelBatch(caseId, b)));
+      return { caseId, jobs: results.flatMap((r) => r.jobs) };
+    },
+    onSuccess: ({ caseId, jobs }) => {
+      client.setQueryData<Job[]>(keys.jobs(mode, caseId), (old) =>
+        jobs.reduce<Job[] | undefined>((list, job) => applyChange(list, "UPDATE", job.id, job), old),
+      );
+      void client.invalidateQueries({ queryKey: keys.cases(mode) });
+    },
+    onError: (err) => reportError("Could not stop the search", err),
   });
 }
 

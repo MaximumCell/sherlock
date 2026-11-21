@@ -3,6 +3,7 @@ import type { DataMode } from "../env";
 import type { PlatformEntry } from "../platforms";
 import type {
   AuditEntry,
+  BatchCancelled,
   Candidate,
   Case,
   Correlation,
@@ -13,6 +14,7 @@ import type {
   Finding,
   Job,
   ModuleInfo,
+  QueueStatus,
   ReviewDecision,
   ScanBody,
   ScanResult,
@@ -61,6 +63,8 @@ export type SignInOutcome = "redirect" | "email_sent" | "signed_in";
  */
 export interface DataSource {
   readonly mode: DataMode;
+  /** Searches need a signed-in account here (the app asks for sign-in before calling the gateway). */
+  readonly searchNeedsAccount: boolean;
   /** Operator panel (`/admin`): the gateway's `/admin/*` routes, or bundled fictional data. */
   readonly admin: AdminSource;
 
@@ -94,6 +98,10 @@ export interface DataSource {
   deleteCase(id: string): Promise<void>;
   scan(caseId: string, body: ScanBody): Promise<ScanResult>;
   cancelJob(caseId: string, jobId: string): Promise<Job>;
+  /** Stop one search: every queued or running job of the batch. */
+  cancelBatch(caseId: string, batchId: string): Promise<BatchCancelled>;
+  /** Queue position of the case's search; null when unknown (gateway asleep or too old). */
+  queueStatus(caseId: string): Promise<QueueStatus | null>;
   wake(caseId: string): Promise<void>;
   curateFinding(caseId: string, findingId: string, curated: boolean): Promise<Finding>;
   reviewCorrelation(id: string, decision: ReviewDecision, note?: string): Promise<Correlation>;

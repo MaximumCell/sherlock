@@ -24,6 +24,10 @@ const point = (day: string, counts: Partial<Omit<DayPoint, "day">> = {}): DayPoi
   paused: 0,
   forbidden: 0,
   invalid: 0,
+  burst_limited: 0,
+  active_search: 0,
+  busy: 0,
+  sign_in_required: 0,
   ...counts,
 });
 

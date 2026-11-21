@@ -109,8 +109,9 @@ export default function AboutPage() {
           </h2>
           <p className="max-w-2xl text-base text-muted-foreground">
             Before the first search you confirm that the target is your own data or that you are
-            authorised to investigate it. Searches are rate-limited, and name search needs a
-            signed-in account. These limits are part of the product, not settings.
+            authorised to investigate it. Searches need a signed-in account (the live demo does
+            not), run one at a time per visitor, and are rate-limited per account and per network.
+            These limits are part of the product, not settings.
           </p>
           <p className="max-w-2xl text-base text-muted-foreground">
             Searches are logged (what was searched, when, and an anonymised origin) and reviewed by

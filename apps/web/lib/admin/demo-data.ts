@@ -101,6 +101,7 @@ export const DEMO_SESSIONS: SessionSeed[] = [
       ),
       flag("burst", "11 searches within 10 minutes", "medium"),
       flag("rate_limited", "Hit the daily limit 4 times", "medium"),
+      flag("burst_limit", "Hit the burst limit 2 times", "medium"),
     ],
   }),
   session(DEMO_IDS.nameTrier, {
@@ -305,7 +306,7 @@ export function demoSearchSeeds(): DemoSearchSeed[] {
       minutesAgo: 26 * H - i * 1.5,
       type: "email",
       value: `person${String(i + 1).padStart(2, "0")}@example.com`,
-      outcome: i >= 14 ? "rate_limited" : "accepted",
+      outcome: i >= 16 ? "rate_limited" : i >= 14 ? "burst_limited" : "accepted",
       detail:
         i >= 14 ? "Daily limit reached: 20 scans per session. Try again tomorrow." : undefined,
     });

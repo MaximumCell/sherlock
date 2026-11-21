@@ -17,6 +17,13 @@ export interface AppEnv {
   missingSupabaseVars: string[];
   /** Social sign-in buttons to show. Empty by default: only email works out of the box. */
   oauthProviders: OAuthProvider[];
+  /**
+   * Searches need a signed-in account (mirror of the gateway's REQUIRE_SIGN_IN, default on).
+   * The gateway decides; this only lets the app ask for sign-in before calling it.
+   */
+  requireSignIn: boolean;
+  /** Fixture mode only: act like a deployment that requires sign-in (signed-out demo flow). */
+  fixtureRequireSignIn: boolean;
 }
 
 export type OAuthProvider = "google" | "github";
@@ -28,7 +35,12 @@ export interface RawEnv {
   fixtures?: string;
   nodeEnv?: string;
   authProviders?: string;
+  requireSignIn?: string;
+  fixtureRequireSignIn?: string;
 }
+
+const isOff = (v: string | undefined) => ["0", "false", "no", "off"].includes((v ?? "").trim().toLowerCase());
+const isOn = (v: string | undefined) => ["1", "true", "yes", "on"].includes((v ?? "").trim().toLowerCase());
 
 export function resolveEnv(raw: RawEnv): AppEnv {
   const supabaseUrl = (raw.supabaseUrl ?? "").trim();
@@ -56,6 +68,8 @@ export function resolveEnv(raw: RawEnv): AppEnv {
       .split(",")
       .map((p) => p.trim().toLowerCase())
       .filter((p): p is OAuthProvider => p === "google" || p === "github"),
+    requireSignIn: !isOff(raw.requireSignIn),
+    fixtureRequireSignIn: isOn(raw.fixtureRequireSignIn),
   };
 }
 
@@ -66,4 +80,6 @@ export const env: AppEnv = resolveEnv({
   fixtures: process.env.NEXT_PUBLIC_FIXTURES,
   nodeEnv: process.env.NODE_ENV,
   authProviders: process.env.NEXT_PUBLIC_AUTH_PROVIDERS,
+  requireSignIn: process.env.NEXT_PUBLIC_REQUIRE_SIGN_IN,
+  fixtureRequireSignIn: process.env.NEXT_PUBLIC_FIXTURE_REQUIRE_SIGN_IN,
 });

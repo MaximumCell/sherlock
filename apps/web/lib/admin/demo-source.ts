@@ -151,6 +151,10 @@ export function createDemoAdminSource(options: DemoAdminOptions = {}): AdminSour
           paused: 0,
           forbidden: 0,
           invalid: 0,
+          burst_limited: 0,
+          active_search: 0,
+          busy: 0,
+          sign_in_required: 0,
         };
         for (const r of rows) if (r.created_at.startsWith(day)) point[r.outcome] += 1;
         return point;

@@ -21,6 +21,7 @@ import {
   type TileState,
 } from "@/lib/ui/scanner";
 import { cn } from "@/lib/utils";
+import { QueueWaiting } from "./queue-waiting";
 import { ScannerStage } from "./scanner-stage";
 import { SourceRow } from "./source-row";
 
@@ -168,6 +169,7 @@ export function ScanPanel({
       <p className="sr-only" aria-live="polite">
         {headline}
       </p>
+      {!loading && !replay ? <QueueWaiting caseId={caseId} jobs={jobs} /> : null}
       {loading ? (
         <div className="flex items-center gap-3 p-4">
           <Skeleton className="h-5 w-5 rounded-full" />

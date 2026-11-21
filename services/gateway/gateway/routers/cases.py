@@ -14,6 +14,7 @@ from gateway.agent.llm import LLMClient, default_client
 from gateway.agent.orchestrator import Agent
 from gateway.auth import CurrentPrincipal
 from gateway.schemas import (
+    BatchCancelled,
     CandidateConfirmed,
     CandidatesOut,
     CaseCreate,
@@ -35,7 +36,7 @@ from gateway.service import (
     check_scans_allowed,
     check_target_allowed,
     consume_llm_quota,
-    consume_scan_quota,
+    enforce_search_limits,
     enqueue_planned,
     is_uuid,
     load_case,
@@ -91,8 +92,9 @@ def create_case(body: CaseCreate, principal: CurrentPrincipal, store: StoreDep,
         if body.scan:
             attempt.targets = [{"type": i["type"], "value": i["value"], "modules": [j["module"] for j in b]}
                                for i, b in zip(identifiers, batches, strict=True)]
-        for i in identifiers if body.scan else []:
-            consume_scan_quota(store, principal, i["type"])
+        if body.scan:
+            enforce_search_limits(store, principal, origin, [i["type"] for i in identifiers],
+                                  {j["queue"] for b in batches for j in b})
 
         title = (body.title or "").strip() or identifiers[0]["value"]
         case = store.create_case(identifiers, owner_id=principal.user_id, title=title,
@@ -171,6 +173,22 @@ def cancel_job(case_id: str, job_id: str, principal: CurrentPrincipal, store: St
     row = store.cancel_job(job_id)
     store.log(case_id, "job_cancelled", "user", {"job_id": job_id, "module": job["module"]})
     return row
+
+
+@router.post("/{case_id}/batches/{batch_id}/cancel", response_model=BatchCancelled)
+def cancel_batch(case_id: str, batch_id: str, principal: CurrentPrincipal, store: StoreDep):
+    """Stop one search: cancel every queued or running job of the batch (finished jobs are left alone)."""
+    load_case(store, case_id, principal, write=True)
+    if not is_uuid(batch_id):
+        raise HTTPException(404, "search not found")
+    jobs = [j for j in store.list_jobs(case_id) if j.get("batch_id") == batch_id]
+    if not jobs:
+        raise HTTPException(404, "search not found")
+    cancelled = store.cancel_batch(case_id, batch_id)
+    if cancelled:
+        store.log(case_id, "batch_cancelled", "user", {"batch_id": batch_id, "jobs": len(cancelled)})
+    after = [j for j in store.list_jobs(case_id) if j.get("batch_id") == batch_id]
+    return {"batch_id": batch_id, "cancelled": len(cancelled), "jobs": after}
 
 
 @router.post("/{case_id}/correlate", response_model=CorrelateResult)

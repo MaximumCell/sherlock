@@ -16,14 +16,16 @@ Severity = Literal["high", "medium", "low"]
 FLAG_WINDOW_DAYS = 7
 BURST_WINDOW_S = 10 * 60          # "many searches in a short burst" ...
 BURST_SEARCHES = 8                # ... this many search attempts within BURST_WINDOW_S
-RATE_LIMIT_HITS = 3               # refused by a rate limit this many times
+RATE_LIMIT_HITS = 3               # refused by a daily rate limit this many times
+BURST_LIMIT_HITS = 1              # refused by a 10-minute burst limit (session or origin) this many times
 DISTINCT_TARGETS = 12             # this many different targets looks like harvesting, not a self-check
 REFUSED_NAME_SEARCHES = 2         # name searches refused (anonymous session) this many times
 SHARED_TARGET_SESSIONS = 3        # one of its targets was searched from this many sessions (itself included)
 SHARED_ORIGIN_SESSIONS = 3        # this many sessions share one ip_hash (itself included)
 
 SEVERITY_ORDER: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
-OUTCOMES = ("accepted", "rate_limited", "blocked", "paused", "forbidden", "invalid")
+OUTCOMES = ("accepted", "rate_limited", "blocked", "paused", "forbidden", "invalid",
+            "burst_limited", "active_search", "busy", "sign_in_required")
 
 
 def flag(key: str, label: str, severity: Severity) -> Row:
@@ -62,6 +64,10 @@ def session_flags(searches: list[Row], *, ip_hash: str | None,
     limited = sum(1 for r in searches if r["outcome"] == "rate_limited")
     if limited >= RATE_LIMIT_HITS:
         out.append(flag("rate_limited", f"Hit the daily limit {_plural(limited, 'time')}", "medium"))
+
+    burst_hits = sum(1 for r in searches if r["outcome"] == "burst_limited")
+    if burst_hits >= BURST_LIMIT_HITS:
+        out.append(flag("burst_limit", f"Hit the burst limit {_plural(burst_hits, 'time')}", "medium"))
 
     distinct = {(r["target_type"], r["target_value"]) for r in searches}
     if len(distinct) >= DISTINCT_TARGETS:

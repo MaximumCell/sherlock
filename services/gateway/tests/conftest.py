@@ -64,6 +64,29 @@ def registry(monkeypatch):
     return reg
 
 
+# The search limits added with 0003_limits.sql, at their documented defaults. Most tests predate
+# them and search repeatedly as an anonymous session, so they are off unless a test asks for
+# `limits` (tests/test_limits.py).
+DEFAULT_LIMITS = {
+    "REQUIRE_SIGN_IN": True, "SEARCHES_PER_SESSION_PER_10M": 3, "SEARCHES_PER_ORIGIN_PER_10M": 5,
+    "SEARCHES_PER_ORIGIN_PER_DAY": 30, "ACTIVE_SEARCHES_PER_SESSION": 1, "QUEUE_BACKLOG_MAX": 80,
+}
+
+
+@pytest.fixture(autouse=True)
+def relaxed_limits(monkeypatch):
+    for key, value in DEFAULT_LIMITS.items():
+        monkeypatch.setattr(config, key, False if isinstance(value, bool) else 0)
+
+
+@pytest.fixture
+def limits(monkeypatch):
+    """Turn the newer limits on at their defaults."""
+    for key, value in DEFAULT_LIMITS.items():
+        monkeypatch.setattr(config, key, value)
+    return DEFAULT_LIMITS
+
+
 @pytest.fixture
 def store():
     s = MemoryStore()

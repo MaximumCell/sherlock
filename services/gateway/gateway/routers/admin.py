@@ -39,7 +39,7 @@ from gateway.schemas import (
     SessionPage,
     VisitorSession,
 )
-from gateway.service import DAY_S, SEARCH_LOG_RETENTION_DAYS, StoreDep, is_uuid, scans_paused
+from gateway.service import DAY_S, SEARCH_LOG_RETENTION_DAYS, StoreDep, is_operator, is_uuid, scans_paused
 
 log = logging.getLogger("sherlock.gateway.admin")
 Row = dict[str, Any]
@@ -51,8 +51,7 @@ TOP_TARGETS = 10
 
 
 def is_admin(principal: Principal) -> bool:
-    return (not principal.is_anonymous and principal.email_verified and bool(principal.email)
-            and (principal.email or "").strip().lower() in config.ADMIN_EMAILS)
+    return is_operator(principal)
 
 
 async def require_admin(

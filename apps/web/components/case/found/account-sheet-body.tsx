@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
 import { ChevronRight, ExternalLink, Layers, Pin } from "lucide-react";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { ProvenanceLabel } from "@/components/common/provenance-label";
@@ -40,6 +41,7 @@ export function AccountSheetBody({
   openId: string;
 }) {
   const curate = useCurate(caseId);
+  const readOnly = useReadOnly();
   const { view } = account;
   const pinned = account.findings.some((f) => f.curated);
   const reason = account.merge
@@ -71,6 +73,7 @@ export function AccountSheetBody({
         </div>
         <div className="flex flex-wrap gap-2 pt-2">
           <Button
+            hidden={readOnly}
             variant={pinned ? "secondary" : "outline"}
             size="sm"
             aria-pressed={pinned}

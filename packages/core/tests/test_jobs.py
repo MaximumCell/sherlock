@@ -273,7 +273,7 @@ async def test_enrich_runs_previews_then_hashes_the_fetched_pictures(monkeypatch
         f = dict(findings[0], extra_metadata={"url": "u", "extra": {"avatar_url": "https://img.example/a.png"}})
         return [f]
 
-    async def hashes(findings, http):
+    async def hashes(findings, http, **kw):
         calls.append("hashes")
         assert findings[0]["extra_metadata"]["extra"]["avatar_url"]   # sees the fetched picture
         f = dict(findings[0])
@@ -302,7 +302,7 @@ async def test_enrich_failures_never_cost_the_findings(monkeypatch):
     async def broken(findings, http, **kw):
         raise RuntimeError("preview bug")
 
-    async def hangs(findings, http):
+    async def hangs(findings, http, **kw):
         raise TimeoutError
 
     monkeypatch.setattr("sherlock_core.modules.preview.enrich_previews", broken)
@@ -442,3 +442,156 @@ def test_wake_signature_roundtrip():
     assert not jobs.verify_wake(body, None, "secret")
     assert not jobs.verify_wake(body, sig, "")
     assert not jobs.verify_wake(body, "sígnature", "secret")
+
+
+# ----------------------------------------------------------------------------- worker pool
+class Tracker(Module):
+    """Sleeps briefly and records how many tracked jobs (and heavy ones) run at once."""
+    name = "tracker"
+    title = "Tracker"
+    description = "light, network-bound"
+    inputs = ("username",)
+    queue = "identity"
+    delay = 0.08
+    running: list = []
+    peak = 0
+    heavy_running = 0
+    heavy_peak = 0
+    order: list = []
+
+    async def run(self, target, ctx):
+        cls = Tracker
+        cls.running.append(self.name)
+        cls.order.append((self.name, target.value))
+        cls.peak = max(cls.peak, len(cls.running))
+        if self.heavy:
+            cls.heavy_running += 1
+            cls.heavy_peak = max(cls.heavy_peak, cls.heavy_running)
+        try:
+            await asyncio.sleep(self.delay)
+        finally:
+            cls.running.remove(self.name)
+            if self.heavy:
+                cls.heavy_running -= 1
+        return []
+
+
+class HeavyA(Tracker):
+    name = "heavy_a"
+    heavy = True
+
+
+class HeavyB(Tracker):
+    name = "heavy_b"
+    heavy = True
+
+
+@pytest.fixture
+def pool(registry):
+    Tracker.running, Tracker.order = [], []
+    Tracker.peak = Tracker.heavy_running = Tracker.heavy_peak = 0
+    for cls in (Tracker, HeavyA, HeavyB):
+        registry[cls.name] = cls()
+    for name in ("ok_user", "boom", "needs_key"):
+        registry.pop(name)
+    return registry
+
+
+async def test_pool_runs_at_most_its_concurrency_and_drains_to_empty(store, pool):
+    cid = _case(store)
+    for i in range(7):
+        _enqueue(store, cid, "username", f"u{i}", ["tracker"])
+    assert await jobs.drain("identity", store, "w1", concurrency=3) == 7
+    assert Tracker.peak == 3
+    assert {j["status"] for j in store.list_jobs(cid)} == {"succeeded"}
+
+
+async def test_pool_never_runs_two_heavy_jobs_at_once(store, pool):
+    cid = _case(store)
+    for i in range(3):
+        _enqueue(store, cid, "username", f"u{i}", ["heavy_a", "heavy_b", "tracker"])
+    assert await jobs.drain("identity", store, "w1", concurrency=3) == 9
+    assert Tracker.heavy_peak == 1 and Tracker.peak >= 2      # light jobs filled the other slots
+    assert {j["status"] for j in store.list_jobs(cid)} == {"succeeded"}
+
+
+async def test_pool_keeps_heartbeats_for_every_job(store, pool, monkeypatch):
+    monkeypatch.setattr(jobs, "HEARTBEAT_INTERVAL_S", 0.02)
+    monkeypatch.setattr(Tracker, "delay", 0.12)
+    cid = _case(store)
+    for i in range(3):
+        _enqueue(store, cid, "username", f"u{i}", ["tracker"])
+    await jobs.drain("identity", store, "w1", concurrency=3)
+    ids = [j["id"] for j in store.list_jobs(cid)]
+    for job_id in ids:
+        assert len([b for b in store.beats if b == (job_id, None, None)]) >= 2
+
+
+async def test_pool_survives_a_failing_job_and_a_crashing_task(store, pool, monkeypatch):
+    pool["boom"] = Boom()
+    cid = _case(store)
+    _enqueue(store, cid, "username", "aa", ["boom", "tracker"])
+    _enqueue(store, cid, "username", "bb", ["tracker"])
+    real = jobs.run_job
+    crashed = []
+
+    async def flaky(job, st, http=None):
+        if job["target_value"] == "bb" and not crashed:
+            crashed.append(job["id"])
+            raise RuntimeError("bug outside the module")
+        await real(job, st, http)
+
+    monkeypatch.setattr(jobs, "run_job", flaky)
+    await jobs.drain("identity", store, "w1", concurrency=2)
+    status = {(j["target_value"], j["module"]): j["status"] for j in store.list_jobs(cid)}
+    assert status[("aa", "boom")] == "failed" and status[("aa", "tracker")] == "succeeded"
+    # the crashed task left its job running; the stale-heartbeat requeue takes it from there
+    assert status[("bb", "tracker")] == "running"
+
+
+async def test_pool_is_fair_between_searches(store, pool):
+    a = _case(store)
+    b = _case(store)
+    for i in range(4):
+        _enqueue(store, a, "username", f"a{i}", ["tracker"])
+    for i in range(2):
+        _enqueue(store, b, "username", f"b{i}", ["tracker"])
+    for j in store.jobs.values():   # make creation order strict: all of A's jobs first
+        j["created_at"] = f"2026-11-21T10:00:0{j['target_value'][1]}" + ("" if j["target_value"][0] == "a" else ".5")
+    await jobs.drain("identity", store, "w1", concurrency=2)
+    first_four = [v for _, v in Tracker.order[:4]]
+    assert sorted(first_four[:2]) == ["a0", "b0"] and sorted(first_four[2:]) == ["a1", "b1"]
+
+
+async def test_cancelling_the_pool_hands_every_running_job_back(store, pool, monkeypatch):
+    monkeypatch.setattr(Tracker, "delay", 5)
+    cid = _case(store)
+    for i in range(3):
+        _enqueue(store, cid, "username", f"u{i}", ["tracker"])
+    task = asyncio.create_task(jobs.drain("identity", store, "w1", concurrency=2))
+    await asyncio.sleep(0.05)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    rows = store.list_jobs(cid)
+    assert [j["status"] for j in rows] == ["queued"] * 3
+    assert sorted(j["error"] or "" for j in rows) == ["", "worker shut down", "worker shut down"]
+
+
+async def test_enrichment_downloads_share_one_limit_across_jobs(monkeypatch):
+    from sherlock_core import config
+    monkeypatch.setattr(config, "ENRICH_CONCURRENCY", 1)
+    jobs._enrich_slots.clear()
+    active, peak = [0], [0]
+
+    async def hashes(findings, http, *, shared=None):
+        async with shared:
+            active[0] += 1
+            peak[0] = max(peak[0], active[0])
+            await asyncio.sleep(0.03)
+            active[0] -= 1
+        return []
+
+    monkeypatch.setattr("sherlock_core.modules.avatar_hash.hash_avatars", hashes)
+    await asyncio.gather(*(jobs._enrich([_row("github")], None, "infra") for _ in range(3)))
+    assert peak[0] == 1

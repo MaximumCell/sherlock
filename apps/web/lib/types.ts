@@ -244,3 +244,22 @@ export interface ScanResult {
   batch_id: string;
   jobs: Job[];
 }
+/** `POST /cases/{id}/batches/{batch_id}/cancel`. */
+export interface BatchCancelled {
+  batch_id: string;
+  cancelled: number;
+  jobs: Job[];
+}
+/** `GET /queue/status?case_id=`: counts only, never other people's data. */
+export interface QueueStatus {
+  case_id: string;
+  queued: number;
+  running: number;
+  /** Queued behind other searches with nothing of its own running yet. */
+  waiting: boolean;
+  /** Other unfinished searches that started before this one. */
+  ahead: number;
+  jobs_ahead: number;
+  /** Rough seconds until its first job starts; null when not waiting. */
+  estimated_wait_s: number | null;
+}

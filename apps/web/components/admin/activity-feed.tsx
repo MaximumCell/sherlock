@@ -18,7 +18,7 @@ import { OUTCOME_LABELS, newRowIds, relativeTime } from "@/lib/admin/logic";
 import { SEARCH_OUTCOMES, type SearchLogRow, type SearchOutcome } from "@/lib/admin/types";
 import { TARGET_TYPES } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { OutcomeBadge, SensitiveTarget, SessionLabel, formatTime } from "./admin-bits";
+import { OutcomeBadge, SensitiveTarget, SessionLabel, ViewCaseLink, formatTime } from "./admin-bits";
 
 const ALL = "all";
 
@@ -49,6 +49,7 @@ function FeedRow({
         <SensitiveTarget type={row.target_type} value={row.target_value} className="min-w-0" />
         <OutcomeBadge outcome={row.outcome} />
         {fresh ? <span className="sr-only">New</span> : null}
+        {row.case_id ? <ViewCaseLink caseId={row.case_id} /> : null}
       </div>
       <button
         type="button"

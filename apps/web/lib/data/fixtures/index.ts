@@ -4,6 +4,8 @@
  * emitting the same change events Supabase Realtime would.
  */
 import { createDemoAdminSource } from "../../admin/demo-source";
+import type { AdminCaseView, CaseMeta } from "../../admin/types";
+import { DEMO_CASE_ID } from "./demo-case";
 import type { Case, Correlation, Finding, Job, JsonObject, NameHints } from "../../types";
 import { GatewayError } from "../gateway";
 import { decisionStatus } from "../../review";
@@ -17,7 +19,10 @@ import type {
   TableRows,
 } from "../types";
 import { PLATFORM_SNAPSHOT } from "../../platforms";
+import { env } from "../../env";
+import { fixtureSignInRequired } from "../../fixture-switches";
 import { FIXTURE_MODULES, modulesFor } from "./catalogue";
+import { HELD_TICKS, SIGN_IN_DETAIL, fixtureQueueStatus, fixtureRefusal, isHeldTrigger } from "./limits";
 import { scoreFixtureCase } from "./exposure";
 import { entitiesForCandidate, syntheticCandidates } from "./people";
 import { renderFixtureReport } from "./report";
@@ -30,6 +35,8 @@ export interface FixtureOptions {
   /** Job simulation tick; 0 disables the timer (tests call `tick()` directly). */
   tickMs?: number;
   now?: () => number;
+  /** Searches need a signed-in session (default: the fixture switch, off unless asked for). */
+  requireSignIn?: boolean;
 }
 
 export interface FixtureDataSource extends DataSource {
@@ -52,6 +59,43 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
   const latency = options.latencyMs ?? 120;
   const tickMs = options.tickMs ?? 1400;
   const state = createFixtureState(now());
+  const needsAccount = options.requireSignIn ?? fixtureSignInRequired(env.fixtureRequireSignIn);
+  /** Cases whose search waits behind invented searches (`demo-queued`): ticks left. */
+  const held = new Map<string, number>();
+
+  /**
+   * The operator's read-only view: a sandbox case as it is, or for an invented visitor case of
+   * the demo panel, the bundled demo case under that visitor's title and targets.
+   */
+  function adminCaseContent(caseId: string, meta: CaseMeta | null): AdminCaseView | null {
+    const own = state.cases.find((c) => c.id === caseId);
+    const sourceId = own ? caseId : meta ? DEMO_CASE_ID : null;
+    const source = sourceId ? state.cases.find((c) => c.id === sourceId) : undefined;
+    if (!sourceId || !source) return null;
+    audit(caseId, "admin_case_viewed", "operator", {});
+    const c: Case = own
+      ? own
+      : { ...source, id: caseId, title: meta?.title ?? source.title, identifiers: meta?.identifiers ?? source.identifiers, is_demo: false };
+    return clone({
+      case: c,
+      findings: byCase(state.findings, sourceId),
+      correlations: byCase(state.correlations, sourceId),
+      entities: byCase(state.entities, sourceId),
+      jobs: byCase(state.jobs, sourceId),
+      audit: state.audit
+        .filter((a) => a.case_id === caseId || a.case_id === sourceId)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    });
+  }
+
+  /** The gateway's checks that the demo can show: sign-in, then the refusal triggers. */
+  function checkSearch(values: string[]) {
+    if (needsAccount && session.anonymous) throw new GatewayError(401, SIGN_IN_DETAIL);
+    for (const v of values) {
+      const refusal = fixtureRefusal(v, state.jobs);
+      if (refusal) throw refusal;
+    }
+  }
 
   let session: SessionInfo = { userId: FIXTURE_USER_ID, anonymous: true, email: null };
   const sessionListeners = new Set<(s: SessionInfo | null) => void>();
@@ -189,6 +233,14 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       return;
     }
     for (const [caseId, jobs] of byCase) {
+      const left = held.get(caseId);
+      if (left !== undefined) {
+        if (left > 1) {
+          held.set(caseId, left - 1);
+          continue;
+        }
+        held.delete(caseId);
+      }
       const running = jobs.filter((j) => j.status === "running");
       for (const job of running) {
         const step = 9 + ((job.id.charCodeAt(7) + job.progress) % 9);
@@ -238,7 +290,8 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
 
   return {
     mode: "fixtures",
-    admin: createDemoAdminSource(),
+    searchNeedsAccount: needsAccount,
+    admin: createDemoAdminSource({ caseContent: adminCaseContent }),
     state,
     tick,
 
@@ -302,6 +355,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
     listPlatforms: () => respond([...PLATFORM_SNAPSHOT]),
 
     async createCase(body) {
+      if (body.scan !== false) checkSearch(body.identifiers.map((i) => i.value));
       if (body.identifiers.some((i) => i.type === "name") && session.anonymous) {
         throw new GatewayError(403, "Name search requires a signed-in account.");
       }
@@ -333,6 +387,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
         }),
       );
       audit(c.id, "case_created", "investigator", { identifiers: body.identifiers.length });
+      if (body.identifiers.some((i) => isHeldTrigger(i.value))) held.set(c.id, HELD_TICKS);
       const jobs =
         body.scan === false
           ? []
@@ -372,6 +427,8 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
 
     async scan(caseId, body) {
       const c = requireCase(caseId);
+      checkSearch([body.value]);
+      if (isHeldTrigger(body.value)) held.set(caseId, HELD_TICKS);
       if (body.type === "name" && session.anonymous) {
         throw new GatewayError(403, "Name search requires a signed-in account.");
       }
@@ -395,6 +452,25 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       }
       return respond(job);
     },
+
+    async cancelBatch(caseId, batchId) {
+      requireCase(caseId);
+      const jobs = state.jobs.filter((j) => j.case_id === caseId && j.batch_id === batchId);
+      if (jobs.length === 0) throw new GatewayError(404, "search not found");
+      let cancelled = 0;
+      for (const job of jobs) {
+        if (job.status !== "queued" && job.status !== "running") continue;
+        job.status = "cancelled";
+        job.finished_at = nowIso();
+        job.progress_note = "Cancelled by the investigator";
+        cancelled += 1;
+        emit("jobs", "UPDATE", caseId, job.id, job);
+      }
+      held.delete(caseId);
+      return respond({ batch_id: batchId, cancelled, jobs });
+    },
+
+    queueStatus: (caseId) => respond(fixtureQueueStatus(caseId, state.jobs, held.get(caseId))),
 
     wake: () => Promise.resolve(),
 

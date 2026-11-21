@@ -6,6 +6,9 @@ import { NameHintsFields } from "@/components/cases/name-hints-fields";
 import { Button } from "@/components/ui/button";
 import { detectTarget } from "@/lib/detect-target";
 import { useModules, useSession } from "@/lib/query/hooks";
+import { useData } from "@/components/providers/data-provider";
+import { savePendingSearch } from "@/lib/pending-search";
+import { SIGN_IN_REASON } from "@/lib/search-refusal";
 import { requestSignIn } from "@/lib/sign-in-prompt";
 import { sourcesFor } from "@/lib/sources";
 import { hasAcknowledged, recordAcknowledgement } from "@/lib/storage";
@@ -42,6 +45,7 @@ export function SmartSearch({
   submitLabel = "Search",
   pending = false,
   examples,
+  caseId,
   onSubmit,
 }: {
   size?: "hero" | "compact";
@@ -54,9 +58,12 @@ export function SmartSearch({
   pending?: boolean;
   /** Fictional examples the hero placeholder types out. */
   examples?: readonly string[];
+  /** The case a submission adds a target to (kept with a search saved for after sign-in). */
+  caseId?: string;
   onSubmit: (input: SmartSearchSubmit) => void;
 }) {
   const id = useId();
+  const { ds } = useData();
   const session = useSession();
   const catalogue = useModules();
   const [own, setOwn] = useState("");
@@ -105,6 +112,21 @@ export function SmartSearch({
       options,
       modules: narrowed ? included.map((m) => m.name) : undefined,
     };
+    if (ds.searchNeedsAccount && (session.data?.anonymous ?? true)) {
+      // Keep the search for after the sign-in round trip; the resumer runs it (ack included).
+      savePendingSearch({
+        type,
+        value: result.value,
+        hints,
+        title: options.title,
+        tags: options.tags,
+        excluded: options.excluded,
+        ...(input.modules ? { modules: input.modules } : {}),
+        ...(caseId ? { caseId } : {}),
+      });
+      requestSignIn(SIGN_IN_REASON);
+      return;
+    }
     if (!hasAcknowledged()) {
       setQueued(input);
       setAckOpen(true);

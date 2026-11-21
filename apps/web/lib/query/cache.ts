@@ -14,6 +14,7 @@ export const keys = {
   report: (mode: DataMode, id: string) => [mode, "case", id, "report"] as const,
   exposure: (mode: DataMode, id: string) => [mode, "case", id, "exposure"] as const,
   candidates: (mode: DataMode, id: string) => [mode, "case", id, "candidates"] as const,
+  queue: (mode: DataMode, id: string) => [mode, "case", id, "queue"] as const,
   audit: (mode: DataMode, caseId: string | null) => [mode, "audit", caseId ?? "all"] as const,
   modules: (mode: DataMode) => [mode, "modules"] as const,
   platforms: (mode: DataMode) => [mode, "platforms"] as const,

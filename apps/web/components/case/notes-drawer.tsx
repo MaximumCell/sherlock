@@ -12,11 +12,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { useReadOnly } from "@/components/providers/read-only";
 import { useUpdateCase } from "@/lib/query/mutations";
 import type { Case } from "@/lib/types";
 
 function NotesForm({ c, onClose }: { c: Case; onClose: () => void }) {
   const update = useUpdateCase(c.id);
+  const readOnly = useReadOnly();
   const [notes, setNotes] = useState(c.notes);
   const dirty = notes !== c.notes;
   return (
@@ -25,6 +27,7 @@ function NotesForm({ c, onClose }: { c: Case; onClose: () => void }) {
         aria-label="Case notes"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
+        readOnly={readOnly}
         placeholder="Hypotheses, open questions, what to check next…"
         className="min-h-64 flex-1 resize-none font-mono text-sm leading-relaxed"
       />
@@ -33,6 +36,7 @@ function NotesForm({ c, onClose }: { c: Case; onClose: () => void }) {
           Close
         </Button>
         <Button
+          hidden={readOnly}
           disabled={!dirty || update.isPending}
           onClick={() =>
             update.mutate({ notes }, { onSuccess: () => toast.success("Notes saved") })

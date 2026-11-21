@@ -70,6 +70,8 @@ class Module(ABC):
     requires_env: ClassVar[tuple[str, ...]] = ()
     source_url: ClassVar[str | None] = None
     timeout_s: ClassVar[float] = 120.0     # hard cap enforced by the worker
+    # Memory-heavy (hundreds of MB): a worker runs at most one heavy job at a time.
+    heavy: ClassVar[bool] = False
 
     def available(self) -> bool:
         return all(os.getenv(k) for k in self.requires_env)

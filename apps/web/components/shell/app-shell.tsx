@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { PendingSearchResumer } from "@/components/search/pending-search-resumer";
+import { ActiveSearchDialog } from "./active-search-dialog";
 import { Banners } from "./banners";
 import { CommandPalette } from "./command-palette";
 import { GatewayStatusPill } from "./gateway-status-pill";
@@ -52,6 +54,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </footer>
       <CommandPalette />
+      <ActiveSearchDialog />
+      <PendingSearchResumer />
       <GatewayStatusPill />
     </div>
   );

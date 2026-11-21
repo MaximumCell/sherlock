@@ -1,5 +1,7 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
+import { PinMark } from "./account-card";
 import { Pin } from "lucide-react";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +54,8 @@ function PinButton({
   finding: Finding;
   onCurate: (id: string, curated: boolean) => void;
 }) {
+  const readOnly = useReadOnly();
+  if (readOnly) return <PinMark pinned={finding.curated} />;
   return (
     <button
       type="button"

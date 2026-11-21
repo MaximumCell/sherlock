@@ -57,6 +57,7 @@ class UserScanner(Module):
     queue = "identity"
     source_url = "https://github.com/kaifcodec/user-scanner"
     timeout_s = 420.0
+    heavy = True  # thousands of site checks; memory-heavy like whatsmyname
 
     async def run(self, target: Target, ctx: ModuleContext) -> list[dict[str, Any]]:
         await ctx.progress(5, "sweeping sites")

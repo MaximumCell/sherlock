@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
 import { ExternalLink, Pin } from "lucide-react";
 import { useMemo } from "react";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
@@ -35,6 +36,7 @@ function SheetBody({
   findings: Finding[];
 }) {
   const curate = useCurate(caseId);
+  const readOnly = useReadOnly();
   const correlations = useCorrelations(caseId);
   const all = useMemo(() => correlations.data ?? [], [correlations.data]);
   const account = useMemo(
@@ -80,6 +82,7 @@ function SheetBody({
         </div>
         <div className="flex flex-wrap gap-2 pt-2">
           <Button
+            hidden={readOnly}
             variant={finding.curated ? "secondary" : "outline"}
             size="sm"
             aria-pressed={finding.curated}

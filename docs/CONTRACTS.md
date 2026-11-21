@@ -9,7 +9,7 @@ apps/web                     Next.js app (Vercel)
 services/gateway/gateway     FastAPI: commands, auth, rate limits, agent, report
 services/worker/worker       Queue worker, deployed once per queue (WORKER_QUEUE)
 packages/core/sherlock_core  Shared: config, models, store, modules, correlation
-supabase/migrations          Versioned SQL (0001_v2.sql is the v2 schema, 0002_admin.sql the operator panel)
+supabase/migrations          Versioned SQL (0001_v2.sql is the v2 schema, 0002_admin.sql the operator panel, 0003_limits.sql search limits + fair claims)
 ```
 
 Python packages: `sherlock_core`, `gateway`, `worker` (uv workspace, Python 3.11).
@@ -116,6 +116,10 @@ queued -> running -> succeeded
 ```
 
 A worker must heartbeat at least every 30 s while a job runs. A job with no heartbeat for `JOB_STALE_SECONDS` is requeued by the next `claim_job` call.
+
+Claiming (`store.claim_job(queue, worker, exclude_modules=())`, SQL `claim_job(p_queue, p_worker, p_stale_seconds, p_exclude_modules text[] default '{}')`): only queued jobs whose `run_after` has passed and whose module is not excluded; the oldest job of the case with the FEWEST running jobs in that queue first, then the oldest (round-robin between searches). Before 0003_limits.sql has run, `SupabaseStore` falls back to the 3-argument function and hands an excluded job straight back (fairness then needs the migration).
+
+Modules with `heavy = True` (`whatsmyname`, `user_scanner`: hundreds of MB) never run two at a time in one worker.
 Job `result`: `{"findings": <count>, "found": <count with status found>}`.
 
 ## Gateway HTTP API
@@ -135,6 +139,8 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 | `GET /cases/{id}/candidates?name=` | | `{name, hints, candidates: Candidate[], unassigned_finding_ids}` (name search; see `sherlock_core.resolve`) |
 | `POST /cases/{id}/candidates/{candidate_id}/confirm?name=` | | `{candidate, entities: Entity[]}`; adds pivot suggestions, starts no scan |
 | `POST /cases/{id}/jobs/{job_id}/cancel` | | `Job` |
+| `POST /cases/{id}/batches/{batch_id}/cancel` | | `{batch_id, cancelled, jobs: Job[]}`; stops one search (404 when the case has no such batch) |
+| `GET /queue/status?case_id=` | | `{case_id, queued, running, waiting, ahead, jobs_ahead, estimated_wait_s}`: counts only, never other people's data. `ahead` = other unfinished searches in the same queue that started earlier; `waiting` = queued, nothing of its own running, and `ahead > 0`; `estimated_wait_s` is rough (null when not waiting). Readable for the case's owner (and demo cases) |
 | `POST /cases/{id}/wake` | | 202; re-pokes workers that have queued jobs for this case |
 | `POST /cases/{id}/correlate` | | `{correlations: number}` |
 | `GET /cases/{id}/exposure` | | `{score, band, factors[], computed_from, method}` (see `sherlock_core.scoring`) |
@@ -148,11 +154,20 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 Rules:
 - `POST /cases` and `POST /cases/{id}/scan` accept optional `hints: {city?, employer?, school?, keywords?: string[]}` for `type = "name"` only.
 - `type = "name"` requires a non-anonymous session (403 otherwise) and is limited by `NAME_SEARCHES_PER_USER_PER_DAY`.
-- Scans are limited by `SCANS_PER_SESSION_PER_DAY` and `SCANS_GLOBAL_PER_DAY` (429 with a clear message).
+- Search checks, in this order, on `POST /cases` (with `scan`) and `POST /cases/{id}/scan` (and the agent's scan tools); the first that fails answers:
+  1. blocked session (403 `blocked`), 2. paused (503 `paused`),
+  3. sign-in: with `REQUIRE_SIGN_IN` (default true) an anonymous session gets 401 `Sign in to run a search. It's free and takes a few seconds.` (`sign_in_required`),
+  4. invalid input (400 `invalid`; anonymous name search 403 `forbidden` when sign-in is not required),
+  5. one unfinished search per session (`ACTIVE_SEARCHES_PER_SESSION`, 1): 429 `active_search` with body `{detail, active_search: {case_id, batch_ids}}` (the web app offers "Open my running search" and "Stop it"),
+  6. burst per session (`SEARCHES_PER_SESSION_PER_10M`, 3; key `burst:session:<user>:10m`): 429 `burst_limited`,
+  7. per origin, by `ip_hash` so a new session does not reset it (`SEARCHES_PER_ORIGIN_PER_10M`, 5, key `origin:<ip_hash>:10m`: 429 `burst_limited`; `SEARCHES_PER_ORIGIN_PER_DAY`, 30, key `origin:<ip_hash>:day`: 429 `rate_limited`),
+  8. daily: `NAME_SEARCHES_PER_USER_PER_DAY`, `SCANS_PER_SESSION_PER_DAY`, `SCANS_GLOBAL_PER_DAY` (429 `rate_limited`),
+  9. backlog: a queue the search needs holds more than `QUEUE_BACKLOG_MAX` (80) queued jobs: 503 `busy` `Sherlock is busy right now. Try again in a few minutes.`
+  Every timed refusal sends `Retry-After` (seconds: end of the fixed window, 180 for `busy`) and says the wait in words. Counters are only read until every check passed, then counted (`hit_rate_limit`), so a refused search costs nothing. A search request with several targets counts each. The operator (ADMIN_EMAILS principal) is exempt from 5, 6, 7 and the per-user daily limits, not from the global cap or the backlog guard.
 - `POST /cases` and manual links return 201. A case owned by someone else is 403; a missing case is 404. Validation errors are 422 with a string `detail`.
 - Reads (lists of cases, findings, correlations, jobs, entities, audit) are **not** on the gateway; the web app reads them from Supabase.
 - A blocked session gets 403 `This session has been blocked from running searches.` and a paused app 503 `Searches are paused by the operator. Try again later.` on `POST /cases` (with `scan`) and `POST /cases/{id}/scan`, before anything is planned, counted or queued (blocked is checked first). Reads and other commands keep working. The web client shows a 503 that carries a JSON `detail` at once instead of retrying it as a cold start.
-- Every search attempt (those two routes and the agent's scan tools) writes ONE `search_log` row per target with its outcome: `accepted`, `rate_limited` (429), `blocked`, `paused`, `forbidden` (anonymous name search), `invalid` (400). Ownership errors (403/404 on someone else's or a missing case) and body validation (422) are not search attempts. Logging never changes the answer: a failed log write is only reported in the server log.
+- Every search attempt (those two routes and the agent's scan tools) writes ONE `search_log` row per target with its outcome: `accepted`, `rate_limited` (429, daily limits), `burst_limited` (429, 10-minute limits), `active_search` (429), `busy` (503), `sign_in_required` (401), `blocked`, `paused`, `forbidden` (anonymous name search), `invalid` (400). The last four new outcomes need 0003_limits.sql; until it has run they are stored as `rate_limited` (`sign_in_required` as `forbidden`) with the specific `detail`. Ownership errors (403/404 on someone else's or a missing case) and body validation (422) are not search attempts. Logging never changes the answer: a failed log write is only reported in the server log.
 
 ## Operator panel
 
@@ -171,7 +186,7 @@ Privacy rules (not negotiable):
 - `country` only from the `CF-IPCountry` edge header (two letters, `XX` dropped). No geo-IP service is ever called with visitor IPs.
 - The user agent is stored truncated; the panel shows it as "Browser on OS" (the raw string under Advanced).
 - `search_log` rows are deleted after 90 days (`purge_old_search_log`, called by the gateway at most once a day). The responsible-use page and the first-search dialog say so.
-- The panel shows cases as metadata only (title, targets, counts). Findings are never part of it.
+- Lists in the panel show cases as metadata only (title, targets, counts). The full contents of a case (findings included) are shown only in the read-only case view below, one case at a time, and every opening is recorded on that case's own audit log, which its owner sees in the case history. Visitors are told this in the first-search acknowledgement, "How it works" and the responsible-use page.
 
 Every authenticated gateway request touches the caller's `visitor_sessions` row (at most once a minute per session, in-process throttle). `Principal` carries `email` and `email_verified` from the verified Supabase user.
 
@@ -188,10 +203,11 @@ Admin API. Guard: a non-anonymous principal whose **verified** email is in `ADMI
 | `POST /admin/sessions/{user_id}/unblock` | | visitor |
 | `POST /admin/pause` | `{paused}` | `{scans_paused}` |
 | `DELETE /admin/cases/{case_id}` | | 204 (demo cases: 400) |
+| `GET /admin/cases/{case_id}?findings_limit=&findings_offset=` | | `{case, findings (page, limit 1..2000, default 1000), findings_total, findings_next_offset, correlations (same_account included), entities, jobs, audit}`. Read-only abuse review: there is no write route under it. The first page writes `audit_log` `{case_id, action: "admin_case_viewed", actor: "operator", detail: {admin: <email>}}` |
 
-Misuse flags (`gateway.insights.session_flags`, pure; thresholds are named constants there; window: the last 7 days): many searches in a short burst, repeated rate limits, many distinct targets (harvesting rather than a self-check), repeated refused name searches, a target also searched from several sessions, several sessions sharing one `ip_hash`. Each is `{key, label, severity: high | medium | low}` with a plain-English label. Flags are hints for a person; nothing is blocked automatically.
+Misuse flags (`gateway.insights.session_flags`, pure; thresholds are named constants there; window: the last 7 days): many searches in a short burst, hit the burst limit, repeated rate limits, many distinct targets (harvesting rather than a self-check), repeated refused name searches, a target also searched from several sessions, several sessions sharing one `ip_hash`. Each is `{key, label, severity: high | medium | low}` with a plain-English label. Flags are hints for a person; nothing is blocked automatically.
 
-Web: `/admin` (not in the public navigation; the account menu shows it when `GET /admin/me` succeeds, asked only for signed-in sessions). Fixture mode and `/demo/admin` run the same components on invented data (`apps/web/lib/admin/demo-source.ts`).
+Web: `/admin` (not in the public navigation; the account menu shows it when `GET /admin/me` succeeds, asked only for signed-in sessions). Fixture mode and `/demo/admin` run the same components on invented data (`apps/web/lib/admin/demo-source.ts`). `/admin/cases/[id]` (and `/demo/admin/cases/[id]`) is the read-only case view: the investigation page in read-only mode under the banner "Viewing as operator · read-only · this view is logged", on a data source that refuses every write (`apps/web/lib/data/read-only-source.ts`).
 
 ## Worker HTTP API
 
@@ -200,11 +216,11 @@ Web: `/admin` (not in the public navigation; the account menu shows it when `GET
 | `GET /health` | `{ok, queue, busy}` |
 | `POST /wake` | Header `X-Sherlock-Signature: <hex hmac-sha256(INTERNAL_SECRET, body)>`, body `{"ts": <unix seconds>}` (reject if older than 5 min). Starts the drain loop if idle, returns 202 immediately. |
 
-The drain loop claims jobs until the queue is empty, one at a time (0.1 CPU), then stops.
+The drain loop is a small pool: up to `WORKER_CONCURRENCY` (3) jobs at once, at most one heavy module (claims pass the heavy module names as `exclude_modules` while one runs). It claims while slots are free, keeps lingering for retries in backoff, and stops when the queue is empty and nothing runs. Each job keeps its own heartbeat, cancellation and timeout; a crashing job never stops the pool; on shutdown every running job is handed back. Profile-preview and avatar downloads share one limiter per worker (`ENRICH_CONCURRENCY`, 4).
 
 ## Environment
 
-See `packages/core/sherlock_core/config.py` (`ADMIN_EMAILS` turns on the operator panel). Web app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`.
+See `packages/core/sherlock_core/config.py` (`ADMIN_EMAILS` turns on the operator panel; search limits, `REQUIRE_SIGN_IN`, `WORKER_CONCURRENCY`). Web app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_REQUIRE_SIGN_IN` (default true; only decides whether the app asks for sign-in before calling the gateway, which decides), `NEXT_PUBLIC_FIXTURE_REQUIRE_SIGN_IN` (fixture mode; also `?signin=required`).
 
 ## Boundaries (not negotiable)
 

@@ -17,8 +17,8 @@ The screenshots show the bundled demo case. Every person, handle and address in 
 Sherlock is for **self-exposure checks, security research and authorised investigations**.
 
 - Public data only. Breach results are exposure metadata (breach name, date, data categories), never records or passwords.
-- Searching a person by name requires a signed-in account, and every search is written to the audit log.
-- Every search is logged (what was searched, when, and an anonymised origin, never an IP address) and reviewed by the operator to prevent misuse. The log is kept for 90 days.
+- Running a search requires a free signed-in account (the live demo does not); every search is written to the audit log.
+- Every search is logged (what was searched, when, and an anonymised origin, never an IP address) and the log is kept for 90 days. To prevent misuse the operator can review searches and their results, read-only; each review is recorded in that case's history.
 - It does not look up who owns a phone number or national ID, does not do face recognition, and does not collect home addresses or family relationships. People-search and data-broker sites are excluded from results.
 - Correlations are confidence scores with evidence, never statements of fact, and nothing is treated as confirmed until a person approves it.
 
@@ -51,7 +51,8 @@ Render's free plan gives one shared pool of 750 instance-hours a month, 512 MB a
 - **Jobs live in Postgres, not in memory.** Workers claim them with `FOR UPDATE SKIP LOCKED`, heartbeat while running, and retry up to three times. A job whose worker went to sleep or crashed is requeued by the next claim.
 - **Services sleep and are woken on demand.** After enqueueing, the gateway sends an HMAC-signed `POST /wake` to the worker for that queue. There are no keep-alive pings: four services kept awake would use the month's hours in about eight days.
 - **Reads never touch Render.** The browser reads from Supabase under row-level security and gets new findings through Realtime, so a cold backend delays a scan by about a minute but never blocks a page.
-- **Every visitor is isolated without signing up.** An anonymous Supabase session scopes cases to that visitor. Scans are limited per session and globally per day.
+- **Every visitor is isolated.** Each Supabase session (anonymous for browsing and the demo, signed in to search) only reads its own cases. Searches are limited per account (one unfinished search at a time, 3 per 10 minutes), per network (5 per 10 minutes, 30 a day, by hashed IP) and globally per day, and refused with a 503 while a queue is backed up.
+- **Workers run a few jobs at once.** Each worker runs up to 3 jobs (most wait on the network), never two memory-heavy ones (WhatsMyName, user-scanner) together, and claims round-robin across searches so one visitor's 19 jobs cannot hold up everyone else.
 
 ## How an investigation works
 
@@ -86,8 +87,8 @@ Modules that need a missing key report themselves unavailable and are skipped. `
 Requirements: [uv](https://docs.astral.sh/uv/), Node 22, Docker (optional), a Supabase project.
 
 ```bash
-# 1. Database: run supabase/setup.sql in the Supabase SQL editor (existing database: run the migrations it does not have yet, e.g. supabase/migrations/0002_admin.sql),
-#    then enable Anonymous sign-ins under Authentication.
+# 1. Database: run supabase/setup.sql in the Supabase SQL editor (existing database: run the migrations it does not have yet,
+#    e.g. supabase/migrations/0003_limits.sql), then enable Anonymous and Email sign-ins under Authentication.
 
 # 2. Backend
 cp .env.example .env            # fill in SUPABASE_URL, SUPABASE_SERVICE_KEY, INTERNAL_SECRET
@@ -105,10 +106,12 @@ To look at the app with no backend at all:
 cd apps/web && NEXT_PUBLIC_FIXTURES=1 npm run dev
 ```
 
+Fixture mode needs no account. Add `?signin=required` to any URL to see the signed-out "sign in to search" flow, and search the usernames `demo-busy`, `demo-limit`, `demo-running` or `demo-queued` to see the refusals and the waiting state.
+
 ## Tests
 
 ```bash
-uv sync && uv run pytest         # 569 backend tests, all offline (in-memory store, recorded responses)
+uv sync && uv run pytest         # 630 backend tests, all offline (in-memory store, recorded responses)
 uv run ruff check .
 cd apps/web && npm run lint && npm run typecheck && npm test
 ```
@@ -117,14 +120,14 @@ CI runs all of this on every pull request.
 
 ## Deploy
 
-- **Supabase:** run the migration, enable Anonymous sign-ins (and Email or GitHub sign-in for name search).
+- **Supabase:** run the migrations (before deploying code that needs them), enable Anonymous sign-ins (browsing and the demo) and Email sign-in (searching; Google optional).
 - **Render:** New, then Blueprint, and select this repo. [`render.yaml`](render.yaml) creates the gateway and three workers with a shared generated secret. Enter the Supabase URL and service key when asked.
 - **Vercel:** root directory `apps/web`, with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_API_URL`.
 - **GitHub secrets** `SUPABASE_URL` and `SUPABASE_ANON_KEY` let the twice-weekly keepalive workflow stop the free Supabase project from pausing.
 
 ## Operator panel
 
-`/admin` shows the person running a deployment what visitors search and where from: searches per day by outcome, a live feed (including refused searches), visitors with plain-English warning signs (bursts, many different targets, repeated limits, shared origins), and the controls to act: block or unblock a session, pause all searches, remove a case. Targets can be blurred with "Hide targets". Origins are stored as a keyed hash, never as an IP address; search records are deleted after 90 days. Findings are never shown in the panel.
+`/admin` shows the person running a deployment what visitors search and where from: searches per day by outcome, a live feed (including refused searches), visitors with plain-English warning signs (bursts, many different targets, repeated limits, shared origins), and the controls to act: block or unblock a session, pause all searches, remove a case. Targets can be blurred with "Hide targets". Origins are stored as a keyed hash, never as an IP address; search records are deleted after 90 days. Refusals show with plain labels (too many at once, search still running, server busy, needed sign-in), and "Hit the burst limit" is a warning sign. "View case" opens any visitor's case read-only for abuse review (`/admin/cases/<id>`); every opening is recorded in that case's own history, which its owner sees.
 
 Preview it with invented data at `/demo/admin` (works in every mode), or run the web app with `NEXT_PUBLIC_FIXTURES=1` and open `/admin`.
 
@@ -139,10 +142,15 @@ To use it for real:
 |---|---|---|
 | `ADMIN_EMAILS` | gateway | Comma-separated operator emails (confirmed sign-in). Empty: nobody can open `/admin`. |
 | `INTERNAL_SECRET` | gateway, workers | Also the key of the origin hash. |
+| `REQUIRE_SIGN_IN` | gateway | `true` (default): searching needs a signed-in account. `false` lets anonymous sessions search again (name search always needs an account). Mirror it in the web app with `NEXT_PUBLIC_REQUIRE_SIGN_IN`. |
+| `SEARCHES_PER_SESSION_PER_10M`, `SEARCHES_PER_ORIGIN_PER_10M`, `SEARCHES_PER_ORIGIN_PER_DAY` | gateway | Burst and per-network limits (3, 5, 30). The operator is exempt. |
+| `ACTIVE_SEARCHES_PER_SESSION`, `QUEUE_BACKLOG_MAX` | gateway | One unfinished search per session; refuse new searches while a queue holds more than 80 queued jobs (applies to the operator too). |
+| `WORKER_CONCURRENCY`, `ENRICH_CONCURRENCY` | workers | Jobs at once per worker (3, at most one heavy) and shared preview/avatar downloads (4). |
 
 ## Known limits
 
 - The first scan after an idle period waits about a minute for Render to wake the services.
+- One worker per queue on 0.1 CPU: when several people search at once, later searches wait. The scan panel then says "Waiting for other searches to finish · N ahead of you" with a rough estimate. Memory under 3 concurrent jobs is bounded by design (one heavy module at a time, shared download limit) but was not measured on a 512 MB instance.
 - Free sources rate-limit and occasionally block datacentre IPs; a blocked source shows as an error finding and the rest of the scan continues.
 - Existence checks say an account exists, not who owns it. Links come from profile data, so sparse profiles produce few correlations.
 - Keyless web search for name lookups is best-effort. A SerpApi key (250 free searches a month) makes it reliable.

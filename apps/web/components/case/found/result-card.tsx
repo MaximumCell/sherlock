@@ -1,5 +1,7 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
+import { PinMark } from "./account-card";
 import { Layers, MapPin, Pin } from "lucide-react";
 import { tiltHandlers } from "@/components/motion/tilt";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
@@ -76,6 +78,7 @@ export function ResultCard({
   const facts = keyFacts(view);
   const snippet = view.bio ?? view.error ?? null;
   const pinned = account.findings.some((f) => f.curated);
+  const readOnly = useReadOnly();
   const shownId = account.handle ?? primary.identifier_value;
 
   return (
@@ -113,18 +116,22 @@ export function ResultCard({
               <span className="font-mono text-xs">{shownId}</span>
             </p>
           </div>
-          <button
-            type="button"
-            aria-pressed={pinned}
-            aria-label={`${pinned ? "Unpin" : "Pin"} ${title}`}
-            onClick={() => onPin(!pinned)}
-            className={cn(
-              "relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-1 hover:bg-muted",
-              pinned ? "text-accent" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Pin className={cn("h-4 w-4", pinned && "fill-current")} aria-hidden />
-          </button>
+          {readOnly ? (
+            <PinMark pinned={pinned} />
+          ) : (
+            <button
+              type="button"
+              aria-pressed={pinned}
+              aria-label={`${pinned ? "Unpin" : "Pin"} ${title}`}
+              onClick={() => onPin(!pinned)}
+              className={cn(
+                "relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-1 hover:bg-muted",
+                pinned ? "text-accent" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Pin className={cn("h-4 w-4", pinned && "fill-current")} aria-hidden />
+            </button>
+          )}
         </div>
         {snippet ? <p className="line-clamp-2 text-sm text-muted-foreground">{snippet}</p> : null}
         {facts.length || view.location ? (

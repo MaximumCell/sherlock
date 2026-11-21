@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
-from sherlock_core.models import Case, Entity, Identifier, Job, TargetType
+from sherlock_core.models import Case, Correlation, Entity, Finding, Identifier, Job, TargetType
 
 # ----------------------------------------------------------------------------- requests
 _Hint = Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)]
@@ -101,6 +101,23 @@ class WakeResult(BaseModel):
     queues: list[str]
 
 
+class BatchCancelled(BaseModel):
+    batch_id: str
+    cancelled: int
+    jobs: list[Job]
+
+
+class QueueStatus(BaseModel):
+    """Where a case's search stands in the shared queues. Counts only: never other people's data."""
+    case_id: str
+    queued: int                # this case's queued jobs
+    running: int               # this case's running jobs
+    waiting: bool              # queued behind other searches and nothing of it runs yet
+    ahead: int                 # other searches that started before it and are still unfinished
+    jobs_ahead: int            # their unfinished jobs
+    estimated_wait_s: int | None  # rough time until its first job starts (only when waiting)
+
+
 class CorrelateResult(BaseModel):
     correlations: int
 
@@ -187,7 +204,8 @@ class ErrorOut(BaseModel):
 
 
 # ----------------------------------------------------------------------------- operator panel (/admin)
-SearchOutcome = Literal["accepted", "rate_limited", "blocked", "paused", "forbidden", "invalid"]
+SearchOutcome = Literal["accepted", "rate_limited", "blocked", "paused", "forbidden", "invalid",
+                        "burst_limited", "active_search", "busy", "sign_in_required"]
 
 
 class BlockRequest(BaseModel):
@@ -292,6 +310,10 @@ class DayPoint(BaseModel):
     paused: int
     forbidden: int
     invalid: int
+    burst_limited: int = 0
+    active_search: int = 0
+    busy: int = 0
+    sign_in_required: int = 0
 
 
 class TypeCount(BaseModel):
@@ -328,3 +350,15 @@ class Overview(BaseModel):
 
 class PauseState(BaseModel):
     scans_paused: bool
+
+
+class AdminCaseView(BaseModel):
+    """`GET /admin/cases/{id}`: one visitor's case in full, read-only, for abuse review."""
+    case: Case
+    findings: list[Finding]
+    findings_total: int
+    findings_next_offset: int | None
+    correlations: list[Correlation]
+    entities: list[Entity]
+    jobs: list[Job]
+    audit: list[dict[str, Any]]

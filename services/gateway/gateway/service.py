@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import os
 import time
 import uuid
@@ -13,7 +14,7 @@ from typing import Annotated, Any
 from fastapi import Depends, HTTPException
 from sherlock_core import config
 from sherlock_core.jobs import normalize_target, plan_scan
-from sherlock_core.store import Store, get_store
+from sherlock_core.store import LEGACY_OUTCOME, Store, get_store, window_reset_s
 
 from gateway.auth import Principal
 from gateway.visitors import Origin
@@ -22,6 +23,7 @@ log = logging.getLogger("sherlock.gateway.service")
 
 Row = dict[str, Any]
 DAY_S = 86400
+TEN_MIN_S = 600
 # LLM-backed routes (chat, variations) are not in the scan budget; cap them separately.
 LLM_CALLS_PER_SESSION_PER_DAY = int(os.getenv("LLM_CALLS_PER_SESSION_PER_DAY", "60") or 60)
 
@@ -31,16 +33,41 @@ SEARCH_LOG_RETENTION_DAYS = 90
 PURGE_EVERY_S = DAY_S
 BLOCKED_MESSAGE = "This session has been blocked from running searches."
 PAUSED_MESSAGE = "Searches are paused by the operator. Try again later."
-_STATUS_OUTCOME = {429: "rate_limited", 403: "forbidden", 503: "paused"}
+SIGN_IN_MESSAGE = "Sign in to run a search. It's free and takes a few seconds."
+ACTIVE_SEARCH_MESSAGE = ("Your previous search is still running. "
+                         "You can start another when it finishes, or stop it.")
+BUSY_MESSAGE = "Sherlock is busy right now. Try again in a few minutes."
+BUSY_RETRY_S = 180
+_STATUS_OUTCOME = {429: "rate_limited", 403: "forbidden", 503: "paused", 401: "sign_in_required"}
 _last_purge = 0.0
 
 
 class SearchRefused(HTTPException):
-    """An HTTPException that names its search_log outcome (when the status code alone is ambiguous)."""
+    """An HTTPException that names its search_log outcome (when the status code alone is ambiguous).
+    `retry_after` (seconds) becomes a Retry-After header; `extra` is merged into the JSON body
+    next to `detail`."""
 
-    def __init__(self, status_code: int, detail: str, outcome: str):
-        super().__init__(status_code, detail)
+    def __init__(self, status_code: int, detail: str, outcome: str, *, retry_after: int | None = None,
+                 extra: Row | None = None):
+        super().__init__(status_code, detail, headers={"Retry-After": str(int(retry_after))} if retry_after else None)
         self.outcome = outcome
+        self.extra = extra or {}
+
+
+def is_operator(principal: Principal) -> bool:
+    """A signed-in session whose VERIFIED email is in ADMIN_EMAILS."""
+    return (not principal.is_anonymous and principal.email_verified
+            and (principal.email or "").strip().lower() in config.ADMIN_EMAILS)
+
+
+def wait_text(seconds: int) -> str:
+    """'about a minute', 'about 7 minutes', 'about 3 hours'."""
+    if seconds <= 90:
+        return "about a minute"
+    if seconds < 3600:
+        return f"about {math.ceil(seconds / 60)} minutes"
+    hours = round(seconds / 3600)
+    return "about an hour" if hours <= 1 else f"about {hours} hours"
 
 
 def outcome_of(exc: HTTPException) -> str:
@@ -66,6 +93,8 @@ def check_scans_allowed(store: Store, principal: Principal) -> None:
         raise SearchRefused(403, BLOCKED_MESSAGE, "blocked")
     if scans_paused(store):
         raise SearchRefused(503, PAUSED_MESSAGE, "paused")
+    if config.REQUIRE_SIGN_IN and principal.is_anonymous:
+        raise SearchRefused(401, SIGN_IN_MESSAGE, "sign_in_required")
 
 
 @dataclass
@@ -96,14 +125,22 @@ def record_searches(store: Store, principal: Principal, origin: Origin | None, a
     """One search_log row per target. Never raises: logging must not change the answer."""
     origin = origin or Origin()
     for t in attempt.targets:
+        row = {
+            "user_id": principal.user_id, "case_id": attempt.case_id, "target_type": t["type"],
+            "target_value": t["value"], "modules": t.get("modules"), "outcome": outcome, "detail": detail,
+            "ip_hash": origin.ip_hash, "country": origin.country, "is_anonymous": principal.is_anonymous,
+        }
         try:
-            store.log_search({
-                "user_id": principal.user_id, "case_id": attempt.case_id, "target_type": t["type"],
-                "target_value": t["value"], "modules": t.get("modules"), "outcome": outcome, "detail": detail,
-                "ip_hash": origin.ip_hash, "country": origin.country, "is_anonymous": principal.is_anonymous,
-            })
+            store.log_search(row)
         except Exception as e:
-            log.warning("search_log write failed: %s", type(e).__name__)
+            if outcome not in LEGACY_OUTCOME:
+                log.warning("search_log write failed: %s", type(e).__name__)
+                continue
+            # 0003_limits.sql not applied yet: its CHECK rejects the new outcome. Keep the row anyway.
+            try:
+                store.log_search({**row, "outcome": LEGACY_OUTCOME[outcome]})
+            except Exception as e2:
+                log.warning("search_log write failed: %s / %s", type(e).__name__, type(e2).__name__)
     _maybe_purge(store)
 
 
@@ -155,20 +192,94 @@ def check_target_allowed(principal: Principal, target_type: str) -> None:
                             "forbidden")
 
 
-def consume_scan_quota(store: Store, principal: Principal, target_type: str) -> None:
-    """Count one scan against the caller. 429 with a readable message when a limit is hit."""
-    if target_type == "name" and not store.hit_rate_limit(
-        f"name:user:{principal.user_id}", DAY_S, config.NAME_SEARCHES_PER_USER_PER_DAY
-    ):
-        raise HTTPException(
-            429, f"Daily limit reached: {config.NAME_SEARCHES_PER_USER_PER_DAY} name searches per account. "
-                 "Try again tomorrow.")
-    if not store.hit_rate_limit(f"scan:session:{principal.user_id}", DAY_S, config.SCANS_PER_SESSION_PER_DAY):
-        raise HTTPException(
-            429, f"Daily limit reached: {config.SCANS_PER_SESSION_PER_DAY} scans per session. Try again tomorrow.")
-    if not store.hit_rate_limit("scan:global", DAY_S, config.SCANS_GLOBAL_PER_DAY):
-        raise HTTPException(
-            429, "Sherlock has reached its shared daily scan capacity on the free tier. Try again tomorrow.")
+@dataclass(frozen=True)
+class _Limit:
+    key: str
+    window_s: int
+    limit: int
+    hits: int                 # searches this request counts against the limit
+    outcome: str
+    message: str              # may contain {wait}
+
+
+def _limits(principal: Principal, origin: Origin | None, target_types: list[str]) -> list[_Limit]:
+    """Counters for one search request, in refusal order: burst/session, origin, daily."""
+    uid, n = principal.user_id, len(target_types)
+    names = sum(1 for t in target_types if t == "name")
+    out: list[_Limit] = []
+    if not is_operator(principal):
+        if config.SEARCHES_PER_SESSION_PER_10M > 0:
+            lim = config.SEARCHES_PER_SESSION_PER_10M
+            out.append(_Limit(f"burst:session:{uid}:10m", TEN_MIN_S, lim, n, "burst_limited",
+                              f"Too many searches in a short time: up to {lim} every 10 minutes. "
+                              "You can search again in {wait}."))
+        ip_hash = origin.ip_hash if origin else None
+        if ip_hash and config.SEARCHES_PER_ORIGIN_PER_10M > 0:
+            lim = config.SEARCHES_PER_ORIGIN_PER_10M
+            out.append(_Limit(f"origin:{ip_hash}:10m", TEN_MIN_S, lim, n, "burst_limited",
+                              f"Too many searches from your network in a short time: up to {lim} every 10 minutes. "
+                              "You can search again in {wait}."))
+        if ip_hash and config.SEARCHES_PER_ORIGIN_PER_DAY > 0:
+            lim = config.SEARCHES_PER_ORIGIN_PER_DAY
+            out.append(_Limit(f"origin:{ip_hash}:day", DAY_S, lim, n, "rate_limited",
+                              f"Daily limit reached for your network: {lim} searches a day. "
+                              "Try again in {wait}."))
+        if names:
+            lim = config.NAME_SEARCHES_PER_USER_PER_DAY
+            out.append(_Limit(f"name:user:{uid}", DAY_S, lim, names, "rate_limited",
+                              f"Daily limit reached: {lim} name searches per account. Try again in {{wait}}."))
+        lim = config.SCANS_PER_SESSION_PER_DAY
+        out.append(_Limit(f"scan:session:{uid}", DAY_S, lim, n, "rate_limited",
+                          f"Daily limit reached: {lim} scans per session. Try again in {{wait}}."))
+    out.append(_Limit("scan:global", DAY_S, config.SCANS_GLOBAL_PER_DAY, n, "rate_limited",
+                      "Sherlock has reached its shared daily scan capacity on the free tier. Try again in {wait}."))
+    return out
+
+
+def _refuse(limit: _Limit) -> SearchRefused:
+    wait = window_reset_s(limit.window_s)
+    return SearchRefused(429, limit.message.replace("{wait}", wait_text(wait)), limit.outcome, retry_after=wait)
+
+
+def check_active_search(store: Store, principal: Principal) -> None:
+    """At most ACTIVE_SEARCHES_PER_SESSION unfinished searches per session (the operator is exempt)."""
+    cap = config.ACTIVE_SEARCHES_PER_SESSION
+    if cap <= 0 or is_operator(principal):
+        return
+    batches = store.active_batches(principal.user_id)
+    if len(batches) < cap:
+        return
+    case_id = batches[0]["case_id"]
+    raise SearchRefused(429, ACTIVE_SEARCH_MESSAGE, "active_search", extra={"active_search": {
+        "case_id": case_id, "batch_ids": [b["batch_id"] for b in batches if b["case_id"] == case_id and b["batch_id"]],
+    }})
+
+
+def check_backlog(store: Store, queues: set[str]) -> None:
+    """503 while a queue this search needs already holds more than QUEUE_BACKLOG_MAX queued jobs.
+    Applies to everyone, the operator included."""
+    if config.QUEUE_BACKLOG_MAX <= 0:
+        return
+    for q in sorted(queues):
+        if store.count_queued(q) > config.QUEUE_BACKLOG_MAX:
+            raise SearchRefused(503, BUSY_MESSAGE, "busy", retry_after=BUSY_RETRY_S)
+
+
+def enforce_search_limits(store: Store, principal: Principal, origin: Origin | None,
+                          target_types: list[str], queues: set[str]) -> None:
+    """Every limit after validation, in order: active search, burst/session, origin, daily, backlog.
+    Counters are only read until everything passed, so a refused search costs nothing; then each
+    is counted atomically (a race lost at that point still refuses with that limit's message)."""
+    check_active_search(store, principal)
+    limits = _limits(principal, origin, target_types)
+    for lim in limits:
+        if store.rate_limit_count(lim.key, lim.window_s) + lim.hits > lim.limit:
+            raise _refuse(lim)
+    check_backlog(store, queues)
+    for lim in limits:
+        for _ in range(lim.hits):
+            if not store.hit_rate_limit(lim.key, lim.window_s, lim.limit):
+                raise _refuse(lim)
 
 
 def consume_llm_quota(store: Store, principal: Principal) -> None:
@@ -230,5 +341,5 @@ def start_scan(store: Store, principal: Principal, case_id: str, target_type: st
         planned = plan_or_400(case_id, target_type, value, modules, params=params)
         attempt.targets = [{"type": target_type, "value": planned[0]["target_value"],
                             "modules": [j["module"] for j in planned]}]
-        consume_scan_quota(store, principal, target_type)
+        enforce_search_limits(store, principal, origin, [target_type], {j["queue"] for j in planned})
         return enqueue_planned(store, principal, case_id, planned, actor=actor)

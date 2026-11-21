@@ -2,7 +2,7 @@
 
     plan_scan   one user action -> one batch of job rows (one per applicable module)
     run_job     run one claimed job: module -> findings -> correlation -> complete / fail
-    drain       claim-run loop for one queue, one job at a time
+    drain       claim-run loop for one queue: a small pool of WORKER_CONCURRENCY jobs, at most one heavy
     sign_wake   HMAC used by the gateway's wake call and verified by the worker
 
 See docs/CONTRACTS.md ("Jobs").
@@ -202,13 +202,29 @@ def _persist(job: Row, findings: list[Row], store: Store) -> Row:
     return {"findings": len(findings), "found": sum(1 for f in findings if f.get("status") == "found")}
 
 
+_enrich_slots: dict[asyncio.AbstractEventLoop, asyncio.Semaphore] = {}
+
+
+def enrich_semaphore() -> asyncio.Semaphore:
+    """The one limiter shared by every job of this worker for preview and avatar downloads
+    (ENRICH_CONCURRENCY in flight in total), so parallel jobs cannot multiply the memory they use."""
+    loop = asyncio.get_running_loop()
+    sem = _enrich_slots.get(loop)
+    if sem is None:
+        _enrich_slots.clear()          # an old loop (tests) is gone
+        sem = _enrich_slots[loop] = asyncio.Semaphore(config.ENRICH_CONCURRENCY)
+    return sem
+
+
 async def _enrich(findings: list[Row], http: httpx.AsyncClient, queue: str = "") -> list[Row]:
     """Post-module enrichment, best effort: nothing here may cost the scan.
 
     1. identity queue: profile previews (picture / name / bio from the public profile page);
     2. perceptual hashes of profile pictures so `avatar_match` can compare them
        (needs Pillow/imagehash, i.e. the worker image).
+    Downloads go through `enrich_semaphore()`, shared by all jobs running in this worker.
     """
+    shared = enrich_semaphore()
     async def step(name: str, fn: Callable[[], Any], timeout: float) -> None:
         nonlocal findings
         try:
@@ -220,9 +236,9 @@ async def _enrich(findings: list[Row], http: httpx.AsyncClient, queue: str = "")
 
     if queue == "identity":
         from sherlock_core.modules.preview import enrich_previews
-        await step("profile previews", lambda: enrich_previews(findings, http), 50)
+        await step("profile previews", lambda: enrich_previews(findings, http, shared=shared), 50)
     from sherlock_core.modules.avatar_hash import hash_avatars
-    await step("avatar hashing", lambda: hash_avatars(findings, http), 60)
+    await step("avatar hashing", lambda: hash_avatars(findings, http, shared=shared), 60)
     return findings
 
 
@@ -332,26 +348,65 @@ async def drain(
     should_stop: Callable[[], bool] | None = None,
     linger_s: float = 0.0,
     poll_s: float = 5.0,
+    concurrency: int | None = None,
 ) -> int:
-    """Claim and run jobs for `queue`, one at a time, until none is claimable. Returns jobs run.
+    """Claim and run jobs for `queue` until none is claimable and none is running. Returns jobs run.
 
-    `linger_s` > 0 keeps polling for that long while the queue still holds queued jobs that
-    are not runnable yet (retries waiting for their backoff), so a retry does not depend on
-    someone waking the worker again.
+    A small pool: up to `concurrency` (default WORKER_CONCURRENCY) jobs run at once, of which at
+    most one is heavy (`Module.heavy`): while a heavy job runs, claims exclude heavy modules.
+    Each job keeps its own heartbeat, cancellation and timeout (`run_job`). A failing job never
+    stops the pool. `linger_s` > 0 keeps polling for that long while the queue still holds queued
+    jobs that are not runnable yet (retries waiting for their backoff), so a retry does not depend
+    on someone waking the worker again. Cancelling the drain cancels every running job, which
+    hands each one back to the queue.
     """
+    slots = max(1, concurrency or config.WORKER_CONCURRENCY)
+    heavy = modules.heavy_module_names()
+    running: dict[asyncio.Task[None], bool] = {}     # task -> is heavy
     ran = 0
     waited = 0.0
-    while not (should_stop and should_stop()):
-        job = await asyncio.to_thread(store.claim_job, queue, worker_id)
-        if job is not None:
-            waited = 0.0
-            await run_job(job, store, http)
-            ran += 1
-            continue
-        if waited >= linger_s or queue not in await asyncio.to_thread(store.queued_queues):
-            break
-        await asyncio.sleep(poll_s)
-        waited += poll_s
+
+    def stopping() -> bool:
+        return bool(should_stop and should_stop())
+
+    try:
+        while True:
+            while not stopping() and len(running) < slots:
+                exclude = sorted(heavy) if any(running.values()) else []
+                try:
+                    job = await asyncio.to_thread(store.claim_job, queue, worker_id, exclude)
+                except Exception:
+                    if not running:
+                        raise
+                    log.warning("claim failed; retrying after a running job finishes", exc_info=True)
+                    break
+                if job is None:
+                    break
+                task = asyncio.create_task(run_job(job, store, http), name=f"job-{job['id']}")
+                running[task] = job["module"] in heavy
+                ran += 1
+                waited = 0.0
+            if running:
+                # Wake on the first finished job, or after poll_s to claim jobs queued meanwhile.
+                done, _ = await asyncio.wait(running, timeout=poll_s, return_when=asyncio.FIRST_COMPLETED)
+                for task in done:
+                    running.pop(task)
+                    if not task.cancelled() and task.exception() is not None:
+                        log.error("job task crashed", exc_info=task.exception())
+                continue
+            if stopping():
+                break
+            if waited >= linger_s or queue not in await asyncio.to_thread(store.queued_queues):
+                break
+            await asyncio.sleep(poll_s)
+            waited += poll_s
+    except BaseException:
+        # Shutdown (CancelledError) or a store error with nothing left to claim: every running job
+        # is cancelled, and run_job hands each one back to the queue.
+        for task in running:
+            task.cancel()
+        await asyncio.gather(*running, return_exceptions=True)
+        raise
     return ran
 
 

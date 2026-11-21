@@ -123,7 +123,7 @@ async def test_wake_refused_when_no_secret_is_configured(client, monkeypatch):
 
 
 async def test_no_double_drain(client, app, env):
-    cid = enqueue(env, 3)
+    cid = enqueue(env, config.WORKER_CONCURRENCY + 2)
     first = await client.post("/wake", **signed())
     await asyncio.sleep(0.05)
     assert (await client.get("/health")).json()["busy"] is True
@@ -137,7 +137,7 @@ async def test_no_double_drain(client, app, env):
 
     Gate.release.set()
     await settle(app)
-    assert Gate.max_running == 1  # one job at a time
+    assert Gate.max_running == config.WORKER_CONCURRENCY  # a small pool, never more
     assert {j["status"] for j in env.list_jobs(cid)} == {"succeeded"}
 
 
@@ -163,17 +163,18 @@ async def test_drains_on_startup(env):
 
 async def test_shutdown_stops_claiming_and_releases_the_running_job(env, monkeypatch):
     monkeypatch.setattr(worker_main, "SHUTDOWN_GRACE_S", 0.05)
-    cid = enqueue(env, 2)
+    monkeypatch.setattr(config, "WORKER_CONCURRENCY", 2)
+    cid = enqueue(env, 3)
     app = worker_main.create_app("identity")
     async with app.router.lifespan_context(app):
-        await asyncio.sleep(0.05)  # first job is now blocked inside the module
+        await asyncio.sleep(0.05)  # two jobs are now blocked inside the module, one waits for a slot
         assert app.state.drainer.busy
     drainer = app.state.drainer
     assert drainer.stopping and not drainer.busy
     assert drainer.kick() is False
     rows = env.list_jobs(cid)
-    assert sorted(j["status"] for j in rows) == ["queued", "queued"]
-    assert sorted(j["attempts"] for j in rows) == [0, 1]
+    assert sorted(j["status"] for j in rows) == ["queued", "queued", "queued"]
+    assert sorted(j["attempts"] for j in rows) == [0, 1, 1]      # both running jobs were handed back
 
 
 async def test_drain_survives_a_store_outage(app, monkeypatch):

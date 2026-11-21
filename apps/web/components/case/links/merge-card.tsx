@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
 import { Combine, Split } from "lucide-react";
 import { ProfileAvatar } from "@/components/common/profile-avatar";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ export function MergeCard({
   onDecide: (decision: ReviewDecision) => void;
   onOpenFinding: (id: string) => void;
 }) {
+  const readOnly = useReadOnly();
   const members = m.entities_involved
     .map((id) => findings.get(id))
     .filter((f): f is Finding => f !== undefined);
@@ -102,7 +104,7 @@ export function MergeCard({
           rule {m.type} · key {m.matched_value} · id {m.id}
         </p>
       ) : null}
-      <footer className="flex justify-end border-t border-border pt-3">
+      <footer hidden={readOnly} className="flex justify-end border-t border-border pt-3">
         {split ? (
           <Button size="sm" variant="outline" disabled={pending} onClick={() => onDecide("reset")}>
             <Combine aria-hidden />

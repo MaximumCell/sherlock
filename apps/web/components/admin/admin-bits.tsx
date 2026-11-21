@@ -1,6 +1,8 @@
 "use client";
 
-import { Ban, Network } from "lucide-react";
+import { Ban, Eye, Network } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { TargetIcon } from "@/components/common/bits";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   OUTCOME_LABELS,
   OUTCOME_TONES,
+  adminCaseHref,
   countryFlag,
   severityTone,
   sessionName,
@@ -23,6 +26,21 @@ export const HIDE_TARGETS_KEY = "sherlock.admin.hide-targets";
 /** The "Hide targets" preference (remembered per browser, off by default). */
 export function useHideTargets() {
   return useFlag(HIDE_TARGETS_KEY, false);
+}
+
+/** "View case": the read-only case view (every opening is logged on the case). */
+export function ViewCaseLink({ caseId, label }: { caseId: string; label?: string }) {
+  const pathname = usePathname();
+  return (
+    <Link
+      href={adminCaseHref(pathname, caseId)}
+      aria-label={label ? `View case ${label}` : "View case"}
+      className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <Eye className="h-3.5 w-3.5" aria-hidden />
+      View case
+    </Link>
+  );
 }
 
 export function OutcomeBadge({ outcome }: { outcome: SearchOutcome }) {

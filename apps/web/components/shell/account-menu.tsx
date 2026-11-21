@@ -26,6 +26,7 @@ export function AccountMenu() {
   const { ds } = useData();
   const session = useSession();
   const [signInOpen, setSignInOpen] = useState(false);
+  const [signInReason, setSignInReason] = useState<string | null>(null);
   const [advanced, setAdvanced] = useAdvanced();
   const user = session.data;
   const signedIn = Boolean(user && !user.anonymous);
@@ -33,13 +34,29 @@ export function AccountMenu() {
   const operator = useAdminMe({ quiet: true }).data;
   const pathname = usePathname();
   const adminHref = pathname?.startsWith("/demo") ? "/demo/admin" : "/admin";
-  useEffect(() => onSignInRequest(() => setSignInOpen(true)), []);
+  useEffect(
+    () =>
+      onSignInRequest((reason) => {
+        setSignInReason(reason);
+        setSignInOpen(true);
+      }),
+    [],
+  );
+  const openSignIn = () => {
+    setSignInReason(null);
+    setSignInOpen(true);
+  };
+  const initial = (user?.email ?? "?").trim().charAt(0).toUpperCase() || "?";
 
   const signOut = async () => {
     try {
       await ds.signOut();
       await session.refetch();
-      toast.success("Signed out", { description: "You are back on a guest session." });
+      toast.success("Signed out", {
+        description: ds.searchNeedsAccount
+          ? "You are back on a guest session. Sign in again to search."
+          : "You are back on a guest session.",
+      });
     } catch (err) {
       toast.error("Could not sign out", {
         description: err instanceof Error ? err.message : undefined,
@@ -49,10 +66,29 @@ export function AccountMenu() {
 
   return (
     <>
+      {!signedIn && !session.isLoading ? (
+        <Button variant="outline" size="sm" className="ml-1" onClick={openSignIn}>
+          <LogIn aria-hidden />
+          Sign in
+        </Button>
+      ) : null}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Account menu">
-            <UserRound aria-hidden />
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={signedIn ? `Account menu, signed in as ${user?.email ?? "you"}` : "Account menu"}
+          >
+            {signedIn ? (
+              <span
+                aria-hidden
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/20 text-sm font-semibold text-accent ring-1 ring-accent/40"
+              >
+                {initial}
+              </span>
+            ) : (
+              <UserRound aria-hidden />
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
@@ -68,8 +104,10 @@ export function AccountMenu() {
               {session.isError
                 ? "Could not reach the auth service."
                 : signedIn
-                  ? "Name search is enabled."
-                  : "Anonymous. Your cases stay tied to this browser."}
+                  ? "Signed in. Searches and name search are enabled."
+                  : ds.searchNeedsAccount
+                    ? "Not signed in. Sign in to run searches; the demo needs no account."
+                    : "Anonymous. Your cases stay tied to this browser."}
             </p>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -101,14 +139,14 @@ export function AccountMenu() {
               Sign out
             </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem onSelect={() => setSignInOpen(true)}>
+            <DropdownMenuItem onSelect={openSignIn}>
               <LogIn aria-hidden />
               Sign in
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <SignInDialog open={signInOpen} onOpenChange={setSignInOpen} />
+      <SignInDialog open={signInOpen} onOpenChange={setSignInOpen} reason={signInReason} />
     </>
   );
 }

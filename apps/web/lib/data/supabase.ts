@@ -6,15 +6,18 @@ import { createClient, type SupabaseClient, type User } from "@supabase/supabase
 import type { AppEnv } from "../env";
 import { toPlatformEntries } from "../platforms";
 import type {
+  BatchCancelled,
   Candidate,
   Case,
   Correlation,
   CreateCaseResult,
   Finding,
   Job,
+  QueueStatus,
   ScanResult,
 } from "../types";
 import { createGatewayAdminSource } from "../admin/gateway-source";
+import { upgradeOrSignIn } from "./auth-upgrade";
 import { createGateway, GatewayError, type GatewayClient, type GatewayRequest } from "./gateway";
 import type { SignInOutcome } from "./types";
 import {
@@ -29,6 +32,7 @@ import {
   toJob,
   toList,
   toModuleInfo,
+  toQueueStatus,
 } from "./mappers";
 import type {
   CaseSummary,
@@ -139,17 +143,18 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
     redirectTo: string,
   ): Promise<SignInOutcome> {
     const session = await getSession();
-    if (session?.anonymous) {
-      const linked = await client.auth.linkIdentity({ provider, options: { redirectTo } });
-      if (!linked.error) return "redirect";
-    }
-    const { error } = await client.auth.signInWithOAuth({ provider, options: { redirectTo } });
-    if (error) fail(`${label} sign-in failed`, error.message);
+    await upgradeOrSignIn(
+      session?.anonymous === true,
+      () => client.auth.linkIdentity({ provider, options: { redirectTo } }),
+      () => client.auth.signInWithOAuth({ provider, options: { redirectTo } }),
+      `${label} sign-in failed`,
+    );
     return "redirect";
   }
 
   return {
     mode: "supabase",
+    searchNeedsAccount: env.requireSignIn,
     admin: createGatewayAdminSource(command),
     getSession,
 
@@ -165,15 +170,12 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
 
     async signInWithEmail(email, redirectTo) {
       const session = await getSession();
-      if (session?.anonymous) {
-        const upgraded = await client.auth.updateUser({ email }, { emailRedirectTo: redirectTo });
-        if (!upgraded.error) return "email_sent";
-      }
-      const { error } = await client.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: redirectTo },
-      });
-      if (error) fail("Could not send the sign-in link", error.message);
+      await upgradeOrSignIn(
+        session?.anonymous === true,
+        () => client.auth.updateUser({ email }, { emailRedirectTo: redirectTo }),
+        () => client.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } }),
+        "Could not send the sign-in link",
+      );
       return "email_sent";
     },
 
@@ -328,6 +330,28 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
       return toJob(
         await command<unknown>(`/cases/${caseId}/jobs/${jobId}/cancel`, { method: "POST" }),
       );
+    },
+    async cancelBatch(caseId, batchId): Promise<BatchCancelled> {
+      const res = await command<unknown>(`/cases/${caseId}/batches/${batchId}/cancel`, {
+        method: "POST",
+      });
+      const r = isRecord(res) ? res : {};
+      return {
+        batch_id: batchId,
+        cancelled: typeof r.cancelled === "number" ? r.cancelled : 0,
+        jobs: toList(r.jobs, toJob),
+      };
+    },
+    async queueStatus(caseId): Promise<QueueStatus | null> {
+      try {
+        // polled: no cold-start retries (the next poll tries again)
+        return toQueueStatus(
+          await command<unknown>(`/queue/status?case_id=${encodeURIComponent(caseId)}`, { retry: false }),
+        );
+      } catch (err) {
+        if (err instanceof GatewayError && (err.status === 404 || err.unreachable)) return null;
+        throw err;
+      }
     },
     async wake(caseId) {
       await command<void>(`/cases/${caseId}/wake`, { method: "POST", parse: "none", retry: false });

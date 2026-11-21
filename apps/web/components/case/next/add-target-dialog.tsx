@@ -38,6 +38,7 @@ export function AddTargetDialog({
             autoFocus
             showCaseFields={false}
             submitLabel="Add"
+            caseId={caseId}
             pending={scan.isPending}
             onSubmit={({ type, value, hints, modules }) =>
               scan.mutate(

@@ -77,5 +77,6 @@ def test_day_series_zero_fills_every_day_and_outcome():
     series = I.day_series({"2026-11-02": {"accepted": 2, "paused": 1}}, date(2026, 11, 1), 3)
     assert [p["day"] for p in series] == ["2026-11-01", "2026-11-02", "2026-11-03"]
     assert series[1] == {"day": "2026-11-02", "accepted": 2, "rate_limited": 0, "blocked": 0, "paused": 1,
-                         "forbidden": 0, "invalid": 0}
+                         "forbidden": 0, "invalid": 0,
+                         "burst_limited": 0, "active_search": 0, "busy": 0, "sign_in_required": 0}
     assert sum(series[0][o] for o in I.OUTCOMES) == 0

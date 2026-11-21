@@ -28,6 +28,8 @@ const AUDIT_TITLES: Record<string, string> = {
   report: "Report created",
   agent_call: "Assistant used",
   candidate_confirmed: "You chose a person",
+  batch_cancelled: "You stopped a search",
+  admin_case_viewed: "The operator reviewed this investigation to prevent misuse",
 };
 
 const DETAIL_KEYS: Record<string, string> = {
@@ -55,13 +57,23 @@ function detailText(detail: AuditEntry["detail"]): string | null {
 
 /** Audit actors are either the investigator or a data-source id. */
 const actorIsSource = (actor: string) =>
-  actor !== "investigator" && actor !== "system" && !actor.includes("@");
+  actor !== "investigator" &&
+  actor !== "system" &&
+  actor !== "operator" &&
+  actor !== "user" &&
+  !actor.includes("@");
 
 /** Plain title and detail line for one activity-log entry. */
 export function describeAudit(a: AuditEntry): { title: string; detail: string | null; by: string } {
   return {
     by:
-      a.actor === "investigator" ? "You" : actorIsSource(a.actor) ? sourceTitle(a.actor) : a.actor,
+      a.actor === "investigator" || a.actor === "user"
+        ? "You"
+        : a.actor === "operator"
+          ? "Operator"
+          : actorIsSource(a.actor)
+            ? sourceTitle(a.actor)
+            : a.actor,
     title: (AUDIT_TITLES[a.action] ?? a.action.replace(/_/g, " ")).replace(
       "{source}",
       actorIsSource(a.actor) ? sourceTitle(a.actor) : "a data source",
@@ -72,7 +84,9 @@ export function describeAudit(a: AuditEntry): { title: string; detail: string | 
 
 function auditEvent(a: AuditEntry): TimelineEvent {
   const kind: TimelineKind =
-    a.action === "review"
+    a.action === "admin_case_viewed"
+      ? "audit"
+      : a.action === "review"
       ? "review"
       : a.action.startsWith("scan")
         ? "scan"

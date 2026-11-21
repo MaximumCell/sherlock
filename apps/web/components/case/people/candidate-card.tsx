@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
 import {
   AtSign,
   Briefcase,
@@ -64,6 +65,7 @@ export function CandidateCard({
   pending: boolean;
   onConfirm: () => void;
 }) {
+  const readOnly = useReadOnly();
   const { set } = useUrlState();
   const s = strength(candidate.score);
   const pct = Math.round(candidate.score * 100);
@@ -230,7 +232,11 @@ export function CandidateCard({
             </>
           ) : null}
         </p>
-        {candidate.confirmed ? (
+        {readOnly ? (
+          candidate.confirmed ? (
+            <span className="text-sm text-success">Chosen by the owner</span>
+          ) : null
+        ) : candidate.confirmed ? (
           <Button variant="outline" size="sm" onClick={() => goToSection("next")}>
             See suggested searches
           </Button>

@@ -14,6 +14,7 @@ ROUTES = [
     ("get", "/admin/sessions", None), ("get", f"/admin/sessions/{ANON}", None),
     ("post", f"/admin/sessions/{ANON}/block", {"reason": "x"}), ("post", f"/admin/sessions/{ANON}/unblock", None),
     ("post", "/admin/pause", {"paused": True}), ("delete", f"/admin/cases/{ANON}", None),
+    ("get", f"/admin/cases/{ANON}", None),
 ]
 
 

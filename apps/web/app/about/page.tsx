@@ -109,12 +109,14 @@ export default function AboutPage() {
           </h2>
           <p className="max-w-2xl text-base text-muted-foreground">
             Before the first search you confirm that the target is your own data or that you are
-            authorised to investigate it. Searches are rate-limited, and name search needs a
-            signed-in account. These limits are part of the product, not settings.
+            authorised to investigate it. Searches need a signed-in account (the live demo does
+            not), run one at a time per visitor, and are rate-limited per account and per network.
+            These limits are part of the product, not settings.
           </p>
           <p className="max-w-2xl text-base text-muted-foreground">
-            Searches are logged (what was searched, when, and an anonymised origin) and reviewed by
-            the operator to prevent misuse. The log is kept for 90 days.
+            Searches are logged (what was searched, when, and an anonymised origin) and the log is
+            kept for 90 days. To prevent misuse, the operator can review searches and their
+            results, read-only; every review is recorded in that case&apos;s history.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

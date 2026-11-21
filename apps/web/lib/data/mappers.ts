@@ -30,6 +30,7 @@ import {
   type JsonValue,
   type ModuleInfo,
   type Queue,
+  type QueueStatus,
   type TargetType,
 } from "../types";
 
@@ -300,3 +301,18 @@ export function toModuleInfo(row: unknown): ModuleInfo {
 
 export const toList = <T>(rows: unknown, map: (row: unknown) => T): T[] =>
   Array.isArray(rows) ? rows.map(map) : [];
+
+/** `GET /queue/status`; null when the body is not one. */
+export function toQueueStatus(row: unknown): QueueStatus | null {
+  if (!isRecord(row) || typeof row.case_id !== "string") return null;
+  const wait = row.estimated_wait_s;
+  return {
+    case_id: row.case_id,
+    queued: num(row.queued),
+    running: num(row.running),
+    waiting: bool(row.waiting),
+    ahead: num(row.ahead),
+    jobs_ahead: num(row.jobs_ahead),
+    estimated_wait_s: typeof wait === "number" && Number.isFinite(wait) ? wait : null,
+  };
+}

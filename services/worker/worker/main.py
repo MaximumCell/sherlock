@@ -1,7 +1,8 @@
 """Queue worker: one process per queue (WORKER_QUEUE), deployed as a free web service.
 
 The process may be asleep. The gateway wakes it with a signed `POST /wake`; it then
-drains its queue one job at a time and goes idle. It also drains on startup, because
+drains its queue with a small pool (WORKER_CONCURRENCY jobs at once, at most one
+memory-heavy module among them) and goes idle. It also drains on startup, because
 a cold start usually means jobs are already waiting. Jobs live in Postgres, so a
 killed worker loses nothing: the stale-heartbeat requeue hands its job to the next claim.
 """
@@ -28,7 +29,7 @@ log = logging.getLogger("sherlock.worker")
 
 # How long a drain keeps polling for retries that are waiting out their backoff.
 LINGER_S = 90.0
-# On shutdown, give the in-flight job this long to finish before cancelling it.
+# On shutdown, give the in-flight jobs this long to finish before cancelling them (each is handed back).
 SHUTDOWN_GRACE_S = 10.0
 
 
@@ -45,7 +46,7 @@ class WakeAccepted(BaseModel):
 
 
 class Drainer:
-    """Owns the single drain loop of this process."""
+    """Owns the single drain loop (a pool of up to WORKER_CONCURRENCY jobs) of this process."""
 
     def __init__(self, queue: str) -> None:
         self.queue = queue

@@ -38,6 +38,7 @@ often, which is what the wall gates are for. `PLATFORM_OUTCOMES` holds the same 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import copy
 import html
 import json
@@ -608,12 +609,14 @@ def _merge(f: dict[str, Any], fields: dict[str, Any], fetched_at: str, final_url
 async def enrich_previews(findings: list[dict[str, Any]], http: httpx.AsyncClient, *,
                           limit: int = 40, concurrency: int = 6,
                           budget_s: float = TOTAL_BUDGET_S,
-                          report: dict[str, str] | None = None) -> list[dict[str, Any]]:
+                          report: dict[str, str] | None = None,
+                          shared: asyncio.Semaphore | None = None) -> list[dict[str, Any]]:
     """Return updated copies of the found account findings that gained preview data.
 
     See the module docstring. Best effort: a page that fails, is walled, times out or is
     generic is skipped silently. Findings that gained nothing are not returned.
     `report`, when given, receives {profile url: reason} for every page that gave no preview.
+    `shared`, when given, is the worker-wide download limiter (shared with other jobs).
     """
     todo = select_candidates(findings, limit)
     if not todo:
@@ -629,7 +632,8 @@ async def enrich_previews(findings: list[dict[str, Any]], http: httpx.AsyncClien
         url = _profile_url(f)
         host = _host(url)
         lock = host_locks.setdefault(host, asyncio.Lock())
-        async with lock, sem:            # one request per host at a time, a few hosts in parallel
+        # one request per host at a time, a few hosts in parallel, within the worker-wide limit
+        async with lock, sem, shared or contextlib.nullcontext():
             if host in blocked or time.monotonic() - started > budget_s:
                 return
             try:

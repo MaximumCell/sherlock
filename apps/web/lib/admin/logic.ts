@@ -9,6 +9,10 @@ export const OUTCOME_LABELS: Record<SearchOutcome, string> = {
   paused: "Paused",
   forbidden: "Not allowed",
   invalid: "Invalid",
+  burst_limited: "Too many at once",
+  active_search: "Search still running",
+  busy: "Server busy",
+  sign_in_required: "Needed sign-in",
 };
 
 /** Badge variants of the UI kit, per outcome. */
@@ -19,6 +23,10 @@ export const OUTCOME_TONES: Record<SearchOutcome, "success" | "warning" | "dange
   paused: "muted",
   forbidden: "danger",
   invalid: "muted",
+  burst_limited: "warning",
+  active_search: "muted",
+  busy: "warning",
+  sign_in_required: "muted",
 };
 
 /** Chart fills (Tailwind classes on SVG rects), stacked in SEARCH_OUTCOMES order. */
@@ -29,6 +37,10 @@ export const OUTCOME_FILLS: Record<SearchOutcome, string> = {
   paused: "fill-muted-foreground/50",
   forbidden: "fill-danger/60",
   invalid: "fill-muted-foreground/30",
+  burst_limited: "fill-warning/70",
+  active_search: "fill-accent/40",
+  busy: "fill-warning/40",
+  sign_in_required: "fill-muted-foreground/20",
 };
 
 export const SEVERITY_LABELS: Record<FlagSeverity, string> = {
@@ -208,4 +220,10 @@ export function relativeTime(iso: string | null | undefined, now: number = Date.
   if (s < 3600) return `${Math.round(s / 60)} min ago`;
   if (s < 86400) return `${Math.round(s / 3600)} h ago`;
   return new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+/** Where the read-only case view lives (`/demo/admin/cases/...` inside the demo). */
+export function adminCaseHref(pathname: string | null, caseId: string): string {
+  const base = pathname?.startsWith("/demo") ? "/demo/admin" : "/admin";
+  return `${base}/cases/${encodeURIComponent(caseId)}`;
 }

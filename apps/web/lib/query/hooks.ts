@@ -185,6 +185,28 @@ export function useCaseListRealtime() {
   }, [ds, mode, client]);
 }
 
+export const QUEUE_POLL_MS = 10_000;
+
+/** True while a case has queued jobs and none running: it may be waiting behind other searches. */
+export function mayBeWaiting(jobs: readonly Job[] | undefined): boolean {
+  if (!jobs?.length) return false;
+  return jobs.some((j) => j.status === "queued") && !jobs.some((j) => j.status === "running");
+}
+
+/** Queue position (`GET /queue/status`), polled every 10 s only while the case may be waiting. */
+export function useQueueStatus(caseId: string, jobs: readonly Job[] | undefined) {
+  const { ds, mode } = useData();
+  const enabled = mayBeWaiting(jobs);
+  return useQuery({
+    queryKey: keys.queue(mode, caseId),
+    queryFn: () => ds.queueStatus(caseId),
+    enabled,
+    refetchInterval: enabled ? QUEUE_POLL_MS : false,
+    retry: false,
+    staleTime: 0,
+  });
+}
+
 export const STUCK_AFTER_MS = 10_000;
 export const WAKE_EVERY_MS = 20_000;
 

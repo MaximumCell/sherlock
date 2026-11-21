@@ -1,5 +1,6 @@
 "use client";
 
+import { useReadOnly } from "@/components/providers/read-only";
 import { CircleCheckBig, CornerUpLeft, Link2, List, MessageCircleQuestion } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EmptyState, ErrorState } from "@/components/common/states";
@@ -71,7 +72,10 @@ export function LinksSection({
   const { params, set } = useUrlState();
   const review = useReview(caseId);
   const [advanced] = useAdvanced();
-  const [listMode, setListMode] = useState(() => params.get("status") !== null);
+  const readOnly = useReadOnly();
+  const [listChoice, setListMode] = useState(() => params.get("status") !== null);
+  // read-only: the full list without decisions, never the one-at-a-time questions
+  const listMode = readOnly || listChoice;
   const [index, setIndex] = useState(0);
   const [decided, setDecided] = useState(0);
   const [history, setHistory] = useState<{ id: string; previous: CorrelationStatus }[]>([]);
@@ -92,6 +96,7 @@ export function LinksSection({
   const dialogOpen = Boolean(params.get("finding"));
 
   const decide = (c: Correlation, decision: ReviewDecision, note?: string) => {
+    if (readOnly) return;
     setLeaving(decision === "approve" ? 1 : decision === "reject" ? -1 : 0);
     setHistory((h) => [...h, { id: c.id, previous: c.status }]);
     if (c.status === "pending" && decision !== "reset") setDecided((d) => d + 1);
@@ -138,7 +143,7 @@ export function LinksSection({
       title="Possible links"
       hint={<LinksHint />}
       description="Accounts that may belong to the same person. Nothing is treated as connected until you say so."
-      actions={correlations.length ? toggle : null}
+      actions={correlations.length && !readOnly ? toggle : null}
     >
       {error ? (
         <ErrorState title="Could not load the links" error={error} onRetry={onRetry} />
@@ -164,7 +169,7 @@ export function LinksSection({
           onFilter={(status) => set({ status: status === "pending" ? null : status })}
           onDecide={decide}
           onOpenFinding={(id) => set({ finding: id })}
-          keysEnabled={active && listMode && !dialogOpen}
+          keysEnabled={active && listMode && !dialogOpen && !readOnly}
           advanced={advanced}
           pendingId={review.isPending ? review.variables?.id : undefined}
         />

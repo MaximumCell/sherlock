@@ -46,6 +46,14 @@ services:
         sync: false
       - key: MODEL_NAME
         value: gemma-4-26b-a4b-it
+      # Searching needs a signed-in account (Supabase Email sign-in must be on). false = anonymous
+      # sessions may search again; also set NEXT_PUBLIC_REQUIRE_SIGN_IN=false on Vercel.
+      - key: REQUIRE_SIGN_IN
+        value: "true"
+      # Search limits (defaults shown; the operator is exempt from session and origin limits):
+      #   SEARCHES_PER_SESSION_PER_10M=3   SEARCHES_PER_ORIGIN_PER_10M=5   SEARCHES_PER_ORIGIN_PER_DAY=30
+      #   ACTIVE_SEARCHES_PER_SESSION=1    QUEUE_BACKLOG_MAX=80 (503 "busy" above this many queued jobs)
+      #   SCANS_PER_SESSION_PER_DAY=20     SCANS_GLOBAL_PER_DAY=300
       # Comma-separated origins of the deployed web app (e.g. https://your-app.vercel.app)
       - key: FRONTEND_ORIGINS
         sync: false
@@ -80,6 +88,10 @@ services:
     healthCheckPath: /health
     envVars:
       - fromGroup: sherlock-internal
+      # Jobs at once (default 3; at most one heavy module such as whatsmyname, ~400 MB) and
+      # shared preview/avatar downloads (default 4). Lower WORKER_CONCURRENCY if memory runs out.
+      # - key: WORKER_CONCURRENCY
+      #   value: "3"
       - key: WORKER_QUEUE
         value: identity
       - key: SUPABASE_URL

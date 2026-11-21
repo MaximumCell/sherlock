@@ -91,8 +91,11 @@ class Store:
 
     # ---- jobs
     def enqueue_jobs(self, jobs: list[Row]) -> list[Row]: raise NotImplementedError
-    def claim_job(self, queue: str, worker: str) -> Row | None:
-        """Atomically take the oldest queued job; requeue/fail jobs with a stale heartbeat."""
+    def claim_job(self, queue: str, worker: str, exclude_modules: list[str] | tuple[str, ...] = ()) -> Row | None:
+        """Atomically take one runnable queued job of `queue`, skipping jobs whose module is in
+        `exclude_modules`; requeue/fail jobs with a stale heartbeat first. Fair order: the oldest job
+        of the case with the FEWEST running jobs in this queue (round-robin between searches),
+        then the oldest overall."""
         raise NotImplementedError
     def heartbeat(self, job_id: str, progress: int | None = None, note: str | None = None) -> None: raise NotImplementedError
     def complete_job(self, job_id: str, result: Row) -> None: raise NotImplementedError
@@ -104,6 +107,20 @@ class Store:
         """Mark a queued or running job cancelled (finished jobs are left alone). Returns the row."""
         raise NotImplementedError
     def list_jobs(self, case_id: str, *, active_only: bool = False) -> list[Row]: raise NotImplementedError
+    def cancel_batch(self, case_id: str, batch_id: str) -> list[Row]:
+        """Cancel every queued or running job of one batch of one case. Returns the rows cancelled."""
+        raise NotImplementedError
+    def active_batches(self, owner_id: str) -> list[Row]:
+        """`{case_id, batch_id}` of every batch with queued or running jobs in the owner's cases
+        (one row per batch, oldest first)."""
+        raise NotImplementedError
+    def count_queued(self, queue: str) -> int:
+        """Number of queued jobs in `queue` (runnable or waiting for a retry)."""
+        raise NotImplementedError
+    def active_job_summary(self, queues: list[str]) -> list[Row]:
+        """`{case_id, queue, status, created_at}` of every queued or running job in `queues`
+        (at most 2000, oldest first). Only these columns: callers turn them into counts."""
+        raise NotImplementedError
     def queued_queues(self) -> set[str]:
         """Queues that currently have queued jobs (used to decide which workers to wake)."""
         raise NotImplementedError
@@ -186,7 +203,11 @@ class Store:
         return aggregate_searches(rows, truncated=len(rows) >= max_rows)
 
 
-SEARCH_OUTCOMES = ("accepted", "rate_limited", "blocked", "paused", "forbidden", "invalid")
+SEARCH_OUTCOMES = ("accepted", "rate_limited", "blocked", "paused", "forbidden", "invalid",
+                   "burst_limited", "active_search", "busy", "sign_in_required")
+# Outcomes added by 0003_limits.sql, and what to store instead while that migration has not run.
+LEGACY_OUTCOME = {"burst_limited": "rate_limited", "active_search": "rate_limited", "busy": "rate_limited",
+                  "sign_in_required": "forbidden"}
 USER_AGENT_MAX = 300
 TARGET_MAX = 300
 
@@ -212,6 +233,25 @@ def aggregate_searches(rows: list[Row], *, truncated: bool = False) -> Row:
         "targets": [{"target_type": k[0], "target_value": k[1], "count": v["count"], "sessions": len(v["sessions"])}
                     for k, v in ranked],
     }
+
+
+def _distinct_batches(rows: list[Row]) -> list[Row]:
+    out: dict[tuple[str, str | None], Row] = {}
+    for r in rows:
+        out.setdefault((r["case_id"], r.get("batch_id")), {"case_id": r["case_id"], "batch_id": r.get("batch_id")})
+    return list(out.values())
+
+
+def _missing_function(e: Exception) -> bool:
+    """PostgREST could not find a function with the arguments sent (PGRST202), i.e. an older schema."""
+    text = f"{getattr(e, 'code', '')} {e}"
+    return "PGRST202" in text or "Could not find the function" in text
+
+
+def window_reset_s(window_s: int) -> int:
+    """Seconds until the current fixed window of `window_s` seconds ends (at least 1)."""
+    now = datetime.now(UTC).timestamp()
+    return max(1, int(window_s - (now % window_s)) + 1)
 
 
 def _window_start(window_s: int) -> datetime:
@@ -393,11 +433,28 @@ class SupabaseStore(Store):
     def enqueue_jobs(self, jobs):
         return self._t("jobs").insert(jobs).execute().data if jobs else []
 
-    def claim_job(self, queue, worker):
-        res = self.c.rpc("claim_job", {
-            "p_queue": queue, "p_worker": worker, "p_stale_seconds": config.JOB_STALE_SECONDS,
-        }).execute()
-        return res.data[0] if res.data else None
+    _legacy_claim = False   # 0003_limits.sql not applied: claim_job has no p_exclude_modules yet
+
+    def claim_job(self, queue, worker, exclude_modules=()):
+        params: Row = {"p_queue": queue, "p_worker": worker, "p_stale_seconds": config.JOB_STALE_SECONDS}
+        exclude = sorted(set(exclude_modules))
+        if not self._legacy_claim:
+            try:
+                res = self.c.rpc("claim_job", {**params, "p_exclude_modules": exclude}).execute()
+                return res.data[0] if res.data else None
+            except Exception as e:
+                if not _missing_function(e):
+                    raise
+                log.warning("claim_job has no p_exclude_modules (run 0003_limits.sql); using the old claim")
+                self._legacy_claim = True
+        res = self.c.rpc("claim_job", params).execute()
+        job = res.data[0] if res.data else None
+        if job and job["module"] in exclude:
+            # Old claim cannot skip modules: hand the job straight back, as if never claimed.
+            self._t("jobs").update({"status": "queued", "locked_by": None, "attempts": max(0, job["attempts"] - 1)}) \
+                .eq("id", job["id"]).eq("status", "running").execute()
+            return None
+        return job
 
     def heartbeat(self, job_id, progress=None, note=None):
         upd: Row = {"heartbeat_at": now_iso()}
@@ -440,6 +497,27 @@ class SupabaseStore(Store):
         if active_only:
             q = q.in_("status", ["queued", "running"])
         return self._all(q.order("created_at", desc=True))
+
+    def cancel_batch(self, case_id, batch_id):
+        return self._t("jobs").update({
+            "status": "cancelled", "finished_at": now_iso(), "locked_by": None,
+        }).eq("case_id", case_id).eq("batch_id", batch_id).in_("status", ["queued", "running"]).execute().data or []
+
+    def active_batches(self, owner_id):
+        rows = (self._t("jobs").select("case_id,batch_id,created_at,cases!inner(owner_id)")
+                .eq("cases.owner_id", owner_id).in_("status", ["queued", "running"])
+                .order("created_at").limit(500).execute().data or [])
+        return _distinct_batches(rows)
+
+    def count_queued(self, queue):
+        res = self._t("jobs").select("id", count="exact").eq("queue", queue).eq("status", "queued").limit(1).execute()
+        return int(res.count or 0)
+
+    def active_job_summary(self, queues):
+        if not queues:
+            return []
+        return (self._t("jobs").select("case_id,queue,status,created_at").in_("queue", list(queues))
+                .in_("status", ["queued", "running"]).order("created_at").limit(2000).execute().data or [])
 
     def queued_queues(self):
         rows = self._t("jobs").select("queue").eq("status", "queued").limit(200).execute().data or []
@@ -737,7 +815,7 @@ class MemoryStore(Store):
             out.append(copy.deepcopy(row))
         return out
 
-    def claim_job(self, queue, worker):
+    def claim_job(self, queue, worker, exclude_modules=()):
         now = datetime.now(UTC)
         for j in self.jobs.values():
             if (j["queue"] == queue and j["status"] == "running" and j["heartbeat_at"]
@@ -746,11 +824,16 @@ class MemoryStore(Store):
                     j.update(status="failed", error="worker lost: no heartbeat", finished_at=now_iso(), locked_by=None)
                 else:
                     j.update(status="queued", locked_by=None)
+        skip = set(exclude_modules)
         ready = [j for j in self.jobs.values() if j["queue"] == queue and j["status"] == "queued"
-                 and datetime.fromisoformat(j["run_after"]) <= now]
+                 and datetime.fromisoformat(j["run_after"]) <= now and j["module"] not in skip]
         if not ready:
             return None
-        j = min(ready, key=lambda r: r["created_at"])
+        busy: dict[str, int] = {}
+        for r in self.jobs.values():
+            if r["queue"] == queue and r["status"] == "running":
+                busy[r["case_id"]] = busy.get(r["case_id"], 0) + 1
+        j = min(ready, key=lambda r: (busy.get(r["case_id"], 0), r["created_at"]))
         j.update(status="running", locked_by=worker, attempts=j["attempts"] + 1,
                  started_at=j["started_at"] or now_iso(), heartbeat_at=now_iso(), error=None)
         return copy.deepcopy(j)
@@ -794,6 +877,28 @@ class MemoryStore(Store):
         rows = [j for j in self.jobs.values() if j["case_id"] == case_id
                 and (not active_only or j["status"] in ("queued", "running"))]
         return copy.deepcopy(sorted(rows, key=lambda j: j["created_at"], reverse=True))
+
+    def cancel_batch(self, case_id, batch_id):
+        out = []
+        for j in self.jobs.values():
+            if j["case_id"] == case_id and j.get("batch_id") == batch_id and j["status"] in ("queued", "running"):
+                j.update(status="cancelled", finished_at=now_iso(), locked_by=None)
+                out.append(copy.deepcopy(j))
+        return out
+
+    def active_batches(self, owner_id):
+        owned = {c["id"] for c in self.cases.values() if c.get("owner_id") == owner_id}
+        rows = sorted((j for j in self.jobs.values() if j["case_id"] in owned and j["status"] in ("queued", "running")),
+                      key=lambda j: j["created_at"])
+        return _distinct_batches(rows)
+
+    def count_queued(self, queue):
+        return sum(1 for j in self.jobs.values() if j["queue"] == queue and j["status"] == "queued")
+
+    def active_job_summary(self, queues):
+        rows = sorted((j for j in self.jobs.values() if j["queue"] in queues and j["status"] in ("queued", "running")),
+                      key=lambda j: j["created_at"])
+        return [{k: j[k] for k in ("case_id", "queue", "status", "created_at")} for j in rows[:2000]]
 
     def queued_queues(self):
         return {j["queue"] for j in self.jobs.values() if j["status"] == "queued"}

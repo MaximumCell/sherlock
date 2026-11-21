@@ -266,13 +266,18 @@ def view_case(case_id: str, admin: Admin, store: StoreDep,
               findings_limit: Annotated[int, Query(ge=1, le=ADMIN_CASE_FINDINGS_MAX)] = 1000,
               findings_offset: Annotated[int, Query(ge=0)] = 0):
     """Any visitor's case in full (findings, links, entities, jobs, history), READ-ONLY, for abuse review.
-    Every opening (the first page) is written to the case's own audit log (`admin_case_viewed`),
-    which its owner can see."""
+    Every opening (the first page) is written to the case's own audit log (`admin_case_viewed`,
+    which its owner can see, without the operator's email) and to an operator-only entry that
+    records which operator looked."""
     case = store.get_case(case_id) if is_uuid(case_id) else None
     if case is None:
         raise HTTPException(404, "case not found")
     if findings_offset == 0:          # one entry per opening, not per page of findings
-        store.log(case_id, "admin_case_viewed", "operator", {"admin": admin.email})
+        # Visible in the case's own history, so it carries no operator email...
+        store.log(case_id, "admin_case_viewed", "operator", {})
+        # ...and who looked is kept in an entry with no case_id, which row-level security
+        # never shows to browsers (only the operator API reads it).
+        store.log(None, "admin_case_viewed", "operator", {"admin": admin.email, "case_id": case_id})
     findings = store.list_findings(case_id)
     page = findings[findings_offset:findings_offset + findings_limit]
     end = findings_offset + len(page)

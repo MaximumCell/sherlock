@@ -72,7 +72,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
     const sourceId = own ? caseId : meta ? DEMO_CASE_ID : null;
     const source = sourceId ? state.cases.find((c) => c.id === sourceId) : undefined;
     if (!sourceId || !source) return null;
-    audit(caseId, "admin_case_viewed", "operator", { admin: "operator@example.com" });
+    audit(caseId, "admin_case_viewed", "operator", {});
     const c: Case = own
       ? own
       : { ...source, id: caseId, title: meta?.title ?? source.title, identifiers: meta?.identifiers ?? source.identifiers, is_demo: false };

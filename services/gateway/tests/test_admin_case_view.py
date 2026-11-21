@@ -31,7 +31,9 @@ def test_operator_reads_any_case_in_full_and_the_view_is_logged(client, store):
     assert len(body["entities"]) == 1 and len(body["jobs"]) == 1
     [entry] = [a for a in store.list_audit(cid) if a["action"] == "admin_case_viewed"]
     assert entry["case_id"] == cid and entry["actor"] == "operator"
-    assert entry["detail"] == {"admin": "Operator@Example.com"}
+    assert entry["detail"] == {}                       # visitors can read this row: no operator email
+    [private] = [a for a in store.list_audit(None) if a["action"] == "admin_case_viewed" and a["case_id"] is None]
+    assert private["detail"] == {"admin": "Operator@Example.com", "case_id": cid}
     assert any(a["action"] == "admin_case_viewed" for a in body["audit"])     # in the case's own history
 
 

@@ -115,11 +115,11 @@ async def test_reverse_image_google_lens(respx_mock, run, fx, meta, monkeypatch)
     route = respx_mock.get("https://serpapi.com/search.json").respond(json=fx("serpapi_google_lens"))
     rows = await run("reverse_image", "image", IMG)
     params = route.calls.last.request.url.params
-    assert (params["engine"], params["url"], params["api_key"]) == ("google_lens", IMG, "test-key")
+    assert (params["engine"], params["type"], params["url"], params["api_key"]) == ("google_lens", "all", IMG, "test-key")
     assert [r["extra_metadata"]["url"] for r in rows] == ["https://en.wikipedia.org/wiki/Example", "https://example.org/logo"]
     assert meta(rows[0]) == {
         "title": "Example logo - Wikipedia", "source": "Wikipedia",
-        "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:1", "position": 1,
+        "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:1", "position": 1, "match": "similar",
     }
     assert rows[0]["finding_key"] != rows[1]["finding_key"]
 
@@ -222,3 +222,16 @@ async def test_enrich_url_unconfigured_and_failures(respx_mock, http, monkeypatc
     route.mock(side_effect=httpx.Response(200, json={"success": False, "error": "blocked"}))
     with pytest.raises(RuntimeError, match="scrape failed"):
         await enrich_url("https://example.com/", "case-1", http)
+
+
+async def test_reverse_image_lists_exact_copies_first_without_duplicates(respx_mock, run, monkeypatch):
+    monkeypatch.setenv("SERPAPI_KEY", "test-key")
+    respx_mock.get("https://serpapi.com/search.json").respond(json={
+        "visual_matches": [{"position": 1, "title": "similar", "link": "https://example.org/a"},
+                           {"position": 2, "title": "dup", "link": "https://example.org/exact"}],
+        "exact_matches": [{"position": 1, "title": "exact copy", "link": "https://example.org/exact"}],
+    })
+    rows = await run("reverse_image", "image", IMG)
+    assert [(r["extra_metadata"]["url"], r["extra_metadata"]["match"]) for r in rows] == [
+        ("https://example.org/exact", "exact"), ("https://example.org/a", "similar"),
+    ]

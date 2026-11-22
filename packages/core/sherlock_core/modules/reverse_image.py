@@ -99,7 +99,7 @@ class ReverseImage(Module):
             return [error_finding(ctx, self, target, "google-lens", error or "no image URL")]
         try:
             r = await ctx.http.get(
-                SERPAPI, params={"engine": "google_lens", "type": "visual_matches", "url": url, "api_key": key},
+                SERPAPI, params={"engine": "google_lens", "type": "all", "url": url, "api_key": key},
                 timeout=40.0,
             )
         except httpx.HTTPError as e:   # the message could carry the request URL (key, signed URL)
@@ -109,7 +109,16 @@ class ReverseImage(Module):
             reason = body.get("error") if isinstance(body, dict) else None
             reason = str(reason or describe_http_error(r)).replace(url, "<image>")  # never echo a signed URL
             return [error_finding(ctx, self, target, "google-lens", reason)]
-        matches = [m for m in body.get("visual_matches") or [] if isinstance(m, dict) and m.get("link")]
+        # type=all: the "visual_matches"-only query comes back empty for many images (checked
+        # 2026-11-22). Exact copies of the picture first, then visually similar pages; one row
+        # per page even when a page appears in both lists.
+        matches: list[dict] = []
+        seen: set[str] = set()
+        for kind in ("exact_matches", "visual_matches"):
+            for m in body.get(kind) or []:
+                if isinstance(m, dict) and m.get("link") and m["link"] not in seen:
+                    seen.add(m["link"])
+                    matches.append({**m, "_kind": "exact" if kind == "exact_matches" else "similar"})
         if not matches:  # SerpApi reports "no results" as 200 + {"error": "..."}
             return []
         return [
@@ -117,7 +126,7 @@ class ReverseImage(Module):
                 self, target, platform="google-lens", url=m["link"],
                 meta=clean({
                     "title": m.get("title"), "source": m.get("source"), "thumbnail": m.get("thumbnail"),
-                    "position": m.get("position"),
+                    "position": m.get("position"), "match": m["_kind"],
                 }),
                 discriminator=str(m["link"]),
             )

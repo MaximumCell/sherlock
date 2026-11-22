@@ -1,6 +1,7 @@
 import { findingTitle } from "./findings";
 import { sourceTitle } from "./sources";
 import type { AuditEntry, Case, Finding, Job } from "./types";
+import { displayTargetValue } from "./uploads";
 
 export type TimelineKind = "case" | "scan" | "job" | "review" | "account" | "audit";
 export type TimelineTone = "neutral" | "success" | "danger" | "accent";
@@ -87,12 +88,12 @@ function auditEvent(a: AuditEntry): TimelineEvent {
     a.action === "admin_case_viewed"
       ? "audit"
       : a.action === "review"
-      ? "review"
-      : a.action.startsWith("scan")
-        ? "scan"
-        : a.action.startsWith("case")
-          ? "case"
-          : "audit";
+        ? "review"
+        : a.action.startsWith("scan")
+          ? "scan"
+          : a.action.startsWith("case")
+            ? "case"
+            : "audit";
   return {
     id: `audit-${a.id}`,
     at: a.created_at,
@@ -114,7 +115,7 @@ function jobEvents(job: Job): TimelineEvent[] {
       at: job.started_at,
       kind: "job",
       tone: "neutral",
-      title: `Started checking ${source} for ${job.target_value}`,
+      title: `Started checking ${source} for ${displayTargetValue(job.target_value)}`,
       detail: job.attempts > 1 ? `try ${job.attempts} of ${job.max_attempts}` : null,
       raw,
     });
@@ -128,10 +129,10 @@ function jobEvents(job: Job): TimelineEvent[] {
       tone: job.status === "failed" ? "danger" : job.status === "succeeded" ? "success" : "neutral",
       title:
         job.status === "failed"
-          ? `${source} could not finish for ${job.target_value}`
+          ? `${source} could not finish for ${displayTargetValue(job.target_value)}`
           : job.status === "cancelled"
-            ? `Stopped checking ${source} for ${job.target_value}`
-            : `Finished checking ${source} for ${job.target_value}`,
+            ? `Stopped checking ${source} for ${displayTargetValue(job.target_value)}`
+            : `Finished checking ${source} for ${displayTargetValue(job.target_value)}`,
       detail:
         job.status === "failed"
           ? job.error

@@ -13,6 +13,7 @@ import { findingTitle, parseFinding } from "@/lib/findings";
 import { findingNodeId, type GraphModel, type GraphNode } from "@/lib/graph/build";
 import type { Finding } from "@/lib/types";
 import { KIND_META } from "./entity-node";
+import { displayTargetValue } from "@/lib/uploads";
 
 /** Findings behind a non-finding node: cluster members, or everything attached to an identifier. */
 export function findingsForNode(
@@ -89,7 +90,7 @@ export function NodeSheet({
                             {findingTitle(f)}
                           </span>
                           <span className="block truncate font-mono text-xs text-muted-foreground">
-                            {f.identifier_value}
+                            {displayTargetValue(f.identifier_value)}
                           </span>
                         </span>
                       </button>

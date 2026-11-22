@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { AccountSheetBody } from "./account-sheet-body";
 import { FindingDetail } from "./finding-detail";
 import { FindingStatusBadge } from "./results-table";
+import { displayTargetValue } from "@/lib/uploads";
 
 function SheetBody({
   caseId,
@@ -72,7 +73,7 @@ function SheetBody({
               <p className="text-sm text-muted-foreground">{findingTitle(finding)}</p>
             ) : null}
             <SheetDescription className="break-all font-mono text-xs">
-              {finding.identifier_type}: {finding.identifier_value}
+              {finding.identifier_type}: {displayTargetValue(finding.identifier_value)}
             </SheetDescription>
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <FindingStatusBadge status={finding.status} />

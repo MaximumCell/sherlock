@@ -19,6 +19,7 @@ import type { Finding, FindingStatus } from "@/lib/types";
 import { resolvePlatform } from "@/lib/platforms";
 import { findingPlatform } from "@/lib/profile";
 import { cn } from "@/lib/utils";
+import { displayTargetValue } from "@/lib/uploads";
 
 function RowAvatar({ finding, avatarUrl }: { finding: Finding; avatarUrl: string | null }) {
   const platform = findingPlatform(finding);
@@ -172,9 +173,9 @@ export function ResultsTable({ rows, notes, onOpen, onCurate, sourceLabel, advan
                   </TableCell>
                   <TableCell
                     className="max-w-48 truncate font-mono text-xs"
-                    title={f.identifier_value}
+                    title={displayTargetValue(f.identifier_value)}
                   >
-                    {f.identifier_value}
+                    {displayTargetValue(f.identifier_value)}
                   </TableCell>
                   <TableCell className="max-w-72 truncate text-muted-foreground">
                     {summaryLine(f)}
@@ -218,7 +219,7 @@ export function ResultsTable({ rows, notes, onOpen, onCurate, sourceLabel, advan
                   <FindingStatusBadge status={f.status} />
                 </div>
                 <p className="truncate font-mono text-xs text-muted-foreground">
-                  {f.identifier_value}
+                  {displayTargetValue(f.identifier_value)}
                 </p>
                 {notes?.get(f.id) ? (
                   <p className="text-2xs text-muted-foreground">{notes.get(f.id)}</p>

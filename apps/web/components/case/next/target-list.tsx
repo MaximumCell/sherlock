@@ -9,6 +9,7 @@ import { followUpOutcome, suggestionSource } from "@/lib/follow-up";
 import { useScan } from "@/lib/query/mutations";
 import type { Case, Entity, Finding, Job, TargetType } from "@/lib/types";
 import { TARGET_TYPES } from "@/lib/types";
+import { displayTargetValue } from "@/lib/uploads";
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 const isType = (t: string): t is TargetType => (TARGET_TYPES as readonly string[]).includes(t);
@@ -71,8 +72,8 @@ export function TargetList({
           <li key={`${row.type}:${row.value}`} className="flex items-center gap-3 px-4 py-3">
             <TargetIcon type={row.type} className="h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-mono text-sm" title={row.value}>
-                {row.value}
+              <p className="truncate font-mono text-sm" title={displayTargetValue(row.value)}>
+                {displayTargetValue(row.value)}
               </p>
               <p className="text-xs text-muted-foreground">
                 {DETECTION_LABEL[row.type]} · {status}
@@ -89,7 +90,7 @@ export function TargetList({
               size="sm"
               disabled={running || pending}
               onClick={() => scan.mutate({ type: row.type, value: row.value })}
-              aria-label={`${scanned ? "Search again" : "Search"} ${row.value}`}
+              aria-label={`${scanned ? "Search again" : "Search"} ${displayTargetValue(row.value)}`}
             >
               <RotateCw aria-hidden />
               {running ? "Searching" : scanned ? "Search again" : "Search"}

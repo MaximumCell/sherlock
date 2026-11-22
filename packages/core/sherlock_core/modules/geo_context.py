@@ -7,10 +7,13 @@ the claimed time) this module looks up, from free public sources:
   geo-weather  the weather that hour (Open-Meteo archive / forecast APIs, keyless)
   geo-place    a coarse place name: district, city, country (OpenStreetMap Nominatim, keyless,
                at most one request per second; street names, house numbers and postcodes are dropped)
-  geo-webcams  public webcams nearby (Windy Webcams API, optional: WINDY_WEBCAMS_KEY)
-  geo-street   ready-made links to OpenStreetMap / Google Maps / Mapillary, plus the nearest public
-               Mapillary images (optional: MAPILLARY_TOKEN)
+  geo-street   ready-made links to OpenStreetMap / Google Maps / Street View / Mapillary
   geo-checks   plain-language consistency checks (`geo.claims.assess_claim`), each with a verdict
+
+Two optional modules in this file need a free key and report themselves unavailable without it:
+  geo_webcams        -> geo-webcams        public webcams nearby (Windy Webcams API, WINDY_WEBCAMS_KEY)
+  geo_street_images  -> geo-street-images  nearest public Mapillary images (MAPILLARY_TOKEN)
+They locate the photo the same way (camera GPS, else the claim).
 
 The EXIF data is read here from the image itself rather than from the case's `image_meta` finding:
 media jobs of one search run at the same time, so that finding may not exist yet, and reading the
@@ -163,9 +166,8 @@ def _row_reason(ctx: ModuleContext, module: Module, target: Target, platform: st
 class GeoContext(Module):
     name = "geo_context"
     title = "Where and when (photo location check)"
-    description = ("Sun position, weather, coarse place name, public webcams and street-level links for where and "
-                   "when a photo was taken or is claimed to be from, with plain-language consistency checks. "
-                   "Webcams need WINDY_WEBCAMS_KEY and street-level images MAPILLARY_TOKEN (both optional).")
+    description = ("Sun position, weather, coarse place name and street-level links for where and when a photo "
+                   "was taken or is claimed to be from, with plain-language consistency checks.")
     inputs = ("image",)
     queue = "media"
     source_url = "https://open-meteo.com/"
@@ -244,10 +246,10 @@ class GeoContext(Module):
                                     status="error" if weather_errors and not any(
                                         "future" in e or "before" in e for e in weather_errors) else "not_found"))
 
-        # --- place, webcams, street
+        # --- place, street links (webcams and street images: the optional modules below)
         place: dict[str, Any] = {}
         if not location:
-            for platform in ("geo-place", "geo-webcams", "geo-street"):
+            for platform in ("geo-place", "geo-street"):
                 rows.append(_row_reason(ctx, self, target, platform, NO_LOCATION))
         else:
             lat, lon = _r(location[0]), _r(location[1])
@@ -271,8 +273,7 @@ class GeoContext(Module):
                                 "claim_place": resolved or None, "claim_distance_km": claim_km,
                                 "claim_lookup_error": resolve_error, "attribution": OSM_ATTRIBUTION}),
                 ))
-            rows.append(await self._webcams(ctx, target, lat, lon))
-            rows.append(await self._street(ctx, target, lat, lon))
+            rows.append(self._street(ctx, target, lat, lon))
         await ctx.progress(80, "places looked up")
 
         # --- checks (Google Lens titles, waiting briefly for the Lens job of the same search)
@@ -436,85 +437,34 @@ class GeoContext(Module):
         out["label"] = place_label(out) or text
         return out
 
-    # ------------------------------------------------------------------ webcams (optional)
-    async def _webcams(self, ctx: ModuleContext, target: Target, lat: float, lon: float) -> dict[str, Any]:
-        key = os.getenv("WINDY_WEBCAMS_KEY", "").strip()
-        directory = f"https://www.windy.com/-Webcams/webcams?{lat},{lon},12"
-        if not key:
-            return _row_reason(ctx, self, target, "geo-webcams",
-                               "Nearby webcams need a free Windy Webcams API key (WINDY_WEBCAMS_KEY) on this server. "
-                               "You can browse public webcams on the map instead.",
-                               url=directory, directory=directory, requires_env="WINDY_WEBCAMS_KEY")
+    # ------------------------------------------------------------------ where, for the optional modules
+    async def _locate(self, target: Target, ctx: ModuleContext) -> tuple[float, float] | None:
+        """The (rounded) point the context is about: camera GPS, else the claimed point or place."""
         try:
-            r = await ctx.http.get(WINDY_WEBCAMS, params={
-                "nearby": f"{lat},{lon},{WEBCAM_RADIUS_KM}", "limit": MAX_WEBCAMS,
-                "include": "images,urls,location",
-            }, headers={"x-windy-api-key": key, "User-Agent": DEFAULT_UA}, timeout=12.0)
-        except httpx.HTTPError as e:
-            return _row_reason(ctx, self, target, "geo-webcams", f"webcam lookup failed: {type(e).__name__}",
-                               status="error", directory=directory)
-        body = _json(r)
-        if r.status_code != 200 or not isinstance(body, dict):
-            return _row_reason(ctx, self, target, "geo-webcams", f"webcam lookup failed: {describe_http_error(r)}",
-                               status="error", directory=directory)
-        cams = []
-        for w in body.get("webcams") or []:
-            if not isinstance(w, dict) or w.get("status", "active") != "active":
-                continue
-            loc = w.get("location") if isinstance(w.get("location"), dict) else {}
-            imgs = w.get("images") if isinstance(w.get("images"), dict) else {}
-            current = imgs.get("current") if isinstance(imgs.get("current"), dict) else {}
-            urls = w.get("urls") if isinstance(w.get("urls"), dict) else {}
-            wid = w.get("webcamId") or w.get("id")
-            km = None
-            if isinstance(loc.get("latitude"), int | float) and isinstance(loc.get("longitude"), int | float):
-                km = round(geo_claims.haversine_km(lat, lon, loc["latitude"], loc["longitude"]), 1)
-            cams.append(clean({
-                "id": str(wid) if wid else None, "title": str(w.get("title") or "Webcam")[:120],
-                "url": urls.get("detail") or (f"https://www.windy.com/webcams/{wid}" if wid else None),
-                "thumbnail": current.get("thumbnail") or current.get("preview"),
-                "city": loc.get("city"), "distance_km": km, "provider": "Windy Webcams",
-            }))
-        cams.sort(key=lambda c: c.get("distance_km", 1e9))
-        if not cams:
-            return _row_reason(ctx, self, target, "geo-webcams",
-                               f"No public webcams listed within {WEBCAM_RADIUS_KM} km.", url=directory,
-                               directory=directory)
-        return ctx.finding(self, target, platform="geo-webcams", url=directory,
-                           extra={"note": f"{len(cams)} public webcam{'s' if len(cams) != 1 else ''} within "
-                                          f"{WEBCAM_RADIUS_KM} km. Their archives can show the weather and light "
-                                          "around the claimed time."},
-                           meta={"webcams": cams, "directory": directory, "attribution": "Webcams provided by windy.com"})
-
-    # ------------------------------------------------------------------ street level
-    async def _street(self, ctx: ModuleContext, target: Target, lat: float, lon: float) -> dict[str, Any]:
-        links = links_for(lat, lon)
-        token = os.getenv("MAPILLARY_TOKEN", "").strip()
-        images: list[dict[str, Any]] = []
-        error = None
-        if token:
+            claim = geo_claims.normalize_claim(target.params.get("claim")) or {}
+        except ValueError:
+            claim = {}
+        exif, _, _ = await self._read_exif(target, ctx)
+        if isinstance(exif.get("gps_lat"), int | float) and isinstance(exif.get("gps_lon"), int | float):
+            return _r(exif["gps_lat"]), _r(exif["gps_lon"])
+        if claim.get("lat") is not None:
+            return claim["lat"], claim["lon"]
+        if claim.get("place"):
             try:
-                r = await ctx.http.get(MAPILLARY_IMAGES, params={
-                    "access_token": token, "fields": "id,thumb_256_url,captured_at,computed_geometry",
-                    "bbox": ",".join(f"{round(v, 4):g}" for v in (lon - STREET_BOX_DEG, lat - STREET_BOX_DEG,
-                                                                   lon + STREET_BOX_DEG, lat + STREET_BOX_DEG)),
-                    "limit": 20,
-                }, timeout=12.0)
-                body = _json(r)
-                if r.status_code != 200 or not isinstance(body, dict):
-                    error = describe_http_error(r)
-                else:
-                    images = _mapillary_images(body, lat, lon)
-            except httpx.HTTPError as e:    # never echo the request URL: it carries the token
-                error = type(e).__name__
-        note = ("Open the spot on public maps and street-level imagery to compare it with the photo."
-                if not images else f"{len(images)} public street-level image{'s' if len(images) != 1 else ''} "
-                                   "within about 1 km (Mapillary), plus links to open the spot on maps.")
+                hit = await self._search_place(ctx, claim["place"])
+            except (httpx.HTTPError, UpstreamError):
+                return None
+            if hit.get("lat") is not None:
+                return hit["lat"], hit["lon"]
+        return None
+
+    # ------------------------------------------------------------------ street-level links (keyless)
+    def _street(self, ctx: ModuleContext, target: Target, lat: float, lon: float) -> dict[str, Any]:
+        links = links_for(lat, lon)
         return ctx.finding(self, target, platform="geo-street", url=links["openstreetmap"],
-                           extra={"note": note},
-                           meta=clean({"links": links, "images": images,
-                                       "mapillary": "used" if token else "not configured (MAPILLARY_TOKEN)",
-                                       "mapillary_error": f"Mapillary lookup failed: {error}" if error else None}))
+                           extra={"note": "Open the spot on public maps and street-level imagery to compare it "
+                                          "with the photo."},
+                           meta={"links": links})
 
     # ------------------------------------------------------------------ Google Lens titles
     async def _lens_matches(self, ctx: ModuleContext, target: Target) -> tuple[list[dict[str, Any]], str]:
@@ -582,3 +532,121 @@ def _mapillary_images(body: dict[str, Any], lat: float, lon: float) -> list[dict
         }))
     out.sort(key=lambda i: i.get("distance_km", 1e9))
     return out[:MAX_STREET_IMAGES]
+
+
+def _obj(v: Any) -> dict[str, Any]:
+    return v if isinstance(v, dict) else {}
+
+
+def _webcam_rows(body: dict[str, Any], lat: float, lon: float) -> list[dict[str, Any]]:
+    cams = []
+    for w in body.get("webcams") or []:
+        if not isinstance(w, dict) or w.get("status", "active") != "active":
+            continue
+        loc, urls = _obj(w.get("location")), _obj(w.get("urls"))
+        current = _obj(_obj(w.get("images")).get("current"))
+        wid = w.get("webcamId") or w.get("id")
+        km = None
+        if isinstance(loc.get("latitude"), int | float) and isinstance(loc.get("longitude"), int | float):
+            km = round(geo_claims.haversine_km(lat, lon, loc["latitude"], loc["longitude"]), 1)
+        cams.append(clean({
+            "id": str(wid) if wid else None, "title": str(w.get("title") or "Webcam")[:120],
+            "url": urls.get("detail") or (f"https://www.windy.com/webcams/{wid}" if wid else None),
+            "thumbnail": current.get("thumbnail") or current.get("preview"),
+            "city": loc.get("city"), "distance_km": km, "provider": "Windy Webcams",
+        }))
+    cams.sort(key=lambda c: c.get("distance_km", 1e9))
+    return cams
+
+
+# ----------------------------------------------------------------------------- optional modules (free keys)
+@register
+class GeoWebcams(GeoContext):
+    """Public, operator-published webcams near the photo's place (Windy Webcams API, free key)."""
+    name = "geo_webcams"
+    title = "Where and when: public webcams nearby"
+    description = ("Public webcams listed by Windy within 15 km of where a photo was taken or is claimed to be "
+                   "from; their archives can show the light and weather at that hour.")
+    requires_env = ("WINDY_WEBCAMS_KEY",)
+    source_url = "https://api.windy.com/webcams/docs"
+    timeout_s = 60.0
+
+    async def run(self, target: Target, ctx: ModuleContext) -> list[dict[str, Any]]:
+        key = os.getenv("WINDY_WEBCAMS_KEY", "").strip()
+        if not key:
+            raise RuntimeError("WINDY_WEBCAMS_KEY is not set")
+        point = await self._locate(target, ctx)
+        if point is None:
+            return [_row_reason(ctx, self, target, "geo-webcams", NO_LOCATION)]
+        lat, lon = point
+        directory = f"https://www.windy.com/-Webcams/webcams?{lat},{lon},12"
+        try:
+            r = await ctx.http.get(WINDY_WEBCAMS, params={
+                "nearby": f"{lat},{lon},{WEBCAM_RADIUS_KM}", "limit": MAX_WEBCAMS,
+                "include": "images,urls,location",
+            }, headers={"x-windy-api-key": key, "User-Agent": DEFAULT_UA}, timeout=12.0)
+        except httpx.HTTPError as e:   # never echo the request (the key is a header, but stay terse)
+            return [_row_reason(ctx, self, target, "geo-webcams", f"webcam lookup failed: {type(e).__name__}",
+                                status="error", directory=directory)]
+        body = _json(r)
+        if r.status_code != 200 or not isinstance(body, dict):
+            return [_row_reason(ctx, self, target, "geo-webcams", f"webcam lookup failed: {describe_http_error(r)}",
+                                status="error", directory=directory)]
+        cams = _webcam_rows(body, lat, lon)
+        if not cams:
+            return [_row_reason(ctx, self, target, "geo-webcams",
+                                f"No public webcams listed within {WEBCAM_RADIUS_KM} km.", url=directory,
+                                directory=directory)]
+        return [ctx.finding(self, target, platform="geo-webcams", url=directory,
+                            extra={"note": f"{len(cams)} public webcam{'s' if len(cams) != 1 else ''} within "
+                                           f"{WEBCAM_RADIUS_KM} km. Their archives can show the weather and light "
+                                           "around the claimed time."},
+                            meta={"webcams": cams, "directory": directory,
+                                  "attribution": "Webcams provided by windy.com"})]
+
+
+@register
+class GeoStreetImages(GeoContext):
+    """The nearest public street-level images (Mapillary, free client token)."""
+    name = "geo_street_images"
+    title = "Where and when: street-level images nearby"
+    description = ("The nearest public Mapillary street-level images within about 1 km of where a photo was taken "
+                   "or is claimed to be from, to compare buildings, signs and skyline.")
+    requires_env = ("MAPILLARY_TOKEN",)
+    source_url = "https://www.mapillary.com/developer/api-documentation"
+    timeout_s = 60.0
+
+    async def run(self, target: Target, ctx: ModuleContext) -> list[dict[str, Any]]:
+        token = os.getenv("MAPILLARY_TOKEN", "").strip()
+        if not token:
+            raise RuntimeError("MAPILLARY_TOKEN is not set")
+        point = await self._locate(target, ctx)
+        if point is None:
+            return [_row_reason(ctx, self, target, "geo-street-images", NO_LOCATION)]
+        lat, lon = point
+        url = links_for(lat, lon)["mapillary"]
+        try:
+            r = await ctx.http.get(MAPILLARY_IMAGES, params={
+                "access_token": token, "fields": "id,thumb_256_url,captured_at,computed_geometry",
+                "bbox": ",".join(f"{round(v, 4):g}" for v in (lon - STREET_BOX_DEG, lat - STREET_BOX_DEG,
+                                                               lon + STREET_BOX_DEG, lat + STREET_BOX_DEG)),
+                "limit": 20,
+            }, timeout=12.0)
+        except httpx.HTTPError as e:   # never echo the request URL: it carries the token
+            return [_row_reason(ctx, self, target, "geo-street-images",
+                                f"Mapillary lookup failed: {type(e).__name__}", status="error")]
+        body = _json(r)
+        if r.status_code != 200 or not isinstance(body, dict):
+            return [_row_reason(ctx, self, target, "geo-street-images",
+                                f"Mapillary lookup failed: {describe_http_error(r)}", status="error")]
+        images = _mapillary_images(body, lat, lon)
+        if not images:
+            return [_row_reason(ctx, self, target, "geo-street-images",
+                                "No public street-level images within about 1 km on Mapillary.", url=url)]
+        return [ctx.finding(self, target, platform="geo-street-images", url=url,
+                            extra={"note": f"{len(images)} public street-level image{'s' if len(images) != 1 else ''} "
+                                           "within about 1 km (Mapillary)."},
+                            meta={"images": images, "attribution": "Street-level images from Mapillary (CC BY-SA)"})]
+
+
+GEO_MODULES = ("geo_context", "geo_webcams", "geo_street_images")

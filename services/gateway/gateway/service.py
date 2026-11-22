@@ -385,6 +385,8 @@ def start_scan(store: Store, principal: Principal, case_id: str, target_type: st
 
 
 GEO_MODULE = "geo_context"
+# the keyless check and the two optional (free key) context modules; each runs when available
+GEO_MODULES = ("geo_context", "geo_webcams", "geo_street_images")
 NO_PHOTO_MESSAGE = "This investigation has no photo to check."
 
 
@@ -414,10 +416,15 @@ def start_geo_check(store: Store, principal: Principal, case: Row, value: str | 
     if target not in photos:
         raise HTTPException(400, "That photo is not part of this investigation.")
     with search_attempt(store, principal, origin, [{"type": "image", "value": target, "modules": [GEO_MODULE]}],
-                        case_id):
+                        case_id) as attempt:
         check_scans_allowed(store, principal)
         check_upload_owner(principal, "image", target)
-        planned = plan_or_400(case_id, "image", target, [GEO_MODULE], params=claim_params("image", claim))
+        from sherlock_core import modules as registry
+
+        available = {m.name for m in registry.modules_for("image")}
+        geo = [n for n in GEO_MODULES if n in available] or [GEO_MODULE]
+        planned = plan_or_400(case_id, "image", target, geo, params=claim_params("image", claim))
+        attempt.targets = [{"type": "image", "value": target, "modules": geo}]
         limits = [
             (f"geo:case:{case_id}:10m", TEN_MIN_S, config.GEO_CHECKS_PER_CASE_PER_10M, "burst_limited",
              f"Too many re-checks of this photo: up to {config.GEO_CHECKS_PER_CASE_PER_10M} every 10 minutes. "
@@ -435,7 +442,7 @@ def start_geo_check(store: Store, principal: Principal, case: Row, value: str | 
             if not store.hit_rate_limit(key, window, limit):
                 raise _refuse(_Limit(key, window, limit, 1, outcome, message))
         for job in store.list_jobs(case_id, active_only=True):
-            if job.get("module") == GEO_MODULE and job.get("target_value") == target:
+            if job.get("module") in GEO_MODULES and job.get("target_value") == target:
                 store.cancel_job(job["id"])
         jobs = enqueue_planned(store, principal, case_id, planned, actor="user")
         store.log(case_id, "photo_claim_set", "user", {

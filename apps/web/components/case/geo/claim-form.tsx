@@ -92,11 +92,18 @@ export function ClaimForm({
   const listId = `${ids}-places`;
   const showList = open && hits.length > 0;
   return (
-    <form onSubmit={submit} className="space-y-4" aria-describedby={error ? `${ids}-err` : undefined}>
+    <form
+      onSubmit={submit}
+      className="space-y-4"
+      aria-describedby={error ? `${ids}-err` : undefined}
+    >
       <div className="space-y-1.5">
         <Label htmlFor={`${ids}-place`}>Place it is said to show</Label>
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden />
+          <Search
+            className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
+            aria-hidden
+          />
           <Input
             id={`${ids}-place`}
             value={place}
@@ -132,7 +139,10 @@ export function ClaimForm({
             }}
           />
           {searching ? (
-            <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" aria-label="Searching places" />
+            <Loader2
+              className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground"
+              aria-label="Searching places"
+            />
           ) : null}
           {showList ? (
             <ul

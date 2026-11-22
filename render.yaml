@@ -76,6 +76,11 @@ services:
         sync: false
       - key: SCRAPING_API_KEY
         sync: false
+      # Photo location check: public webcams (Windy) and street-level images (Mapillary), both free keys.
+      - key: WINDY_WEBCAMS_KEY
+        sync: false
+      - key: MAPILLARY_TOKEN
+        sync: false
 
   - type: web
     name: sherlock-worker-identity
@@ -157,4 +162,8 @@ services:
       - key: SERPAPI_KEY
         sync: false
       - key: SCRAPING_API_KEY
+        sync: false
+      - key: WINDY_WEBCAMS_KEY
+        sync: false
+      - key: MAPILLARY_TOKEN
         sync: false

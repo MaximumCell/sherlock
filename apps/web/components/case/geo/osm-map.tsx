@@ -74,7 +74,8 @@ export function OsmMap({
   const [fitted, setFitted] = useState(fitFor);
   if (fitted !== fitFor) {
     setFitted(fitFor);
-    if (points.length) setView({ center: centerOf(points)!, zoom: fitZoom(points, size.w, size.h) });
+    if (points.length)
+      setView({ center: centerOf(points)!, zoom: fitZoom(points, size.w, size.h) });
   }
 
   const tiles = visibleTiles(view.center, view.zoom, size.w, size.h);
@@ -107,7 +108,13 @@ export function OsmMap({
     if (!d || d.moved || !onPick || !box.current) return;
     const rect = box.current.getBoundingClientRect();
     const c = project(view.center, view.zoom);
-    onPick(unproject(c.x + e.clientX - rect.left - size.w / 2, c.y + e.clientY - rect.top - size.h / 2, view.zoom));
+    onPick(
+      unproject(
+        c.x + e.clientX - rect.left - size.w / 2,
+        c.y + e.clientY - rect.top - size.h / 2,
+        view.zoom,
+      ),
+    );
   }
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     const step = 80;
@@ -129,7 +136,9 @@ export function OsmMap({
   }
 
   return (
-    <div className={cn("relative overflow-hidden rounded-lg border border-border bg-muted", className)}>
+    <div
+      className={cn("relative overflow-hidden rounded-lg border border-border bg-muted", className)}
+    >
       <div
         ref={box}
         role="application"
@@ -175,7 +184,13 @@ export function OsmMap({
                 {m.label}
               </span>
               <span aria-hidden className={cn("mx-auto block h-2 w-0.5", TONE[m.tone])} />
-              <span aria-hidden className={cn("mx-auto -mt-0.5 block h-2 w-2 rounded-full ring-2 ring-background", TONE[m.tone])} />
+              <span
+                aria-hidden
+                className={cn(
+                  "mx-auto -mt-0.5 block h-2 w-2 rounded-full ring-2 ring-background",
+                  TONE[m.tone],
+                )}
+              />
             </span>
           );
         })}

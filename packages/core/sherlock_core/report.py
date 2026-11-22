@@ -142,7 +142,7 @@ def generate_markdown(case_id: str, store: Store | None = None) -> str:
     listed = {a["account_key"] for a in accounts}
     in_accounts = {i for a in group_accounts(findings, split) if a.account_key in listed for i in a.finding_ids}
     found = [f for f in findings if f.get("status") == "found" and str(f.get("id")) not in in_accounts
-             and f.get("module") != "geo_context"
+             and f.get("module") not in ("geo_context", "geo_webcams", "geo_street_images")
              and not (isinstance(f.get("extra_metadata"), dict) and f["extra_metadata"].get("summary") is True)]
     out.append(f"## Other found findings by platform ({len(found)})\n")
     by_platform: dict[str, list[dict[str, Any]]] = defaultdict(list)

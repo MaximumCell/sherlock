@@ -7,6 +7,8 @@
 import type { Finding, JsonObject, JsonValue, PhotoClaim } from "./types";
 
 export const GEO_MODULE = "geo_context";
+/** The keyless check plus the two optional context modules (free keys: Windy, Mapillary). */
+export const GEO_MODULES: readonly string[] = ["geo_context", "geo_webcams", "geo_street_images"];
 
 export type Verdict = "consistent" | "inconsistent" | "cant_tell";
 
@@ -204,7 +206,7 @@ const STREET_LABELS: Record<string, string> = {
 };
 
 /** True for rows of the location check: context about a photo, never an account. */
-export const isGeoFinding = (f: Pick<Finding, "module">) => f.module === GEO_MODULE;
+export const isGeoFinding = (f: Pick<Finding, "module">) => GEO_MODULES.includes(f.module ?? "");
 
 /** Everything the "Where and when" section shows for one photo (`value` is its target value). */
 export function geoView(findings: readonly Finding[], value: string): GeoView {
@@ -235,14 +237,22 @@ export function geoView(findings: readonly Finding[], value: string): GeoView {
   const cams = found("geo-webcams");
   const camsRow = row("geo-webcams");
   const street = found("geo-street");
+  const streetImages = found("geo-street-images");
 
   const lat = num(basis.lat) ?? num(place?.lat);
   const lon = num(basis.lon) ?? num(place?.lon);
-  const source = (str(basis.location_source) ?? str(place?.source)) === "claim" ? "claim" : "camera";
-  const claimPlace = isObj(cm.claim_place) ? cm.claim_place : isObj(place?.claim_place) ? place.claim_place : null;
+  const source =
+    (str(basis.location_source) ?? str(place?.source)) === "claim" ? "claim" : "camera";
+  const claimPlace = isObj(cm.claim_place)
+    ? cm.claim_place
+    : isObj(place?.claim_place)
+      ? place.claim_place
+      : null;
   const claim = parseClaim(cm.claim);
   const claimPoint =
-    (claim?.lat !== undefined && claim.lon !== undefined ? { lat: claim.lat, lon: claim.lon } : null) ??
+    (claim?.lat !== undefined && claim.lon !== undefined
+      ? { lat: claim.lat, lon: claim.lon }
+      : null) ??
     point(claimPlace ?? undefined) ??
     point(place?.claim_point);
 
@@ -279,7 +289,7 @@ export function geoView(findings: readonly Finding[], value: string): GeoView {
     }),
     webcamsNote: camsRow ? note(camsRow) : null,
     webcamsDirectory: camsMeta ? httpUrl(camsMeta.directory) : null,
-    streetImages: (Array.isArray(street?.images) ? street.images : []).flatMap((i) => {
+    streetImages: (Array.isArray(streetImages?.images) ? streetImages.images : []).flatMap((i) => {
       if (!isObj(i)) return [];
       const url = httpUrl(i.url);
       return url
@@ -299,16 +309,20 @@ export function geoView(findings: readonly Finding[], value: string): GeoView {
       return url ? [{ key, label: STREET_LABELS[key] ?? key, url }] : [];
     }),
     notes,
-    lensState:
-      cm.lens === "ready" || cm.lens === "pending" || cm.lens === "none" ? cm.lens : null,
-    attributions: [str(place?.attribution), str(weatherMeta?.attribution), str(cams?.attribution)].filter(
-      (a): a is string => a !== null,
-    ),
+    lensState: cm.lens === "ready" || cm.lens === "pending" || cm.lens === "none" ? cm.lens : null,
+    attributions: [
+      str(place?.attribution),
+      str(weatherMeta?.attribution),
+      str(cams?.attribution),
+    ].filter((a): a is string => a !== null),
   };
 }
 
 // ------------------------------------------------------------------ verdicts
-export const VERDICT_META: Record<Verdict, { label: string; tone: "success" | "danger" | "muted" }> = {
+export const VERDICT_META: Record<
+  Verdict,
+  { label: string; tone: "success" | "danger" | "muted" }
+> = {
   consistent: { label: "Consistent", tone: "success" },
   inconsistent: { label: "Inconsistent", tone: "danger" },
   cant_tell: { label: "Can't tell", tone: "muted" },
@@ -372,12 +386,14 @@ export function shadowSegment(
   };
 }
 
-const round3 = (v: number) => Math.round(v * 1000) / 1000;
+const round3 = (v: number) => Math.round(v * 1000) / 1000 || 0; // never -0
 
 export function sunSentence(s: SunMoment): string {
   const at = s.localTime ? `${s.localTime.slice(11, 16)} local time` : "that time";
-  if (s.daylight === "night") return `At ${at} the sun was ${Math.abs(Math.round(s.elevation))}° below the horizon: night.`;
-  if (s.daylight === "twilight") return `At ${at} the sun had just set or not yet risen: twilight, no direct shadows.`;
+  if (s.daylight === "night")
+    return `At ${at} the sun was ${Math.abs(Math.round(s.elevation))}° below the horizon: night.`;
+  if (s.daylight === "twilight")
+    return `At ${at} the sun had just set or not yet risen: twilight, no direct shadows.`;
   const ratio = s.shadowRatio ?? 0;
   const times = ratio >= 10 ? ratio.toFixed(0) : ratio.toFixed(1);
   return `At ${at} the sun was ${Math.round(s.elevation)}° up in the ${s.compass}; shadows point ${s.shadowCompass} and are about ${times}× as long as the object is tall.`;
@@ -405,7 +421,10 @@ export function unproject(x: number, y: number, zoom: number): Point {
   const lon = (x / scale) * 360 - 180;
   const n = Math.PI - (2 * Math.PI * y) / scale;
   const lat = (180 / Math.PI) * Math.atan(Math.sinh(n));
-  return { lat: round2(Math.max(-85, Math.min(85, lat))), lon: round2(((((lon + 180) % 360) + 360) % 360) - 180) };
+  return {
+    lat: round2(Math.max(-85, Math.min(85, lat))),
+    lon: round2(((((lon + 180) % 360) + 360) % 360) - 180),
+  };
 }
 
 export interface Tile {
@@ -504,7 +523,9 @@ export function claimTime(localDateTime: string, offset: string): string | null 
 
 /** Split a stored ISO time with offset back into the form's two fields. */
 export function splitClaimTime(iso: string | undefined): { local: string; offset: string } | null {
-  const m = iso ? /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/.exec(iso) : null;
+  const m = iso
+    ? /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/.exec(iso)
+    : null;
   if (!m || !m[1] || !m[2]) return null;
   return { local: m[1], offset: m[2] === "Z" ? "+00:00" : m[2] };
 }

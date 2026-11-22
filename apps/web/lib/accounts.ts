@@ -5,6 +5,7 @@
  * is in no merge is an account (or item) on its own. Pure and framework-free.
  */
 import { parseFinding, type FindingView } from "./findings";
+import { GEO_MODULES } from "./geo";
 import { bestPlatformLabel } from "./platforms";
 import type { Correlation, EvidenceItem, Finding } from "./types";
 
@@ -147,7 +148,9 @@ export function buildAccounts(
 ): AccountIndex {
   // location-check rows (geo_context) describe a photo's place and time, never an account
   const found = new Map(
-    findings.filter((f) => f.status === "found" && f.module !== "geo_context").map((f) => [f.id, f]),
+    findings
+      .filter((f) => f.status === "found" && !GEO_MODULES.includes(f.module ?? ""))
+      .map((f) => [f.id, f]),
   );
   const byFinding = new Map<string, CaseAccount>();
   const accounts: CaseAccount[] = [];

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Illustration: a lattice tower at sunset, its long shadow pointing to the lower right">
+  <title>Illustrative demo picture (not a photograph)</title>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#28335f"/>
+      <stop offset="0.55" stop-color="#d9775a"/>
+      <stop offset="0.8" stop-color="#f4c27a"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6f7f4a"/>
+      <stop offset="1" stop-color="#3f4a2a"/>
+    </linearGradient>
+    <pattern id="lattice" width="14" height="14" patternUnits="userSpaceOnUse">
+      <path d="M0 0L14 14M14 0L0 14" stroke="#1d1d2b" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <!-- low sun in the west-north-west (left) -->
+  <circle cx="90" cy="430" r="38" fill="#ffe2a0" opacity="0.95"/>
+  <circle cx="90" cy="430" r="70" fill="#ffd27a" opacity="0.25"/>
+  <rect y="460" width="800" height="140" fill="url(#ground)"/>
+  <!-- distant city blocks -->
+  <g fill="#3b3550" opacity="0.8">
+    <rect x="20" y="420" width="60" height="40"/><rect x="560" y="410" width="70" height="50"/>
+    <rect x="640" y="425" width="50" height="35"/><rect x="700" y="400" width="80" height="60"/>
+    <rect x="150" y="430" width="70" height="30"/>
+  </g>
+  <!-- long shadow towards the east-south-east (lower right) -->
+  <polygon points="380,470 420,470 800,560 800,600 740,600" fill="#1d1d2b" opacity="0.35"/>
+  <!-- lattice tower -->
+  <path d="M400 60 L410 60 L470 470 L440 470 L405 250 L370 470 L340 470 Z" fill="url(#lattice)" stroke="#1d1d2b" stroke-width="4"/>
+  <path d="M352 380 Q405 330 458 380" fill="none" stroke="#1d1d2b" stroke-width="10"/>
+  <rect x="372" y="300" width="66" height="10" fill="#1d1d2b"/>
+  <rect x="388" y="180" width="34" height="8" fill="#1d1d2b"/>
+  <rect x="402" y="30" width="6" height="32" fill="#1d1d2b"/>
+  <!-- warm light on the sun-facing (left) edge -->
+  <path d="M400 60 L370 470 L360 470 Z" fill="#ffcf8a" opacity="0.5"/>
+  <!-- poles with shadows -->
+  <g stroke="#1d1d2b" stroke-width="4">
+    <line x1="200" y1="500" x2="200" y2="470"/><line x1="560" y1="520" x2="560" y2="490"/>
+  </g>
+  <g stroke="#1d1d2b" stroke-width="4" opacity="0.35">
+    <line x1="200" y1="500" x2="330" y2="540"/><line x1="560" y1="520" x2="690" y2="560"/>
+  </g>
+  <text x="784" y="590" text-anchor="end" font-family="sans-serif" font-size="14" fill="#f4f1ea" opacity="0.8">Illustration · demo only</text>
+</svg>

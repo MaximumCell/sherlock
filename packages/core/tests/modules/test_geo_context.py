@@ -91,7 +91,7 @@ async def test_full_run_with_camera_data_claim_and_lens(respx_mock, store, fxj, 
         ctx = ModuleContext(case_id=case["id"], http=http)
         found = await get_module("geo_context").run(Target("image", IMG, {"claim": claim}), ctx)
     rows = _rows(found)
-    assert set(rows) == {"geo-sun", "geo-weather", "geo-place", "geo-webcams", "geo-street", "geo-checks"}
+    assert set(rows) == {"geo-sun", "geo-weather", "geo-place", "geo-street", "geo-checks"}
     assert all(f["status"] == "found" for f in found), [(f["platform"], f["status"]) for f in found]
 
     # one weather request for the shared place and day, rounded coordinates, timezone=auto
@@ -120,14 +120,7 @@ async def test_full_run_with_camera_data_claim_and_lens(respx_mock, store, fxj, 
     assert place["claim_place"]["landmark"] == "Eiffel Tower" and place["claim_place"]["precise"] is True
     assert place["claim_point"] == {"lat": 48.86, "lon": 2.29}
 
-    webcams = _meta(rows["geo-webcams"])["webcams"]
-    assert [c["title"] for c in webcams] == ["Paris: Champ de Mars"]          # the inactive one is dropped
-    assert cams.calls[0].request.headers["x-windy-api-key"] == "test-key"
-    assert webcams[0]["distance_km"] < 1
-    images = _meta(rows["geo-street"])["images"]
-    assert [i["id"] for i in images] == ["2222222222222222", "1111111111111111"]  # nearest first
-    assert images[1]["captured_on"] == "2024-06-14"
-    assert street.calls[0].request.url.params["bbox"] == "2.28,48.85,2.3,48.87"
+    assert not cams.called and not street.called            # the optional modules do that
     assert set(_meta(rows["geo-street"])["links"]) == {"openstreetmap", "google_maps", "google_street_view", "mapillary"}
 
     checks = {c["key"]: c for c in _meta(rows["geo-checks"])["checks"]}
@@ -170,18 +163,65 @@ async def test_uses_the_claimed_point_when_the_photo_has_no_gps(respx_mock, stor
     assert checks["camera_metadata"]["verdict"] == "cant_tell"
     assert checks["location_distance"]["title"] == "No camera GPS to compare with the claimed place"
     assert checks["time_zone"]["verdict"] == "consistent"
-    assert _meta(rows["geo-webcams"])["requires_env"] == "WINDY_WEBCAMS_KEY"
-    assert rows["geo-webcams"]["status"] == "not_found"
-    assert _meta(rows["geo-street"])["mapillary"].startswith("not configured")
+    assert "geo-webcams" not in rows and rows["geo-street"]["status"] == "found"
     assert _meta(rows["geo-checks"])["lens"] == "none"
+
+
+async def test_webcams_module_needs_its_key_and_lists_active_cams(respx_mock, store, fxj, monkeypatch):
+    mod = get_module("geo_webcams")
+    assert mod.requires_env == ("WINDY_WEBCAMS_KEY",) and not mod.available()
+    monkeypatch.setenv("WINDY_WEBCAMS_KEY", "test-key")
+    assert mod.available()
+    respx_mock.get(IMG).respond(content=_jpeg(), headers={"content-type": "image/jpeg"})
+    cams = respx_mock.get(geo.WINDY_WEBCAMS).respond(json=fxj("geo_windy_webcams"))
+    case = store.create_case([{"type": "image", "value": IMG}], owner_id="u1")
+    async with httpx.AsyncClient() as http:
+        (row,) = await mod.run(Target("image", IMG, {}), ModuleContext(case_id=case["id"], http=http))
+    webcams = _meta(row)["webcams"]
+    assert row["platform"] == "geo-webcams" and row["module"] == "geo_webcams"
+    assert [c["title"] for c in webcams] == ["Paris: Champ de Mars"]          # the inactive one is dropped
+    assert cams.calls[0].request.headers["x-windy-api-key"] == "test-key"
+    assert cams.calls[0].request.url.params["nearby"] == "48.86,2.29,15"
+    assert webcams[0]["distance_km"] < 1 and "test-key" not in json.dumps(row)
+
+
+async def test_street_images_module_needs_its_token(respx_mock, store, fxj, monkeypatch):
+    mod = get_module("geo_street_images")
+    assert mod.requires_env == ("MAPILLARY_TOKEN",)
+    monkeypatch.setenv("MAPILLARY_TOKEN", "test-token")
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    street = respx_mock.get(geo.MAPILLARY_IMAGES).respond(json=fxj("geo_mapillary_images"))
+    case = store.create_case([{"type": "image", "value": IMG}], owner_id="u1")
+    claim = {"claim": {"lat": 48.86, "lon": 2.29}}
+    async with httpx.AsyncClient() as http:
+        (row,) = await mod.run(Target("image", IMG, claim), ModuleContext(case_id=case["id"], http=http))
+    images = _meta(row)["images"]
+    assert row["platform"] == "geo-street-images"
+    assert [i["id"] for i in images] == ["2222222222222222", "1111111111111111"]  # nearest first
+    assert images[1]["captured_on"] == "2024-06-14"
+    assert street.calls[0].request.url.params["bbox"] == "2.28,48.85,2.3,48.87"
+    assert "test-token" not in json.dumps(row)
+    # an upstream failure is a row, never an exception, and never echoes the token
+    street.mock(side_effect=httpx.ConnectError("boom https://graph.mapillary.com/?access_token=test-token"))
+    async with httpx.AsyncClient() as http:
+        (err,) = await mod.run(Target("image", IMG, claim), ModuleContext(case_id=case["id"], http=http))
+    assert err["status"] == "error" and "test-token" not in json.dumps(err)
+
+
+async def test_optional_modules_without_location(respx_mock, store, monkeypatch):
+    monkeypatch.setenv("WINDY_WEBCAMS_KEY", "k")
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    async with httpx.AsyncClient() as http:
+        (row,) = await get_module("geo_webcams").run(Target("image", IMG, {}), ModuleContext(case_id="c", http=http))
+    assert row["status"] == "not_found" and _meta(row)["reason"].startswith("No location to check")
 
 
 async def test_skips_with_a_clear_note_without_location(respx_mock, store):
     respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
     _, found = await _run(store)
     rows = _rows(found)
-    assert len(found) == 6
-    for platform in ("geo-sun", "geo-weather", "geo-place", "geo-webcams", "geo-street"):
+    assert len(found) == 5
+    for platform in ("geo-sun", "geo-weather", "geo-place", "geo-street"):
         assert rows[platform]["status"] == "not_found"
         assert rows[platform]["extra_metadata"]["extra"]["note"].startswith("No location to check")
     assert rows["geo-checks"]["status"] == "found"

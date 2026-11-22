@@ -22,7 +22,9 @@ export function toPlaceHits(body: unknown): PlaceHit[] {
     const lat = typeof r.latitude === "number" ? r.latitude : null;
     const lon = typeof r.longitude === "number" ? r.longitude : null;
     if (!name || lat === null || lon === null) return [];
-    const detail = [text(r.admin1), text(r.country)].filter((x): x is string => x !== null && x !== name);
+    const detail = [text(r.admin1), text(r.country)].filter(
+      (x): x is string => x !== null && x !== name,
+    );
     return [
       {
         id: String(r.id ?? `${name}:${lat}:${lon}`),

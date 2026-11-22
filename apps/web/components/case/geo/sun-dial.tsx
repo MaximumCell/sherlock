@@ -59,7 +59,11 @@ export function SunDial({ moments }: { moments: SunMoment[] }) {
             {t}
           </text>
         ))}
-        <text x={C + 3} y={C - R * (2 / 3) - 3} className="fill-muted-foreground font-mono text-[8px]">
+        <text
+          x={C + 3}
+          y={C - R * (2 / 3) - 3}
+          className="fill-muted-foreground font-mono text-[8px]"
+        >
           30°
         </text>
         <text x={C + 3} y={C - R / 3 - 3} className="fill-muted-foreground font-mono text-[8px]">

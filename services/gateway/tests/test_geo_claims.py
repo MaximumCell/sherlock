@@ -91,6 +91,14 @@ def test_geo_check_reruns_only_geo_context(client, store, woken, as_anon):
     assert store.get_job(job["id"])["status"] == "cancelled"
 
 
+def test_geo_check_also_reruns_the_optional_context_modules(client, registry, as_anon):
+    registry["geo_webcams"] = _fake("geo_webcams")
+    cid = photo_case(client, as_anon)["case"]["id"]
+    r = client.post(f"/cases/{cid}/geo-check", headers=as_anon, json={"claim": {"place": "Paris"}})
+    assert r.status_code == 202
+    assert sorted(j["module"] for j in r.json()["jobs"]) == ["geo_context", "geo_webcams"]
+
+
 def test_geo_check_ignores_the_active_search_limit_but_has_its_own(client, store, as_anon, monkeypatch):
     monkeypatch.setattr(config, "ACTIVE_SEARCHES_PER_SESSION", 1)
     monkeypatch.setattr(config, "GEO_CHECKS_PER_CASE_PER_10M", 2)

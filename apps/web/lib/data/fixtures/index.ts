@@ -8,6 +8,7 @@ import type { AdminCaseView, CaseMeta } from "../../admin/types";
 import { DEMO_CASE_ID } from "./demo-case";
 import type { Case, Correlation, Finding, Job, JsonObject, NameHints, PhotoClaim } from "../../types";
 import { DEMO_PLACES, GEO_PHOTO_ASSET, GEO_PHOTO_URL, geoFindings, hasDemoCamera } from "./geo";
+import { GEO_MODULES } from "../../geo";
 import { GatewayError } from "../gateway";
 import { decisionStatus } from "../../review";
 import type {
@@ -218,7 +219,9 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
             lens: hasDemoCamera(job.target_value),
             jobId: job.id,
           })
-        : job.params.synthetic === true
+        : job.module === "geo_webcams" || job.module === "geo_street_images"
+          ? [] // the demo's location rows (webcams included) come with geo_context above
+          : job.params.synthetic === true
           ? syntheticFindings(job, now(), photos.get(job.target_value))
           : [];
     // a re-check replaces the photo's location rows (same ids), like the worker's upsert
@@ -630,7 +633,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       if (!value) throw new GatewayError(400, "This investigation has no photo to check.");
       if (!images.includes(value)) throw new GatewayError(400, "That photo is not part of this investigation.");
       for (const job of state.jobs) {
-        if (job.case_id === caseId && job.module === "geo_context" && job.target_value === value &&
+        if (job.case_id === caseId && GEO_MODULES.includes(job.module) && job.target_value === value &&
             (job.status === "queued" || job.status === "running")) {
           job.status = "cancelled";
           job.finished_at = nowIso();
@@ -638,7 +641,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
         }
       }
       const claim = body.claim ? normalizeFixtureClaim(body.claim) : null;
-      const jobs = enqueue(caseId, "image", value, ["geo_context"], undefined, claim);
+      const jobs = enqueue(caseId, "image", value, [...GEO_MODULES], undefined, claim);
       jobs.forEach((j) => delete j.params.synthetic);
       audit(caseId, "photo_claim_set", "investigator", { claim: (claim ?? null) as JsonObject | null });
       touch(c);

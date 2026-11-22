@@ -1,13 +1,23 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CloudRain, CloudSun, ExternalLink, ImageOff, Loader2, Snowflake, Sun, Webcam as WebcamIcon } from "lucide-react";
+import {
+  CloudRain,
+  CloudSun,
+  ExternalLink,
+  ImageOff,
+  Loader2,
+  Snowflake,
+  Sun,
+  Webcam as WebcamIcon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { InfoHint } from "@/components/common/info-hint";
 import { useData } from "@/components/providers/data-provider";
 import { useReadOnly } from "@/components/providers/read-only";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  GEO_MODULES,
   formatClaimTime,
   geoView,
   verdictCounts,
@@ -26,11 +36,20 @@ import { SunDial } from "./sun-dial";
 const PHOTO_URL_STALE_MS = 30 * 60 * 1000;
 
 function WeatherChip({ w }: { w: WeatherMoment }) {
-  const Icon = w.kind === "wet" ? CloudRain : w.kind === "snow" ? Snowflake : w.kind === "clear" ? Sun : CloudSun;
+  const Icon =
+    w.kind === "wet"
+      ? CloudRain
+      : w.kind === "snow"
+        ? Snowflake
+        : w.kind === "clear"
+          ? Sun
+          : CloudSun;
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1 text-sm">
       <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
-      <span className="text-muted-foreground">{w.label === "camera" ? "Camera time" : "Claimed time"}:</span>
+      <span className="text-muted-foreground">
+        {w.label === "camera" ? "Camera time" : "Claimed time"}:
+      </span>
       <span>
         {w.summary}
         {w.temperatureC !== null ? `, ${Math.round(w.temperatureC)} °C` : ""}
@@ -77,7 +96,10 @@ export function WhereWhenSection({
   const geo = useGeoCheck(caseId);
   const [picked, setPicked] = useState<Point | null>(null);
   const running = jobs.some(
-    (j) => j.module === "geo_context" && j.target_value === value && (j.status === "queued" || j.status === "running"),
+    (j) =>
+      GEO_MODULES.includes(j.module) &&
+      j.target_value === value &&
+      (j.status === "queued" || j.status === "running"),
   );
   const photo = useQuery({
     queryKey: [mode, "photo-url", value],
@@ -87,11 +109,16 @@ export function WhereWhenSection({
   });
 
   const markers: MapMarker[] = [];
-  if (view.cameraPoint) markers.push({ key: "camera", point: view.cameraPoint, label: "Camera GPS", tone: "camera" });
-  if (view.claimPoint) markers.push({ key: "claim", point: view.claimPoint, label: "Claimed place", tone: "claim" });
+  if (view.cameraPoint)
+    markers.push({ key: "camera", point: view.cameraPoint, label: "Camera GPS", tone: "camera" });
+  if (view.claimPoint)
+    markers.push({ key: "claim", point: view.claimPoint, label: "Claimed place", tone: "claim" });
   if (!view.cameraPoint && !view.claimPoint && view.location)
     markers.push({ key: "loc", point: view.location, label: "Location", tone: "camera" });
-  if (picked && !(view.claimPoint && picked.lat === view.claimPoint.lat && picked.lon === view.claimPoint.lon))
+  if (
+    picked &&
+    !(view.claimPoint && picked.lat === view.claimPoint.lat && picked.lon === view.claimPoint.lon)
+  )
     markers.push({ key: "pick", point: picked, label: "Your pick", tone: "pick" });
 
   const counts = verdictCounts(view.checks);
@@ -139,11 +166,32 @@ export function WhereWhenSection({
             </div>
           )}
           <dl className="space-y-1.5">
-            <Fact label="Camera place" value={view.cameraPoint ? view.placeLabel ?? "Recorded" : view.ran ? "None in the file" : null} />
-            <Fact label="Camera time" value={exifTime(view.cameraTime) ?? (view.ran ? "None in the file" : null)} />
+            <Fact
+              label="Camera place"
+              value={
+                view.cameraPoint
+                  ? (view.placeLabel ?? "Recorded")
+                  : view.ran
+                    ? "None in the file"
+                    : null
+              }
+            />
+            <Fact
+              label="Camera time"
+              value={exifTime(view.cameraTime) ?? (view.ran ? "None in the file" : null)}
+            />
             <Fact label="Camera" value={view.camera} />
             <Fact label="Time zone" value={view.timezone} />
-            <Fact label="Claimed place" value={view.claim?.place ?? view.claimPlaceLabel ?? (view.claimPoint ? `${view.claimPoint.lat.toFixed(2)}, ${view.claimPoint.lon.toFixed(2)}` : null)} />
+            <Fact
+              label="Claimed place"
+              value={
+                view.claim?.place ??
+                view.claimPlaceLabel ??
+                (view.claimPoint
+                  ? `${view.claimPoint.lat.toFixed(2)}, ${view.claimPoint.lon.toFixed(2)}`
+                  : null)
+              }
+            />
             <Fact label="Claimed time" value={formatClaimTime(view.claim?.taken_at)} />
           </dl>
           {view.weather.length ? (
@@ -166,7 +214,8 @@ export function WhereWhenSection({
             {view.claimDistanceKm !== null
               ? `The camera location is ${view.claimDistanceKm} km from the claimed place. `
               : ""}
-            Both points are rounded to about 1 km.{readOnly ? "" : " Click the map to pick a claimed place."}
+            Both points are rounded to about 1 km.
+            {readOnly ? "" : " Click the map to pick a claimed place."}
           </p>
         </div>
       </div>
@@ -197,11 +246,16 @@ export function WhereWhenSection({
             <h3 className="eyebrow">Checks</h3>
             {view.checks.length ? (
               <p className="text-sm text-muted-foreground">
-                {counts.consistent} consistent · {counts.inconsistent} inconsistent · {counts.cant_tell} to look at
+                {counts.consistent} consistent · {counts.inconsistent} inconsistent ·{" "}
+                {counts.cant_tell} to look at
               </p>
             ) : null}
           </div>
-          {view.ran || !running ? <CheckList checks={view.checks} /> : <Skeleton className="h-40 rounded-lg" />}
+          {view.ran || !running ? (
+            <CheckList checks={view.checks} />
+          ) : (
+            <Skeleton className="h-40 rounded-lg" />
+          )}
           {view.lensState === "pending" ? (
             <p className="text-xs text-muted-foreground">
               Google Lens results were still coming in. Check the claim again once they are in to
@@ -209,8 +263,8 @@ export function WhereWhenSection({
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            There is no overall score on purpose. Camera data is easy to strip or fake, and clocks are
-            often wrong: these checks help you look, they do not prove anything.
+            There is no overall score on purpose. Camera data is easy to strip or fake, and clocks
+            are often wrong: these checks help you look, they do not prove anything.
           </p>
         </div>
       </div>
@@ -222,12 +276,25 @@ export function WhereWhenSection({
             <ul className="grid grid-cols-3 gap-2" aria-label="Street-level images nearby">
               {view.streetImages.slice(0, 6).map((i) => (
                 <li key={i.id}>
-                  <a href={i.url} target="_blank" rel="noopener noreferrer nofollow" className="block">
+                  <a
+                    href={i.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="block"
+                  >
                     {i.thumbnail ? (
                       // eslint-disable-next-line @next/next/no-img-element -- third-party thumbnail
-                      <img src={i.thumbnail} alt={`Street-level image${i.capturedOn ? ` from ${i.capturedOn}` : ""}`} loading="lazy" referrerPolicy="no-referrer" className="aspect-square w-full rounded border border-border object-cover" />
+                      <img
+                        src={i.thumbnail}
+                        alt={`Street-level image${i.capturedOn ? ` from ${i.capturedOn}` : ""}`}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="aspect-square w-full rounded border border-border object-cover"
+                      />
                     ) : null}
-                    <span className="block truncate text-2xs text-muted-foreground">{i.capturedOn ?? "Mapillary"}</span>
+                    <span className="block truncate text-2xs text-muted-foreground">
+                      {i.capturedOn ?? "Mapillary"}
+                    </span>
                   </a>
                 </li>
               ))}
@@ -237,7 +304,12 @@ export function WhereWhenSection({
             <ul className="flex flex-wrap gap-2" aria-label="Open the spot on public maps">
               {view.streetLinks.map((l) => (
                 <li key={l.key}>
-                  <a href={l.url} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm transition-colors duration-1 hover:bg-muted">
+                  <a
+                    href={l.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm transition-colors duration-1 hover:bg-muted"
+                  >
                     {l.label}
                     <ExternalLink className="h-3 w-3 text-muted-foreground" aria-hidden />
                   </a>
@@ -245,7 +317,9 @@ export function WhereWhenSection({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">Links appear once there is a place to open.</p>
+            <p className="text-sm text-muted-foreground">
+              Links appear once there is a place to open.
+            </p>
           )}
           <p className="text-xs text-muted-foreground">
             Compare buildings, signs, the skyline and the terrain with the photo.
@@ -259,16 +333,34 @@ export function WhereWhenSection({
             <ul className="divide-y divide-border rounded-lg border border-border">
               {view.webcams.map((w) => (
                 <li key={w.id}>
-                  <a href={w.url ?? view.webcamsDirectory ?? "#"} target="_blank" rel="noopener noreferrer nofollow" className="flex items-center gap-3 p-2.5 hover:bg-muted/50">
+                  <a
+                    href={w.url ?? view.webcamsDirectory ?? "#"}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="flex items-center gap-3 p-2.5 hover:bg-muted/50"
+                  >
                     {w.thumbnail ? (
                       // eslint-disable-next-line @next/next/no-img-element -- operator-published webcam still
-                      <img src={w.thumbnail} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-10 w-14 shrink-0 rounded border border-border object-cover" />
+                      <img
+                        src={w.thumbnail}
+                        alt=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="h-10 w-14 shrink-0 rounded border border-border object-cover"
+                      />
                     ) : null}
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm">{w.title}</span>
-                      {w.distanceKm !== null ? <span className="block text-xs text-muted-foreground">{w.distanceKm} km away</span> : null}
+                      {w.distanceKm !== null ? (
+                        <span className="block text-xs text-muted-foreground">
+                          {w.distanceKm} km away
+                        </span>
+                      ) : null}
                     </span>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                    <ExternalLink
+                      className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                      aria-hidden
+                    />
                   </a>
                 </li>
               ))}
@@ -277,7 +369,12 @@ export function WhereWhenSection({
             <p className="text-sm text-muted-foreground">
               {view.webcamsNote ?? "Webcams appear once there is a place to look around."}{" "}
               {view.webcamsDirectory ? (
-                <a href={view.webcamsDirectory} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-2">
+                <a
+                  href={view.webcamsDirectory}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="underline underline-offset-2"
+                >
                   Browse webcams on the map
                 </a>
               ) : null}
@@ -293,7 +390,9 @@ export function WhereWhenSection({
       {readOnly ? null : (
         <div className="panel space-y-4 p-4 sm:p-5">
           <div className="space-y-1">
-            <h3 className="font-display text-xl">{view.claim ? "Change the claim" : "Add the claim to check"}</h3>
+            <h3 className="font-display text-xl">
+              {view.claim ? "Change the claim" : "Add the claim to check"}
+            </h3>
             <p className="text-sm text-muted-foreground">
               Where and when is this photo said to be from? Only the location checks run again.
             </p>

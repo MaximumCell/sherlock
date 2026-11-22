@@ -61,7 +61,11 @@ export function sectionFromUrl(
   const candidates = [fromHash, params.get("section"), LEGACY_TABS[params.get("tab") ?? ""]];
   for (const value of candidates) {
     if (value === SCAN_ANCHOR) return "summary";
-    if (isCaseSection(value) && (value !== "people" || hasPeople) && (value !== "where" || hasPhoto))
+    if (
+      isCaseSection(value) &&
+      (value !== "people" || hasPeople) &&
+      (value !== "where" || hasPhoto)
+    )
       return value;
   }
   return null;

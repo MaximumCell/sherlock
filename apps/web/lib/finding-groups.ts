@@ -4,6 +4,7 @@
  */
 import { buildAccounts, isSameAccount, type CaseAccount } from "./accounts";
 import { findingCategory, parseFinding } from "./findings";
+import { GEO_MODULES } from "./geo";
 import type { Correlation, Finding } from "./types";
 
 export const FINDING_GROUP_IDS = [
@@ -127,7 +128,8 @@ export function groupFindings(
   };
   for (const acc of accounts) bucket(groupOf(acc.primary)).items.push(acc);
   for (const f of findings)
-    if (f.status !== "found" && f.module !== "geo_context") bucket(groupOf(f)).misses += 1;
+    if (f.status !== "found" && !GEO_MODULES.includes(f.module ?? ""))
+      bucket(groupOf(f)).misses += 1;
   return FINDING_GROUP_IDS.flatMap((id) => {
     const b = buckets.get(id);
     if (!b || b.items.length === 0) return [];

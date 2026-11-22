@@ -82,7 +82,8 @@ export function UploadedPhoto({ value, findings }: { value: string; findings: Fi
               <p className="font-medium">{r.locationNote ?? "This photo contains location data"}</p>
               <p className="text-muted-foreground">
                 Anyone with the original file can see roughly where it was taken. Remove location
-                data before you share it. Sherlock does not show the coordinates.
+                data before you share it. Sherlock only shows it rounded to about 1 km, under Where
+                and when.
               </p>
             </div>
           </div>

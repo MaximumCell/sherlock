@@ -5,6 +5,7 @@
 import { buildAccounts, isSameAccount, type CaseAccount } from "./accounts";
 import { findingCategory, parseFinding } from "./findings";
 import type { Correlation, Finding } from "./types";
+import { isUnknownFinding } from "./unchecked";
 
 export const FINDING_GROUP_IDS = [
   "accounts",
@@ -96,7 +97,7 @@ export interface FindingGroup {
   description: string;
   /** One item per ACCOUNT (several sources reporting one account are one item), most informative first. */
   items: CaseAccount[];
-  /** Not-found and error rows that belong here (shown only in the full list). */
+  /** Not-found and error rows that belong here (shown only in the full list); "couldn't check" rows are not misses. */
   misses: number;
 }
 
@@ -126,7 +127,9 @@ export function groupFindings(
     return b;
   };
   for (const acc of accounts) bucket(groupOf(acc.primary)).items.push(acc);
-  for (const f of findings) if (f.status !== "found") bucket(groupOf(f)).misses += 1;
+  for (const f of findings) {
+    if (f.status !== "found" && !isUnknownFinding(f)) bucket(groupOf(f)).misses += 1;
+  }
   return FINDING_GROUP_IDS.flatMap((id) => {
     const b = buckets.get(id);
     if (!b || b.items.length === 0) return [];

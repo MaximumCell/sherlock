@@ -235,16 +235,7 @@ const ACCOUNTS: Account[] = [
   ["Pastebin", "other", { created_at: "2016-11-11T03:33:00Z" }],
 ];
 
-const NOT_FOUND = [
-  "Instagram",
-  "TikTok",
-  "Pinterest",
-  "Snapchat",
-  "LinkedIn",
-  "Vimeo",
-  "Patreon",
-  "Tumblr",
-];
+const NOT_FOUND = ["Pinterest", "Snapchat", "LinkedIn", "Vimeo", "Patreon", "Tumblr"];
 
 function accountSpecs(): Spec[] {
   const specs: Spec[] = ACCOUNTS.map(([platform, category, extra, curated], i) => ({
@@ -284,7 +275,8 @@ function accountSpecs(): Spec[] {
       idType: "username",
       idValue: HANDLE,
       status: "error",
-      meta: { category: "social", error: "timeout after 15 s" },
+      url: `https://www.facebook.com/${HANDLE}`,
+      meta: { category: "social", reason: "blocked", unknown: true, detail: "timeout after 15 s" },
       minutesAgo: 150,
     },
     {
@@ -294,7 +286,46 @@ function accountSpecs(): Spec[] {
       idType: "username",
       idValue: HANDLE,
       status: "error",
-      meta: { category: "social", error: "HTTP 429: rate limited by the platform" },
+      url: `https://x.com/${HANDLE}`,
+      meta: {
+        category: "social",
+        reason: "rate_limited",
+        unknown: true,
+        detail: "HTTP 429: rate limited by the platform",
+      },
+      minutesAgo: 150,
+    },
+    // could not be checked: the platform shows every logged-out visitor the same page
+    {
+      n: 53,
+      platform: "Instagram",
+      module: "whatsmyname",
+      idType: "username",
+      idValue: HANDLE,
+      status: "error",
+      url: `https://www.instagram.com/${HANDLE}/`,
+      meta: {
+        category: "social",
+        reason: "login_wall",
+        unknown: true,
+        detail: "Instagram only shows profiles to signed-in users",
+      },
+      minutesAgo: 150,
+    },
+    {
+      n: 54,
+      platform: "TikTok",
+      module: "user_scanner",
+      idType: "username",
+      idValue: HANDLE,
+      status: "error",
+      url: `https://www.tiktok.com/@${HANDLE}`,
+      meta: {
+        category: "social",
+        reason: "ambiguous",
+        unknown: true,
+        detail: "No public account (a private one looks the same)",
+      },
       minutesAgo: 150,
     },
   );

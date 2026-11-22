@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { AccountSheetBody } from "./account-sheet-body";
 import { FindingDetail } from "./finding-detail";
 import { FindingStatusBadge } from "./results-table";
+import { isUnknownFinding } from "@/lib/unchecked";
 import { displayTargetValue } from "@/lib/uploads";
 
 function SheetBody({
@@ -76,7 +77,7 @@ function SheetBody({
               {finding.identifier_type}: {displayTargetValue(finding.identifier_value)}
             </SheetDescription>
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              <FindingStatusBadge status={finding.status} />
+              <FindingStatusBadge status={finding.status} unknown={isUnknownFinding(finding)} />
               <span className="text-xs text-muted-foreground">{view.category}</span>
             </div>
           </div>

@@ -20,6 +20,7 @@ import { resolvePlatform } from "@/lib/platforms";
 import { findingPlatform } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 import { displayTargetValue } from "@/lib/uploads";
+import { isUnknownFinding } from "@/lib/unchecked";
 
 function RowAvatar({ finding, avatarUrl }: { finding: Finding; avatarUrl: string | null }) {
   const platform = findingPlatform(finding);
@@ -43,8 +44,17 @@ const STATUS_BADGE: Record<
   error: { label: "Error", variant: "danger" },
 };
 
-export function FindingStatusBadge({ status }: { status: FindingStatus }) {
-  const meta = STATUS_BADGE[status];
+export function FindingStatusBadge({
+  status,
+  unknown = false,
+}: {
+  status: FindingStatus;
+  /** A "could not be checked" row (stored as status error). */
+  unknown?: boolean;
+}) {
+  const meta = unknown
+    ? { label: "Couldn't check", variant: "muted" as const }
+    : STATUS_BADGE[status];
   return <Badge variant={meta.variant}>{meta.label}</Badge>;
 }
 
@@ -189,7 +199,7 @@ export function ResultsTable({ rows, notes, onOpen, onCurate, sourceLabel, advan
                     ) : null}
                   </TableCell>
                   <TableCell>
-                    <FindingStatusBadge status={f.status} />
+                    <FindingStatusBadge status={f.status} unknown={isUnknownFinding(f)} />
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-right text-xs text-muted-foreground">
                     {timeAgo(f.collected_at)}
@@ -216,7 +226,7 @@ export function ResultsTable({ rows, notes, onOpen, onCurate, sourceLabel, advan
                   >
                     {findingTitle(f)}
                   </button>
-                  <FindingStatusBadge status={f.status} />
+                  <FindingStatusBadge status={f.status} unknown={isUnknownFinding(f)} />
                 </div>
                 <p className="truncate font-mono text-xs text-muted-foreground">
                   {displayTargetValue(f.identifier_value)}

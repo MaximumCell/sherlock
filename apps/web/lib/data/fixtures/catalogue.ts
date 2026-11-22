@@ -268,7 +268,7 @@ export const FIXTURE_MODULES: ModuleInfo[] = [
     "Image metadata and perceptual hash",
     "media",
     ["image"],
-    "Dimensions, format, SHA-256, perceptual hash and a small EXIF subset of an image URL.",
+    "Dimensions, format, SHA-256, perceptual hash and a small EXIF subset of an image URL or uploaded photo.",
     null,
   ),
   mod(
@@ -279,7 +279,6 @@ export const FIXTURE_MODULES: ModuleInfo[] = [
     "Finds pages showing the same or a visually similar image (Google Lens via SerpApi).",
     "https://serpapi.com/google-lens-api",
     ["SERPAPI_KEY"],
-    false,
   ),
   mod(
     "reverse_image_links",

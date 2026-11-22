@@ -64,5 +64,8 @@ export function createReadOnlyDataSource(base: DataSource, view: AdminCaseView):
         : refuse(),
     listCandidates: () => Promise.resolve(null),
     confirmCandidate: () => refuse(),
+    uploadPhoto: () => refuse(),
+    // the photo is private to the person who uploaded it (Storage policies refuse anyone else)
+    photoUrl: () => Promise.resolve(null),
   };
 }

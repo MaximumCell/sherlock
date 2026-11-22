@@ -7,6 +7,7 @@ import { savePendingSearch } from "@/lib/pending-search";
 import { useStartInvestigation } from "@/lib/query/mutations";
 import { classifyRefusal } from "@/lib/search-refusal";
 import { useCaseHref } from "@/lib/use-case-href";
+import { displayTargetValue } from "@/lib/uploads";
 import { cleanHints, parseTags } from "@/lib/validation";
 import type { SmartSearchSubmit } from "./smart-search";
 
@@ -57,7 +58,7 @@ export function useStartSearch(onStarted?: () => void, launchMs = 0) {
         },
         onSuccess: ({ case: created, jobs }) => {
           toast.success("Search started", {
-            description: `Checking ${jobs.length} data source${jobs.length === 1 ? "" : "s"} for ${value}.`,
+            description: `Checking ${jobs.length} data source${jobs.length === 1 ? "" : "s"} for ${displayTargetValue(value).replace(/^Uploaded photo$/, "your photo")}.`,
           });
           onStarted?.();
           const go = () => router.push(caseHref(created.id));

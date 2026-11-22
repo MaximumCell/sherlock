@@ -118,6 +118,11 @@ export default function AboutPage() {
             kept for 90 days. To prevent misuse, the operator can review searches and their
             results, read-only; every review is recorded in that case&apos;s history.
           </p>
+          <p className="max-w-2xl text-base text-muted-foreground">
+            A photo you upload for an image search is stored privately: only you can open it, and
+            it is deleted together with the investigation. Search engines get a link to it that
+            stops working after an hour. Matches mean the same picture, never the same face.
+          </p>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="panel space-y-4 p-6">

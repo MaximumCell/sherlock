@@ -7,6 +7,7 @@ import { useData } from "@/components/providers/data-provider";
 import { describeError } from "@/lib/data/gateway";
 import { takePendingSearch, type PendingSearch } from "@/lib/pending-search";
 import { useSession } from "@/lib/query/hooks";
+import { displayTargetValue } from "@/lib/uploads";
 import { hasAcknowledged, recordAcknowledgement } from "@/lib/storage";
 import { useCaseHref } from "@/lib/use-case-href";
 import { AckDialog } from "./ack-dialog";
@@ -36,7 +37,7 @@ export function PendingSearchResumer() {
         ...(p.modules ? { modules: p.modules } : {}),
       })
         .then(() => {
-          toast.success(`Searching ${p.value}`);
+          toast.success(`Searching ${displayTargetValue(p.value)}`);
           router.push(caseHref(caseId));
         })
         .catch((err: unknown) =>

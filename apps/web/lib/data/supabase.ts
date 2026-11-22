@@ -17,6 +17,7 @@ import type {
   ScanResult,
 } from "../types";
 import { createGatewayAdminSource } from "../admin/gateway-source";
+import { PHOTO_BUCKET, SIGNED_URL_TTL_S, photoObjectPath, photoPath, photoTarget } from "../uploads";
 import { upgradeOrSignIn } from "./auth-upgrade";
 import { createGateway, GatewayError, type GatewayClient, type GatewayRequest } from "./gateway";
 import type { SignInOutcome } from "./types";
@@ -400,6 +401,26 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
       );
       const rows = Array.isArray(res) ? res : isRecord(res) ? res.entities : [];
       return toList(rows, toEntity);
+    },
+
+    async uploadPhoto(file, ext) {
+      const session = await getSession();
+      if (!session) fail("Could not upload the photo", "no session");
+      const path = photoObjectPath(session.userId, crypto.randomUUID(), ext);
+      const { error } = await client.storage
+        .from(PHOTO_BUCKET)
+        .upload(path, file, { contentType: file.type, upsert: false, cacheControl: "3600" });
+      if (error) throw error; // StorageError: classified by the search box
+      return photoTarget(path).value;
+    },
+    async photoUrl(value) {
+      const parsed = photoPath(value);
+      if (!parsed) return null;
+      await getSession();
+      const { data, error } = await client.storage
+        .from(PHOTO_BUCKET)
+        .createSignedUrl(parsed.path, SIGNED_URL_TTL_S);
+      return error || !data?.signedUrl ? null : data.signedUrl;
     },
   };
 }

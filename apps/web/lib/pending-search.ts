@@ -118,3 +118,42 @@ export function takePendingSearch(
   clearPendingSearch(s);
   return pending;
 }
+
+/**
+ * A photo cannot be kept across a sign-in redirect (files do not fit in sessionStorage and must
+ * not linger there). Only a reminder is kept, so the start page can ask for the photo again.
+ */
+export const PHOTO_REMINDER_KEY = "sherlock.pending-photo.v1";
+
+export function savePhotoReminder(now: number = Date.now(), s = store()): void {
+  try {
+    s?.setItem(PHOTO_REMINDER_KEY, String(now));
+  } catch {
+    // storage unavailable: the reminder is lost, the search box still explains it
+  }
+}
+
+export function clearPhotoReminder(s = store()): void {
+  try {
+    s?.removeItem(PHOTO_REMINDER_KEY);
+  } catch {
+    // nothing to clear
+  }
+}
+
+/** True once (it is removed as it is read) when a signed-in visitor left to sign in with a photo chosen. */
+export function takePhotoReminder(
+  session: { anonymous: boolean } | null | undefined,
+  now: number = Date.now(),
+  s = store(),
+): boolean {
+  if (!session || session.anonymous) return false;
+  try {
+    const saved = Number(s?.getItem(PHOTO_REMINDER_KEY) ?? NaN);
+    if (!Number.isFinite(saved)) return false;
+    s?.removeItem(PHOTO_REMINDER_KEY);
+    return now - saved <= PENDING_MAX_AGE_MS && saved <= now + 60_000;
+  } catch {
+    return false;
+  }
+}

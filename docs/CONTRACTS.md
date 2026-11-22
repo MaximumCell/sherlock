@@ -71,6 +71,22 @@ Rows with top-level meta `summary: true` are scan coverage summaries (checked / 
 
 `not_found` rows are stored (they show coverage) but are never correlation input.
 
+### Unknown results ("could not be checked")
+
+Existence checks have three outcomes: `found`, `not_found` and `unknown`. An unknown result is a row with `status = "error"` and top-level meta `reason` in `login_wall | blocked | rate_limited | ambiguous | rule_disabled`, `unknown: true` and `detail` (the source's own words). No migration: the status CHECK is unchanged. `sherlock_core.walled.is_unknown(f)` (web: `isUnknownFinding`) is the one test; a plain error row (free-text `reason`, no `unknown`) is not unknown.
+
+- Unknown rows are never correlation, scoring or account input (those use `found` only) and never "misses". `summarize` returns `unknown` (a subset of `error`) and `by_source[...].unknown`; coverage summary rows carry `unknown` next to `found` / `not_found`.
+- Web: "What we found" lists them under "Couldn't check automatically" (one entry per platform, left out when any source found that platform; reason in plain words; "Open profile" to `extra_metadata.url`). The scan panel says "Found on N sites · M couldn't be checked" and the summary sentence adds "M sites couldn't be checked automatically."
+- Who emits them: `user_scanner` (library Error / per-check timeout, username searches), `whatsmyname` (`login_wall` rows for walled platforms when no working check runs), and the worker's preview step (`ambiguous`, below).
+
+**Walled platforms** (`sherlock_core.walled.WALLED`): platforms whose logged-out profile page is identical for an existing and a made-up account (Instagram, Facebook, Threads; verified 2026-11-22, method in the module docstring; LinkedIn, Snapchat and TikTok's oEmbed tell them apart and are not walled). WhatsMyName never judges them. The user-scanner checks cover them (and ~70 other platforms: `user_scanner.covered_platforms()`); WhatsMyName skips every platform `user_scanner.covers()` reports, so one platform never gets two verdicts. Without user-scanner, a username search emits one `login_wall` row per walled platform with the exact profile URL.
+
+**user-scanner for usernames**: by default the focused set `user_scanner.FOCUSED` (~70 modules, `engine.check` per module, `CONCURRENCY` 12, `CHECK_TIMEOUT_S` 25; measured ~21 s from a home connection, `timeout_s` 420 leaves room for a 10x slower host). `USER_SCANNER_USERNAMES=1` switches to the full ~2,500-site sweep (no dedupe). Found rows are listed, not-found rows only counted, errors listed as unknown (username) or counted (email sweep). Summary meta: `checked, found, not_found, unknown, errors, mode`.
+
+**Rule health** (`sherlock_core/data/rule_health.json`, written by `uv run python -m sherlock_core.data.rule_health`): `{meta: {checked_at, connection, counts, total, method}, sites: {<site name>: {status, checked_at, detail}}}`, status `ok | false_negative | false_positive | indistinguishable | error`, from each site's own `known` accounts and one made-up name with the module's own request and matching (`whatsmyname.check_site`). `whatsmyname` loads it once (`load_health`, tolerates a missing file: then every rule runs), runs a site when its entry is missing or `ok`, and skips the rest silently. WhatsMyName summary meta: `checked, found, not_found, inconclusive, errors, unknown, disabled` (rules skipped by health), `covered` (left to user-scanner / walled), `walled` (login_wall rows emitted). `whatsmyname.health_counts()` gives the per-class totals.
+
+**Confirmation of sweep hits** (`modules/preview.py`): when the worker's preview step fetches the page of a `found` row from `whatsmyname` or `user_scanner` and the page is a login wall, a generic landing page or a redirect away from the profile (`AMBIGUOUS_REASONS`), the row is returned with `status = "error"`, `reason = "ambiguous"`, `was = "found"` (same `finding_key`, so it replaces the found row). No extra request; walled platforms are exempt.
+
 ## Module (`sherlock_core.modules`)
 
 ```python

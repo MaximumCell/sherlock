@@ -11,6 +11,8 @@ export interface SummaryInput {
   sources: number;
   breaches: number;
   pendingLinks: number;
+  /** Sites that could not be checked automatically (login walls, blocks); never counted as results. */
+  unchecked?: number;
   /** Set while a scan runs. */
   scanning?: { done: number; total: number } | null;
 }
@@ -24,8 +26,17 @@ export function joinList(parts: readonly string[]): string {
 }
 
 export function buildSummarySentence(input: SummaryInput): string {
-  const { subject, accounts, results, sources, breaches, pendingLinks, scanning } = input;
+  const { scanning } = input;
   const remaining = scanning ? scanning.total - scanning.done : 0;
+  const unchecked = input.unchecked ?? 0;
+  const tail = unchecked
+    ? ` ${unchecked === 1 ? "1 site" : `${unchecked} sites`} couldn't be checked automatically.`
+    : "";
+  return `${sentenceBody(input, remaining)}${tail}`;
+}
+
+function sentenceBody(input: SummaryInput, remaining: number): string {
+  const { subject, accounts, results, sources, breaches, pendingLinks, scanning } = input;
 
   if (results === 0) {
     if (scanning) {

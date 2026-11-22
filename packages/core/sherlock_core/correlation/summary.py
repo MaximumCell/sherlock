@@ -12,6 +12,7 @@ from sherlock_core.correlation import facts as facts_mod
 from sherlock_core.correlation import norm
 from sherlock_core.correlation.accounts import group_accounts
 from sherlock_core.correlation.rules import ignorable_url
+from sherlock_core.walled import is_unknown
 
 _FREEMAIL = frozenset({
     "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com", "yahoo.com", "icloud.com",
@@ -27,7 +28,8 @@ def summarize(findings: list[dict[str, Any]], split_keys: set[str] | None = None
 
     {
       total, found, not_found, error,
-      by_source:   {source_tool: {found, not_found, error}},
+      unknown:     rows that could not be checked (a subset of `error`, see `sherlock_core.walled`),
+      by_source:   {source_tool: {found, not_found, error, unknown}},
       account_count: accounts found (one per account, not per row),
       accounts:    [{account_key, label, handle, url, sources, finding_count}, ...],
       platforms_found: distinct platforms with a found account (breach sources excluded),
@@ -47,6 +49,9 @@ def summarize(findings: list[dict[str, Any]], split_keys: set[str] | None = None
         s = str(f.get("status") or "unknown")
         status[s] += 1
         by_source[str(f.get("source_tool") or "unknown")][s] += 1
+        if is_unknown(f):
+            status["unknown"] += 1
+            by_source[str(f.get("source_tool") or "unknown")]["unknown"] += 1
 
     handles: dict[str, dict[str, str]] = defaultdict(dict)   # handle -> {platform: label}
     emails: dict[str, dict[str, str]] = defaultdict(dict)
@@ -94,7 +99,8 @@ def summarize(findings: list[dict[str, Any]], split_keys: set[str] | None = None
         "found": status.get("found", 0),
         "not_found": status.get("not_found", 0),
         "error": status.get("error", 0),
-        "by_source": {k: {s: v.get(s, 0) for s in ("found", "not_found", "error")}
+        "unknown": status.get("unknown", 0),
+        "by_source": {k: {s: v.get(s, 0) for s in ("found", "not_found", "error", "unknown")}
                       for k, v in sorted(by_source.items())},
         "account_count": len(real_accounts),
         "accounts": [{"account_key": a.account_key, "label": a.label, "handle": a.handle, "url": a.url,

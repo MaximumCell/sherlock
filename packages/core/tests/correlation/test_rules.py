@@ -295,7 +295,7 @@ def test_username_reuse_is_a_summary_stat_not_a_correlation(S):
     assert stats["username_reuse"] == {"edith": 300}                  # case-insensitive
     assert stats["handles"][0]["platform_count"] == 300
     assert (stats["total"], stats["found"], stats["not_found"], stats["error"]) == (345, 300, 40, 5)
-    assert stats["by_source"]["user-scanner"] == {"found": 300, "not_found": 40, "error": 5}
+    assert stats["by_source"]["user-scanner"] == {"found": 300, "not_found": 40, "error": 5, "unknown": 0}
 
 
 def test_summarize_counts_platforms_canonically(S):

@@ -1,0 +1,3468 @@
+{
+ "meta": {
+  "checked_at": "2026-11-22T10:24:58+00:00",
+  "connection": "home (residential) connection, run 2026-11-22 from the build machine; not a datacenter IP",
+  "dataset": "wmn-data.json",
+  "total": 690,
+  "counts": {
+   "ok": 369,
+   "false_negative": 55,
+   "false_positive": 0,
+   "indistinguishable": 203,
+   "error": 63
+  },
+  "method": "each site's own `known` accounts and one random made-up name, same request and matching as modules/whatsmyname.py; only `ok` rules run"
+ },
+ "sites": {
+  "247sports": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:35+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "35photo": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:47+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "3dtoday": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:56+00:00",
+   "detail": "no usable answer (known: error, error; random: not_found)"
+  },
+  "7dach": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:36+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "about.me": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:36+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "ACF": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "AdmireMe.VIP": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:35+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "adultism": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:35+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "ADVFN": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "alik": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Alura": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Ameblo": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:35+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "AmericanThinker": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "AniList": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:36+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Anime-Planet": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:36+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Aparat": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:36+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Apex Legends": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:36+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "appian Community": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:38+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Arch Linux GitLab": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:36+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Arduino (Forum)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Arduino (Project Hub)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:40+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "ArmorGames": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Arsmate": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:41+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Artbreeder": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:39+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "ArtStation": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "asciinema": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "AtCoder": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:38+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "au.ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:43+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Audiojungle": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:38+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Avid Community": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:39+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "babepedia": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:37+00:00",
+   "detail": "no usable answer (known: error; random: error)"
+  },
+  "BabyPips": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:39+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Bandcamp": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:40+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Bandlab": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:39+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "bblog_ru": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:38+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "BDSMLR": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:38+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "bdsmsingles": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:38+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Beacons": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:22:40+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Behance": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:39+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Bentbox": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:22:40+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "BiggerPockets": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:41+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "BIGO Live": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:03+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Bimpos": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:40+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Bio Site": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:41+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "biolink": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:42+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Bitbucket": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:41+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Bitchute": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:41+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "blogi.pl": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:40+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Blogmarks": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:22:42+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Blogspot": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:45+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Bluesky Domain as User": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:42+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Bluesky Username": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:42+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "BoardGameGeek": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:42+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Bookcrossing": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:42+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Booknode": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:42+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Boosty": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:42+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Booth": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:42+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Brickset": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:43+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Bugcrowd": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:44+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Bunpro": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:43+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Buy Me a Coffee": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:44+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "BuzzFeed": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:43+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "cafecito": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:43+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Calendy": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:43+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Cameo": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:43+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Carbonmade": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:45+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Career.habr": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:46+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "carrd.co": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:47+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "CastingCallClub": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:44+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "cda.pl": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:44+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Cent": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:45+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "cfx.re": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:44+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "championat": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:50+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Chamsko": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:44+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "chatango.com": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "CHEEZburger": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:47+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Chess.com": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:45+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Chocolatey": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:46+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Choko.Link": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:45+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Chomikuj.pl": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:47+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Chyoa": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:45+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Cloudflare": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:46+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Clubhouse": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "cnet": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Coda": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Codeberg": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:46+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Codecademy": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "CodeChef": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Codeforces": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:47+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "codementor": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:49+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "CodePen": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:22:47+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Coderwall": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:50+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "CodeSandbox": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:47+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Codewars": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:49+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "COLOURlovers": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:48+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Commudle": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Community Adobe": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:49+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "coroflot": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:49+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Coub": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "cowboys4angels": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:48+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Cracked": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:22:52+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "crevado": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Cropty": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:49+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Crowdin": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:22:50+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Cults3D": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:49+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Cytoid": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:54+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Daily Kos": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:50+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Dailymotion": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:49+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "darudar": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "dateinasia": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:50+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "datezone": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:50+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Dating.ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Demotywatory": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "depop": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Designspriation": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "destream": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "dev.to": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "DeviantArt": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:50+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "devRant": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:53+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "DFG": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Diablo": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:53+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "DIBIZ": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:00+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Digitalspy": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:51+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "diigo": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Discogs": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Discord (Invite)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:53+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Discord (User)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:52+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Discourse": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:53+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "discuss.elastic.co": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Disqus": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:53+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Docker Hub (Organization)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Docker Hub (User)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Dojoverse": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "donate.stream": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Donatello": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:53+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Donatik": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Donation Alerts": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:54+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "DonationPay": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:54+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Donatty": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:54+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "dot.cards": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:54+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Dota2.ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "DOTAFire": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "DOU": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:54+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Dribbble": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:56+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "DRIVE2.RU": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Droners": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:56+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Duolingo": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:22:57+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "easyen": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:57+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "eBay": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:56+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "ebay_stores": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:57+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Electrobel": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:56+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "EPORNER": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:19+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Etoro": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Etsy": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:56+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Evolution CMS": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:56+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Expressional.social (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:58+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Fabswingers": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:56+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Facebook": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:56+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "FACEIT": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:57+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Faktopedia": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:57+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "FanCentro": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:59+00:00",
+   "detail": "no usable answer (known: error, error; random: not_found)"
+  },
+  "Fandom": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:58+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Fanslist (OnlyFans)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:58+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Fansly": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:57+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Federated.press (Mastodon Instance)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:57+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Figma": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:59+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Filmot Channel Search": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:58+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Filmot Unlisted Videos": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:58+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Filmweb": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:00+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "fine_art_america": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:22:57+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Fiverr": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:58+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "FL.ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:00+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Flickr": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Flightradar24": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:22:59+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Flipboard": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:58+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "flowcode": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:00+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Fodors Forum": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:58+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Folkd": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:59+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Fortnite Tracker": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:59+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Fosstodon.org (Mastodon Instance)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:22:59+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "fotka": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Fotolog Archived Profile": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:03+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Foursquare": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "freeCodeCamp": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Freelance.RU": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Freelance.ua": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Freelancehunt (Employer)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Freelancehunt (Freelancer)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Freelancer": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "freesound": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "FriendFinder": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:03+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "FriendFinder-X": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:04+00:00",
+   "detail": "no usable answer (known: error; random: error)"
+  },
+  "Fur Affinity": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:02+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Gab": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:01+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Game Jolt": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:02+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Gamer DVR": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:02+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Gamespot": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:03+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Garmin Connect": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:03+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "GDBrowser": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:02+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "GeeksForGeeks": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:03+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Genius (Artist)": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Genius (User)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:11+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Geocaching": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:03+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Gettr": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:03+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Giphy (Channel)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:03+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Gitea": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:04+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Gitee": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:07+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "GitHub (Gists)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:06+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "GitHub (User)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:04+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "GitLab": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:04+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "gloria.tv": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:04+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "GNOME (GitLab)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:04+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "GNOME (Shell Extensions)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:04+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "GOG": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:06+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Goodgame_Russia": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:07+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "gpodder.net": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:06+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "grandprof": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:05+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Graphics.social (Mastodon Instance)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:05+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Gravatar": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:06+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Greasy Fork": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:05+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "GTAinside.com": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:05+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "gumroad": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:08+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habbo.com": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habbo.com.br": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habbo.com.tr": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habbo.de": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habbo.es": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:08+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habbo.fi": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:10+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Habbo.fr": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habbo.it": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:11+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habbo.nl": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:10+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Habr (Q&A)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:08+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habr (User)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Habtium": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:10+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Hackaday.io": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:11+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "HackAdvisor": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Hacker News": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:10+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "hackerearth": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Hackernoon": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:09+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "HackerOne": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:10+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "HackerRank": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:11+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "hackrocks": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:13+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Hackster": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:11+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "hamaha": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:10+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Hanime": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:10+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Hashnode": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:10+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Hcommons.social (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:11+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Heylink": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:11+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "HiHello": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:12+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Holopin": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:12+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Home Design 3D": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:12+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Hometech.social (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:13+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "hoo.be": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:13+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Hostux.social (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:13+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Houzz": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:11+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "HubPages": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:11+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "HudsonRock": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:14+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "HuggingFace": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:13+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "HulkShare": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:15+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "icq-chat": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:14+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "IFTTT": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:13+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "ifunny": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:15+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "igromania": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:13+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "ILGM Growers Forum": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:18+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "imagefap": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:13+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "ImageShack": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:16+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "iMGSRC.RU": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:15+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Imgur": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:15+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Immunefi": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:15+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "inaturalist": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:16+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Independent academia": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:16+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "InkBunny": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:14+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "InsaneJournal": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:15+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Instagram": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:21+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Instagram (Imginn)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:16+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Instagram_archives": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:32+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Instructables": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:20+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Internet Archive User Contribution Search": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:29+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Internet Archive Username Mentions": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:41+00:00",
+   "detail": "no usable answer (known: found, error; random: error)"
+  },
+  "interpals": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:16+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Intigriti": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:21+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "itch.io": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:17+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "JapanDict": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:17+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "JBZD": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:16+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "jeja.pl": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:21+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Jeuxvideo": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:16+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Joe Monster": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:20+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Justforfans": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:20+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Kaggle": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:20+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "kashipara": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:21+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Keybase": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:27+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Kick": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:21+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Kickstarter": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:26+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "kik": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:24+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "KnowYourMeme": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:21+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Ko-Fi": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:23+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "komi": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:25+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Kongregate": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:22+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Kwai": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:23+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "kwejk.pl": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:23+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Kwork": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:23+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Last.fm": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:23+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "LeakIX": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:25+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Learn CW Online": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:23+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "LeetCode": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:24+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Lemon8": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:24+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Letterboxd": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:25+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "LevelBlue": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:25+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Liberapay": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:25+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "LibraryThing": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:25+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Libretooth.gr (Mastodon Instance)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:25+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "lichess.org": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:26+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "LINE": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:26+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Linktree": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:26+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "linux.org.ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:25+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "LiveJasmin": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:25+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Livejournal": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:51+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "livemaster.ru": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:26+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "lobste.rs": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:27+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "LoLProfile": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:27+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Lor.sh (Mastodon Instance)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:27+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "lowcygier.pl": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:28+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Magix": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:27+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Magnific": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:27+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Malpedia Actors": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "MapMyTracks": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:38+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Mapstodon.space (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:28+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Maroc_nl": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:28+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Marshmallow": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:28+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Martech": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:29+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Massage Anywhere": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:31+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "masto.ai": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:29+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Masto.nyc (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:30+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Mastodon API": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:29+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Mastodon-101010.pl": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:29+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Mastodon-C.IM": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:30+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Mastodon-Chaos.social": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:29+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Mastodon-Defcon": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:31+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Mastodon-mastodon": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:30+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Mastodon-meow.social": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:31+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Mastodon-mstdn.io": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:31+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Mastodon-rigcz.club": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:31+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Mastodon-social_tchncs": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:31+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Mastodon-Toot.Community": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:31+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Mastodon.online": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:31+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Mastodonbooks.net (Mastodon Instance)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:32+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "MAX": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:32+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "MCUUID (Minecraft)": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:33+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Medium": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:33+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "meet me": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:34+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Meta-Wiki (Wikimedia)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "metacritic": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Microsoft Learn": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:33+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Minds": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:32+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Minecraft List": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:42+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "mintme": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:35+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Mistrzowie": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:33+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Mix": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:34+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Mixcloud": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:34+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Mixi": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:38+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Mixlr": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Mmorpg": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:36+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "MobileGTA.net": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:36+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Mod DB": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:36+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "MODX.im": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:35+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Monkeytype": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Moto Trip": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:38+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Motokiller": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:38+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Moxfield": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:39+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "mssg.me": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:41+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Muck Rack": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:38+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Musician.social (Mastodon Instance)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:39+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "musictraveler": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:39+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "MUYZORRAS": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:38+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "my_instants": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:40+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "MyAnimeList": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:41+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "MyBuilder": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:43+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "myfitnesspal Author": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:45+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "myfitnesspal Community": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:44+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "MyLot": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:44+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "MYM": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:40+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "MyNickname": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:41+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "MySpace": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:41+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "myWishBoard": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:42+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "naija_planet": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:43+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "nairaland": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:42+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "NaturalNews": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:45+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Naver": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:42+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Neocities": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:45+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Newgrounds": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:47+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "newmeet": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:45+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Nifty Gateway": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:51+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Nightbot": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:44+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Nih Buat Jajan": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:44+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Nitecrew (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:44+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "nnru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:51+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "NotABug": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:45+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Note": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:45+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "npm": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:46+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "oglaszamy24h.pl": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:47+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "ok.ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:47+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "okidoki": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:46+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "omg.lol": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:50+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "OP.GG": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:47+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Opencollective": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:50+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "OpenSource": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:47+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "OpenStreetMap": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:47+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "OpenStreetMap Wiki": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:47+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Oper.ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Origins.Habbo.com": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Origins.Habbo.com.br": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Origins.Habbo.es": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "osu!": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:48+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "palnet": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:50+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Paragraph": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:49+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Parler": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:48+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Parler archived posts": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Parler archived profile": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:53+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Pastebin": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "patch": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:50+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "PatientsLikeMe": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:53+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Patreon": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:51+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Patriots Win": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Patronite": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "PayPal Business": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:52+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "PayPal.Me": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:54+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "PCPartPicker": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:51+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Peerlist": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:53+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Peing": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:53+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Peoople (Creator)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:52+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Peoople (Influencer)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:53+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Peoople (Star)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:53+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Peoople (Unicorn)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:53+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Periscope": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:54+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Pewex": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:54+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Picsart": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:54+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Piekielni": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:54+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Pikabu": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:54+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Pillowfort": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "PinkBike": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Pinterest": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:56+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "pixelfed.social": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Planoly": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:56+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Playstation Network": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:54+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Plink": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Plurk": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:54+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Poe.com": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Pokec": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "pokemonshowdown": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Polarsteps": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Polchat.pl": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:00+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Poll Everywhere": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:56+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "polygon": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "popl": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:56+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Pornhub (Model)": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Pornhub (Pornstar)": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:55+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Pornhub (User)": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:56+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Poshmark": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:56+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "postcrossing": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:56+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Poweredbygay.social (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Pr0gramm": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:56+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Pravda.me": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:02+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Privacy Guides": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Producthunt": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:56+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "PromoDJ": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:59+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Pronouns.page": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:58+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Pronouny": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Prose": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "prv.pl": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "pypi": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "QUEER PL": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Quizlet": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Quora": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Raddle.me": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Rant.li": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:58+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Rarible": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:58+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "redbubble": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:58+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Reddit": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "RedGIFs": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Refsheet": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:02+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Replit": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:23:58+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Researchgate": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:57+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "resumes_actorsaccess": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:04+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Revolut": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:58+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "risk.ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:59+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Roberts Space Industries": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:00+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Roblox": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:23:59+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "RoutineHub": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:00+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "ru_123rf": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "RubyGems.org": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:00+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "RumbleChannel": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:00+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "RumbleUser": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:23:59+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "RuneScape": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:23:58+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "RuTracker.org": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:00+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "ruVoIP.net": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Salon24": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:00+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Scammer.info": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:00+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Scored": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "ScoutWiki": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Scratch": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Scribd (Document)": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Searchengines": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Seneporno": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "sentimente": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:26+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "SEOClerks": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:04+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Sepia Search (PeerTube)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:02+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "setlist.fm": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:02+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "SFD": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:03+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Shesfreaky": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:01+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Shikimori": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:02+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "shopify": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:03+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Showup.tv": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:03+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "shutterstock": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:02+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "SimplePlanes": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:03+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "skeb": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:03+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "SlackHoles": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:02+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Slant": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:03+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "slides": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:03+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Slideshare": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:02+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "SmashRun": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:04+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "SmugMug": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:07+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "smule": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:03+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Snapchat": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "soc.citizen4.eu": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:08+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "social.bund.de": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:04+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "sofurry": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:04+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "solo.to": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:04+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "SoundCloud": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:05+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Soup": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:05+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Sourceforge": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:04+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Speaker Deck": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:05+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "speedrun": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "SPOJ": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:05+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "sporcle": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:04+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Sports Tracker": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:05+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Spotify": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:05+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "StackOverflow": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:05+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "StackShare": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "stats.fm": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Statuspage": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:07+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Steam": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "SteamGifts": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Steemit": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:07+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "steller": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:07+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "StoryCorps": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Strava": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:09+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "StreamElements": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "StreamLabs": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:07+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Stripchat": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Subscribestar": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:06+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Substack": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:07+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "sukebei.nyaa.si": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:09+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Suzuri": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:07+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "szmer.info": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:30+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "tabletoptournament": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:07+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "TamTam": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:08+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Tanuki.pl": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:10+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "TAPiTAG": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:10+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Tappy": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:08+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Taringa": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:10+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Taringa Archived Profile": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:14+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "taskrabbit": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:09+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Teamtreehouse": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:08+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Teespring": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:08+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Teknik": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:12+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Telegram": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:33+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Teletype": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:09+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Tellonym": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:08+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Tenor": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:08+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "TETR.IO": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:10+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "TF2 Backpack Examiner": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:34+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "The Gateway Pundit": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:11+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "theguardian": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:10+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "themeforest": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:10+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Thetattooforum": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:16+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "thoughts": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:10+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Threads": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:11+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "TikTok": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:11+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Tilde.zone (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:11+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Tinder": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:35+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Tindie": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:11+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "TipeeeStream": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:12+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Tooting.ch (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:12+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Topcoder": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:12+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "toyhou.se": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:13+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "TradingView": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:13+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "trakt": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:12+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "TRAKTRAIN": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:14+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Trello": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:13+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "tripadvisor": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:14+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "TruckersMP": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:27+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "TruckersMP.Ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:28+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Truth Social": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:14+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "TryHackMe": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:14+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Tryst": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:23+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "tumblr": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:14+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "tunefind": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:16+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Tweetapus": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:17+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Twitcast": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:17+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Twitch": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:17+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Twitter archived profile": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:22+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Twitter archived tweets": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:24+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "twoplustwo": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:18+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "twpro": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:19+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Udemy": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:20+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "UEF CONNECT": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:22+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Ultimate Guitar": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:19+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Ultras Diary": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:36+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Unlisted Videos": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:20+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "unsplash": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:21+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Untappd": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:21+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "USA Life": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:27+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "utip.io": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:21+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "uwu.ai": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:46+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Uwumarket": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:24+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "vapenews": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:25+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Venmo": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:28+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Vero": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:24+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "vibilagare": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:34+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "VIEWBUG": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:25+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Vimeo": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:26+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Vine": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:27+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "VIP-blog": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:28+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "VirusTotal": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:28+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "visnesscard": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:40+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "Vivino": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:28+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "VK": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:51+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Vkl.world (Mastodon Instance)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:28+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Vmst.io (Mastodon Instance)": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:28+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Voice123": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:30+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Voices.com": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:29+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "vsco": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:29+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "VseTop": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:29+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "W3Schools": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:29+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Wakatime": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:30+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Warmerise": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:31+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "warriorforum": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:32+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "WatchMeMore": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:29+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Watchmyfeed": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:30+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Wattpad": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:30+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "waytohey": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:31+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "Weasyl": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:31+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Weblancer": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:32+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Weblate": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:31+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "weebly": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:32+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "wego": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:32+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "weheartit": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:31+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Weibo": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:33+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "WeTransfer": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:33+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Wikidot": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:32+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Wikimapia": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:32+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Wimkin-PublicProfile": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:34+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Wireclub": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:33+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Wishlistr": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:33+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "wordnik": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:37+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "WordPress.com (Deleted)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:34+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "WordPress.com (Private)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:34+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "WordPress.com (Public)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:34+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "WordPress.org (Forums)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "WordPress.org (Profiles)": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:38+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Wowhead": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:34+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Wykop": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:35+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "X": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:35+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Xakep.ru": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:36+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Xanga": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:38+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Xbox Gamertag": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:38+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "xHamster": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:58+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Xing": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:36+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "XNXX": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:35+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "XVideos": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:36+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Yahoo! JAPAN Auction": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:36+00:00",
+   "detail": "known -> not_found, random -> not_found"
+  },
+  "yapishu": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:37+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "Yazawaj": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:38+00:00",
+   "detail": "known -> found, random -> unknown"
+  },
+  "YesWeHack": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:37+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "YouNow": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:38+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "youpic": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:38+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "YouTube Channel": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:39+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "YouTube User": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:38+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "YouTube User2": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:39+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Zbiornik": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:38+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Zenn": {
+   "status": "false_negative",
+   "checked_at": "2026-11-22T10:24:41+00:00",
+   "detail": "known -> unknown, random -> not_found"
+  },
+  "Zepeto": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:38+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "zhihu": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:39+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Zillow": {
+   "status": "indistinguishable",
+   "checked_at": "2026-11-22T10:24:40+00:00",
+   "detail": "known -> unknown, random -> unknown"
+  },
+  "zmarsa.com": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:39+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  },
+  "Znanija": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:39+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Zomato": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:39+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "zoomitir": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:41+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Военное обозрение": {
+   "status": "ok",
+   "checked_at": "2026-11-22T10:24:40+00:00",
+   "detail": "known -> found, random -> not_found"
+  },
+  "Чатовка.net": {
+   "status": "error",
+   "checked_at": "2026-11-22T10:24:40+00:00",
+   "detail": "no usable answer (known: error, error; random: error)"
+  }
+ }
+}

@@ -342,7 +342,9 @@ def assess_claim(
         label = s.get("label")
         who = "camera time" if label == "camera" else "claimed time"
         at = hhmm(s.get("local_time"))
-        when = f"At the {who}{f' ({at} local)' if at else ''}"
+        solar = hhmm(s.get("solar_time"))      # zone unknown: approximate solar time, never "local"
+        when = (f"At the {who} ({at} local)" if at else f"At the {who} (about {solar} solar time)" if solar
+                else f"At the {who}")
         elev = s.get("elevation")
         if not isinstance(elev, int | float):
             continue

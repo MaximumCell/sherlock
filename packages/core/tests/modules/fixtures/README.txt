@@ -35,6 +35,9 @@ Tower area of Paris, 48.86, 2.29):
   geo_nominatim_reverse    nominatim.openstreetmap.org/reverse zoom=14 (live)
   geo_nominatim_search     nominatim.openstreetmap.org/search "Eiffel Tower, Paris" (live; it
                            includes a road, house number and postcode, which must never be stored)
+  geo_nasa_power_hourly    power.larc.nasa.gov/api/temporal/hourly/point, community RE, time-standard
+                           UTC, T2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN,CLRSKY_SFC_SW_DWN,CLOUD_AMT,
+                           2025-06-13..15 (live), trimmed to the hours of 2025-06-14 and without `times`
 
 Synthetic values in the documented response shape (the endpoint needs a key; a keyless request
 answered 403 "Missing Header 'x-windy-api-key'" / 500 "Invalid OAuth 2.0 Access Token"):

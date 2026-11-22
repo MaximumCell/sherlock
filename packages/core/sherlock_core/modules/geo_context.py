@@ -4,7 +4,8 @@ For the photo's location (camera GPS, else the user's claimed place) and time (c
 the claimed time) this module looks up, from free public sources:
 
   geo-sun      sun azimuth/elevation and the expected shadows (computed locally, `geo.solar`)
-  geo-weather  the weather that hour (Open-Meteo archive / forecast APIs, keyless)
+  geo-weather  the weather that hour (Open-Meteo archive / forecast APIs, keyless; NASA POWER hourly
+               point API, keyless, when Open-Meteo is out of quota or fails; cached in-process for an hour)
   geo-place    a coarse place name: district, city, country (OpenStreetMap Nominatim, keyless,
                at most one request per second; street names, house numbers and postcodes are dropped)
   geo-street   ready-made links to OpenStreetMap / Google Maps / Street View / Mapillary
@@ -29,6 +30,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import os
 import time
 import zoneinfo
@@ -41,7 +43,8 @@ import PIL  # noqa: F401 - optional dep: ImportError => module skipped by the re
 from sherlock_core import uploads
 from sherlock_core.geo import claims as geo_claims
 from sherlock_core.geo.solar import shadow_words, solar_position
-from sherlock_core.geo.weather import HOURLY_VARS, hour_at, weather_sentence
+from sherlock_core.geo.tz import zone_name_at
+from sherlock_core.geo.weather import HOURLY_VARS, NASA_POWER_PARAMS, hour_at, nasa_hour_at, weather_sentence
 from sherlock_core.modules import register
 from sherlock_core.modules._util import (
     UpstreamError,
@@ -61,16 +64,27 @@ OPEN_METEO_ARCHIVE = "https://archive-api.open-meteo.com/v1/archive"
 NOMINATIM = "https://nominatim.openstreetmap.org"
 WINDY_WEBCAMS = "https://api.windy.com/webcams/api/v3/webcams"
 MAPILLARY_IMAGES = "https://graph.mapillary.com/images"
+NASA_POWER_HOURLY = "https://power.larc.nasa.gov/api/temporal/hourly/point"
 OSM_ATTRIBUTION = "© OpenStreetMap contributors (ODbL)"
 WEATHER_ATTRIBUTION = "Weather data by Open-Meteo.com (CC BY 4.0)"
+NASA_ATTRIBUTION = ("Weather data from the NASA Langley Research Center (LaRC) POWER Project funded through "
+                    "the NASA Earth Science/Applied Science Program")
+WEATHER_SOURCES = {
+    "open-meteo": ("https://open-meteo.com/", WEATHER_ATTRIBUTION),
+    "nasa-power": ("https://power.larc.nasa.gov/", NASA_ATTRIBUTION),
+}
+WEATHER_CACHE_TTL_S = 3600.0
+NASA_LAG_DAYS = 7             # recent days are often still missing (fill values) in NASA POWER
 
 ARCHIVE_LAG_DAYS = 5          # the reanalysis archive trails real time by about five days
 FORECAST_AHEAD_DAYS = 15
 NOMINATIM_MIN_INTERVAL_S = 1.1  # usage policy: at most one request per second
 WEBCAM_RADIUS_KM = 15
-STREET_BOX_DEG = 0.01         # about 1 km around the (rounded) point
+STREET_RADII_M = (300, 1000)  # Mapillary search: a small box first, widened once if empty
+MAPILLARY_TIMEOUT_S = 25.0
 MAX_WEBCAMS = 6
 MAX_STREET_IMAGES = 6
+MAPILLARY_LIMIT = 10
 LENS_WAIT_S = 40.0
 LENS_POLL_S = 3.0
 _OFFSET_TIME_ORIGINAL = 0x9011
@@ -88,6 +102,9 @@ NO_TIME = ("No time to check: the photo has no camera time and no claimed time w
 _nominatim_locks: dict[asyncio.AbstractEventLoop, asyncio.Lock] = {}
 _nominatim_last = 0.0
 _reverse_cache: dict[tuple[float, float], dict[str, Any]] = {}
+# (lat, lon, day) -> (expires at, monotonic clock; answered body). Saves quota on re-runs and
+# on the camera + claim moments of one photo.
+_weather_cache: dict[tuple[float, float, date], tuple[float, dict[str, Any]]] = {}
 
 
 # ----------------------------------------------------------------------------- helpers
@@ -221,7 +238,7 @@ class GeoContext(Module):
             rows.append(_row_reason(ctx, self, target, "geo-sun", NO_TIME))
         else:
             first = sun_rows[0]
-            note = (f"At {first['local_time'][11:16]} local time the sun was {first['elevation']:.0f}° "
+            note = (f"At {_time_words(first)} the sun was {first['elevation']:.0f}° "
                     f"{'above' if first['elevation'] > 0 else 'below'} the horizon in the {first['compass']}"
                     + (f": expect {shadow_words(_sun_obj(first))} pointing {first['shadow_compass']}."
                        if first.get("shadow_azimuth") is not None else "."))
@@ -235,16 +252,20 @@ class GeoContext(Module):
             rows.append(_row_reason(ctx, self, target, "geo-weather", NO_TIME))
         elif weather_rows:
             w = weather_rows[0]
+            source = w.get("source") or "open-meteo"
+            home, attribution = WEATHER_SOURCES[source]
             note = f"{'Camera' if w['label'] == 'camera' else 'Claimed'} time: {weather_sentence(w)}."
-            rows.append(ctx.finding(self, target, platform="geo-weather", url="https://open-meteo.com/",
-                                    extra={"note": note},
-                                    meta=clean({"moments": weather_rows, "attribution": WEATHER_ATTRIBUTION,
-                                                "errors": weather_errors})))
+            if source == "nasa-power":
+                note += " (NASA POWER reanalysis: Open-Meteo did not answer.)"
+            rows.append(ctx.finding(self, target, platform="geo-weather", url=home,
+                                    extra={"note": note, "source": source},
+                                    meta=clean({"moments": weather_rows, "attribution": attribution,
+                                                "source": source, "errors": weather_errors})))
         else:
             reason = "; ".join(weather_errors) or "no weather record for that hour"
             rows.append(_row_reason(ctx, self, target, "geo-weather", reason,
                                     status="error" if weather_errors and not any(
-                                        "future" in e or "before" in e for e in weather_errors) else "not_found"))
+                                        "future" in e or "before" in e or "no hourly record" in e for e in weather_errors) else "not_found"))
 
         # --- place, street links (webcams and street images: the optional modules below)
         place: dict[str, Any] = {}
@@ -322,6 +343,13 @@ class GeoContext(Module):
     # ------------------------------------------------------------------ sun + weather
     async def _moments(self, ctx: ModuleContext, moments: list[tuple[str, tuple[float, float], datetime]]
                        ) -> tuple[list[dict], list[dict], dict[str, Any], list[str]]:
+        """Sun and weather for each moment.
+
+        The local zone, best first: the offline zone lookup (`geo.tz`, real IANA zone), the
+        weather response's zone (Open-Meteo), the claim's own UTC offset (claim moment only: the
+        claimant stated it), else an approximate solar time from the longitude, which is never
+        called local time (`local_time` is left out, `solar_time` and `timezone_approximate` set).
+        """
         sun_rows: list[dict] = []
         weather_rows: list[dict] = []
         errors: list[str] = []
@@ -332,45 +360,92 @@ class GeoContext(Module):
             day = when.date()
             key = (lat, lon, day)
             if key not in bodies:
-                try:
-                    bodies[key] = await self._weather(ctx, lat, lon, day)
-                except (httpx.HTTPError, UpstreamError) as e:
-                    bodies[key] = None
-                    errors.append(f"weather for the {label} time: {_why(e)}")
+                body, errs = await self._weather_any(ctx, lat, lon, day)
+                bodies[key] = body
+                errors.extend(f"weather for the {label} time: {e}" for e in errs)
             body = bodies[key]
-            name = body.get("timezone") if body else None
-            offset_s = body.get("utc_offset_seconds") if body else None
-            zone, exact = _zone(name if isinstance(name, str) else None,
-                                offset_s if isinstance(offset_s, int) else None)
-            approx = False
-            if zone is None:      # no weather answer: solar time from the longitude, clearly approximate
-                zone, approx = timezone(timedelta(hours=round(lon / 15))), True
+            name: str | None = await asyncio.to_thread(zone_name_at, lat, lon)
+            zone, exact = _zone(name, None)
+            zone_source = "offline" if zone is not None else None
+            if zone is None:
+                name = None
+            if zone is None and body and body.get("_source") != "nasa-power":
+                wname = body.get("timezone")
+                offset_s = body.get("utc_offset_seconds")
+                zone, exact = _zone(wname if isinstance(wname, str) else None,
+                                    offset_s if isinstance(offset_s, int) else None)
+                if zone is not None:
+                    name, zone_source = (wname if exact else None), "weather"
+            if zone is None and label == "claim" and when.tzinfo is not None:
+                zone, zone_source = when.tzinfo, "claim"
+            approx = zone is None
+            if zone is None:      # nothing better: whole hours from the longitude, only to read a naive time
+                zone = timezone(timedelta(hours=round(lon / 15)))
             aware = when.replace(tzinfo=zone) if when.tzinfo is None else when
             utc = aware.astimezone(UTC)
             local = utc.astimezone(zone)
             if name and not tz.get("timezone"):
                 tz.update(timezone=name, exact=exact)
-            if label == "claim" and not approx:
+            if label == "claim" and zone_source in ("offline", "weather"):
                 tz["claim_offset"] = geo_claims.format_offset(local.utcoffset())
             sun = solar_position(lat, lon, utc)
+            solar = (utc + timedelta(minutes=4 * lon)).replace(tzinfo=None) if approx else None
             sun_rows.append(clean({
                 "label": label, "lat": lat, "lon": lon,
-                "local_time": local.replace(tzinfo=None).isoformat(timespec="minutes"),
-                "utc_offset": geo_claims.format_offset(local.utcoffset()),
+                "local_time": None if approx else local.replace(tzinfo=None).isoformat(timespec="minutes"),
+                "solar_time": solar.isoformat(timespec="minutes") if solar else None,
+                "utc_offset": None if approx else geo_claims.format_offset(local.utcoffset()),
                 "utc_time": utc.isoformat(timespec="minutes").replace("+00:00", "Z"),
-                "timezone": name, "timezone_approximate": approx or None, **sun.to_dict(),
+                "timezone": name, "timezone_source": zone_source,
+                "timezone_approximate": approx or None, **sun.to_dict(),
             }))
-            hour = hour_at(body, utc) if body else None
-            if hour:
-                weather_rows.append({"label": label, **hour})
+            if body:
+                hour = (nasa_hour_at(body, utc) if body.get("_source") == "nasa-power" else hour_at(body, utc))
+                if hour:
+                    weather_rows.append({"label": label, **hour,
+                                         "source": "nasa-power" if body.get("_source") == "nasa-power"
+                                         else "open-meteo"})
+                elif body.get("_source") == "nasa-power":
+                    errors.append(f"weather for the {label} time: {_nasa_missing(day)}")
         return sun_rows, weather_rows, tz, errors
+
+    async def _weather_any(self, ctx: ModuleContext, lat: float, lon: float, day: date
+                           ) -> tuple[dict[str, Any] | None, list[str]]:
+        """(body, reasons): Open-Meteo first, NASA POWER when it fails (quota, timeout, anything).
+        Answers are cached in-process per (lat, lon, day) for an hour."""
+        key = (lat, lon, day)
+        hit = _weather_cache.get(key)
+        if hit and hit[0] > time.monotonic():
+            return hit[1], []
+        today = datetime.now(UTC).date()
+        if day > today + timedelta(days=FORECAST_AHEAD_DAYS):
+            return None, ["the date is in the future, past the forecast range"]
+        if day < date(1940, 1, 2):
+            return None, ["the weather archive starts in 1940; the date is before that"]
+        reasons: list[str] = []
+        body: dict[str, Any] | None = None
+        try:
+            body = await self._weather(ctx, lat, lon, day)
+        except (httpx.HTTPError, UpstreamError) as e:
+            why = _why(e)
+            reasons.append(f"Open-Meteo: {why}" + (" (free quota used up on this server's shared address)"
+                                                   if _is_quota(e) else ""))
+            if day > today:
+                return None, reasons            # NASA POWER has no forecast
+            try:
+                body = await self._nasa_power(ctx, lat, lon, day)
+            except (httpx.HTTPError, UpstreamError) as e2:
+                reasons.append(f"NASA POWER: {_why(e2)}")
+                if day >= today - timedelta(days=NASA_LAG_DAYS):
+                    reasons.append(_nasa_missing(day))
+                return None, reasons
+        if len(_weather_cache) > 256:
+            _weather_cache.clear()
+        _weather_cache[key] = (time.monotonic() + WEATHER_CACHE_TTL_S, body)
+        return body, reasons
 
     async def _weather(self, ctx: ModuleContext, lat: float, lon: float, day: date) -> dict[str, Any]:
         today = datetime.now(UTC).date()
-        if day > today + timedelta(days=FORECAST_AHEAD_DAYS):
-            raise UpstreamError("the date is in the future, past the forecast range")
-        if day < date(1940, 1, 2):
-            raise UpstreamError("the weather archive starts in 1940; the date is before that")
         start, end = day - timedelta(days=1), min(day + timedelta(days=1), today + timedelta(days=FORECAST_AHEAD_DAYS))
         url = OPEN_METEO_ARCHIVE if end < today - timedelta(days=ARCHIVE_LAG_DAYS) else OPEN_METEO_FORECAST
         r = await ctx.http.get(url, params={
@@ -380,8 +455,29 @@ class GeoContext(Module):
         body = _json(r)
         if r.status_code != 200 or not isinstance(body, dict) or "hourly" not in body:
             reason = body.get("reason") if isinstance(body, dict) else None
+            if r.status_code == 429 and not reason:
+                reason = "HTTP 429 (request limit exceeded)"
             raise UpstreamError(str(reason or describe_http_error(r))[:200])
-        body["_source"] = "archive" if url == OPEN_METEO_ARCHIVE else "forecast"
+        body["_source"] = "open-meteo"
+        body["_api"] = "archive" if url == OPEN_METEO_ARCHIVE else "forecast"
+        return body
+
+    async def _nasa_power(self, ctx: ModuleContext, lat: float, lon: float, day: date) -> dict[str, Any]:
+        """NASA POWER hourly point data in UTC for the day before to the day after (capped at today)."""
+        today = datetime.now(UTC).date()
+        start, end = day - timedelta(days=1), min(day + timedelta(days=1), today)
+        r = await ctx.http.get(NASA_POWER_HOURLY, params={
+            "parameters": ",".join(NASA_POWER_PARAMS), "community": "RE", "longitude": lon, "latitude": lat,
+            "start": start.strftime("%Y%m%d"), "end": end.strftime("%Y%m%d"), "format": "JSON",
+            "time-standard": "UTC",
+        }, headers={"User-Agent": DEFAULT_UA}, timeout=20.0)
+        body = _json(r)
+        props = body.get("properties") if isinstance(body, dict) else None
+        if r.status_code != 200 or not isinstance(props, dict) or not isinstance(props.get("parameter"), dict):
+            msgs = body.get("messages") or body.get("detail") if isinstance(body, dict) else None
+            text = "; ".join(map(str, msgs)) if isinstance(msgs, list) else str(msgs) if msgs else None
+            raise UpstreamError(str(text or describe_http_error(r))[:200])
+        body["_source"] = "nasa-power"
         return body
 
     # ------------------------------------------------------------------ places (Nominatim)
@@ -507,6 +603,28 @@ def _why(e: Exception) -> str:
     return str(e) if isinstance(e, UpstreamError) else type(e).__name__
 
 
+def _is_quota(e: Exception) -> bool:
+    text = str(e).lower()
+    return isinstance(e, UpstreamError) and ("429" in text or "limit" in text or "quota" in text)
+
+
+def _nasa_missing(day: date) -> str:
+    return (f"NASA POWER has no hourly record for {day.isoformat()} yet: its data trail real time by several "
+            "days (cloud data by longer), so a recent date can only be checked later")
+
+
+def _time_words(row: dict[str, Any]) -> str:
+    """'08:30 local time', or 'about 06:39 solar time' when the zone is unknown (never 'local')."""
+    if row.get("local_time"):
+        words = f"{row['local_time'][11:16]} local time"
+        if row.get("timezone_source") == "claim":
+            words += f" (UTC{row.get('utc_offset')}, as the claim states)"
+        return words
+    if row.get("solar_time"):
+        return f"about {row['solar_time'][11:16]} solar time"
+    return f"{row['utc_time'][11:16]} UTC"
+
+
 def _sun_obj(row: dict[str, Any]):
     from sherlock_core.geo.solar import describe
 
@@ -610,11 +728,12 @@ class GeoStreetImages(GeoContext):
     """The nearest public street-level images (Mapillary, free client token)."""
     name = "geo_street_images"
     title = "Where and when: street-level images nearby"
-    description = ("The nearest public Mapillary street-level images within about 1 km of where a photo was taken "
-                   "or is claimed to be from, to compare buildings, signs and skyline.")
+    description = ("The nearest public Mapillary street-level images within about 300 m (widened to 1 km when "
+                   "there are none) of where a photo was taken or is claimed to be from, to compare buildings, "
+                   "signs and skyline.")
     requires_env = ("MAPILLARY_TOKEN",)
     source_url = "https://www.mapillary.com/developer/api-documentation"
-    timeout_s = 60.0
+    timeout_s = 120.0     # worker cap; two searches with one retry each at 25 s fit, plus the photo read
 
     async def run(self, target: Target, ctx: ModuleContext) -> list[dict[str, Any]]:
         token = os.getenv("MAPILLARY_TOKEN", "").strip()
@@ -624,29 +743,72 @@ class GeoStreetImages(GeoContext):
         if point is None:
             return [_row_reason(ctx, self, target, "geo-street-images", NO_LOCATION)]
         lat, lon = point
-        url = links_for(lat, lon)["mapillary"]
-        try:
-            r = await ctx.http.get(MAPILLARY_IMAGES, params={
-                "access_token": token, "fields": "id,thumb_256_url,captured_at,computed_geometry",
-                "bbox": ",".join(f"{round(v, 4):g}" for v in (lon - STREET_BOX_DEG, lat - STREET_BOX_DEG,
-                                                               lon + STREET_BOX_DEG, lat + STREET_BOX_DEG)),
-                "limit": 20,
-            }, timeout=12.0)
-        except httpx.HTTPError as e:   # never echo the request URL: it carries the token
-            return [_row_reason(ctx, self, target, "geo-street-images",
-                                f"Mapillary lookup failed: {type(e).__name__}", status="error")]
-        body = _json(r)
-        if r.status_code != 200 or not isinstance(body, dict):
-            return [_row_reason(ctx, self, target, "geo-street-images",
-                                f"Mapillary lookup failed: {describe_http_error(r)}", status="error")]
-        images = _mapillary_images(body, lat, lon)
+        links = links_for(lat, lon)
+        url = links["mapillary"]
+        images: list[dict[str, Any]] = []
+        searched = STREET_RADII_M[0]
+        started = time.monotonic()
+        for radius in STREET_RADII_M:            # small box first, widened once when empty
+            if radius != STREET_RADII_M[0] and time.monotonic() - started > 2 * MAPILLARY_TIMEOUT_S:
+                break                            # stay inside the module's time cap
+            try:
+                body = await self._mapillary(ctx, token, lat, lon, radius)
+            except _MapillaryDown as e:
+                return [self._links_only(ctx, target, links, f"Mapillary did not answer ({e}), so no street-level "
+                                         "images could be listed. Open the spot on Mapillary or Street View "
+                                         "yourself with the links.", str(e))]
+            images, searched = _mapillary_images(body, lat, lon), radius
+            if images:
+                break
+        within = _radius_words(searched)
         if not images:
             return [_row_reason(ctx, self, target, "geo-street-images",
-                                "No public street-level images within about 1 km on Mapillary.", url=url)]
+                                f"No public street-level images within {within} on Mapillary.", url=url,
+                                links=links)]
         return [ctx.finding(self, target, platform="geo-street-images", url=url,
                             extra={"note": f"{len(images)} public street-level image{'s' if len(images) != 1 else ''} "
-                                           "within about 1 km (Mapillary)."},
-                            meta={"images": images, "attribution": "Street-level images from Mapillary (CC BY-SA)"})]
+                                           f"within {within} (Mapillary)."},
+                            meta={"images": images, "radius_m": searched,
+                                  "attribution": "Street-level images from Mapillary (CC BY-SA)"})]
+
+    async def _mapillary(self, ctx: ModuleContext, token: str, lat: float, lon: float, radius_m: int
+                         ) -> dict[str, Any]:
+        """One Mapillary images search in a box of about `radius_m` around the point, retried once
+        on a timeout. Raises _MapillaryDown with a token-free reason when it cannot answer."""
+        dlat = radius_m / 111_320.0
+        dlon = dlat / max(0.01, math.cos(math.radians(lat)))
+        params = {
+            "access_token": token, "fields": "id,thumb_256_url,captured_at,computed_geometry",
+            "bbox": ",".join(f"{round(v, 4):g}" for v in (lon - dlon, lat - dlat, lon + dlon, lat + dlat)),
+            "limit": MAPILLARY_LIMIT,
+        }
+        for attempt in (1, 2):
+            try:
+                r = await ctx.http.get(MAPILLARY_IMAGES, params=params, timeout=MAPILLARY_TIMEOUT_S)
+                break
+            except httpx.TimeoutException as e:    # never echo the request URL: it carries the token
+                if attempt == 2:
+                    raise _MapillaryDown(f"{type(e).__name__}, tried twice") from None
+            except httpx.HTTPError as e:
+                raise _MapillaryDown(type(e).__name__) from None
+        body = _json(r)
+        if r.status_code != 200 or not isinstance(body, dict):
+            raise _MapillaryDown(describe_http_error(r))
+        return body
+
+    def _links_only(self, ctx: ModuleContext, target: Target, links: dict[str, str], note: str,
+                    error: str) -> dict[str, Any]:
+        return ctx.finding(self, target, platform="geo-street-images", status="not_found", url=links["mapillary"],
+                           extra={"note": note[:300]},
+                           meta={"reason": note[:300], "links": links, "images": [], "error": error[:200]})
+
+
+class _MapillaryDown(Exception):
+    """Mapillary could not answer; the message is safe to store (no token, no URL)."""
+
+
+def _radius_words(radius_m: int) -> str:
+    return f"about {radius_m // 1000} km" if radius_m >= 1000 else f"about {radius_m} m"
 
 
 GEO_MODULES = ("geo_context", "geo_webcams", "geo_street_images")

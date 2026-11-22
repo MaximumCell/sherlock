@@ -43,6 +43,9 @@ def store(monkeypatch):
     monkeypatch.setattr(geo, "LENS_POLL_S", 0.01)
     monkeypatch.setattr(geo, "LENS_WAIT_S", 0.05)
     geo._reverse_cache.clear()
+    geo._weather_cache.clear()
+    # offline zone lookup off by default (as without the optional package); tests opt in
+    monkeypatch.setattr(geo, "zone_name_at", lambda lat, lon: None)
     monkeypatch.delenv("WINDY_WEBCAMS_KEY", raising=False)
     monkeypatch.delenv("MAPILLARY_TOKEN", raising=False)
     yield s
@@ -199,13 +202,16 @@ async def test_street_images_module_needs_its_token(respx_mock, store, fxj, monk
     assert row["platform"] == "geo-street-images"
     assert [i["id"] for i in images] == ["2222222222222222", "1111111111111111"]  # nearest first
     assert images[1]["captured_on"] == "2024-06-14"
-    assert street.calls[0].request.url.params["bbox"] == "2.28,48.85,2.3,48.87"
+    q = street.calls[0].request.url.params
+    assert q["bbox"] == "2.2859,48.8573,2.2941,48.8627"                     # about 300 m first
+    assert q["limit"] == "10" and q["fields"] == "id,thumb_256_url,captured_at,computed_geometry"
+    assert street.call_count == 1 and _meta(row)["radius_m"] == 300
     assert "test-token" not in json.dumps(row)
-    # an upstream failure is a row, never an exception, and never echoes the token
+    # an upstream failure is a links-only row, never an exception, and never echoes the token
     street.mock(side_effect=httpx.ConnectError("boom https://graph.mapillary.com/?access_token=test-token"))
     async with httpx.AsyncClient() as http:
         (err,) = await mod.run(Target("image", IMG, claim), ModuleContext(case_id=case["id"], http=http))
-    assert err["status"] == "error" and "test-token" not in json.dumps(err)
+    assert err["status"] == "not_found" and "links" in _meta(err) and "test-token" not in json.dumps(err)
 
 
 async def test_optional_modules_without_location(respx_mock, store, monkeypatch):
@@ -230,10 +236,12 @@ async def test_skips_with_a_clear_note_without_location(respx_mock, store):
 async def test_upstream_failures_never_fail_the_scan(respx_mock, store):
     respx_mock.get(IMG).respond(content=_jpeg(), headers={"content-type": "image/jpeg"})
     respx_mock.get(ARCHIVE).mock(side_effect=httpx.ConnectTimeout("slow"))
+    respx_mock.get(geo.NASA_POWER_HOURLY).mock(side_effect=httpx.ReadTimeout("slow too"))
     respx_mock.get(REVERSE).respond(429, headers={"retry-after": "60"})
     _, found = await _run(store)
     rows = _rows(found)
-    assert rows["geo-weather"]["status"] == "error" and "ConnectTimeout" in _meta(rows["geo-weather"])["reason"]
+    reason = _meta(rows["geo-weather"])["reason"]
+    assert rows["geo-weather"]["status"] == "error" and "ConnectTimeout" in reason and "NASA POWER: ReadTimeout" in reason
     assert rows["geo-place"]["status"] == "error" and "429" in _meta(rows["geo-place"])["reason"]
     sun = _meta(rows["geo-sun"])["moments"][0]
     assert sun["timezone_approximate"] is True              # time zone guessed from the longitude
@@ -290,3 +298,193 @@ async def test_report_lists_the_checks_and_correlation_ignores_geo_rows(respx_mo
 def test_registered_on_the_media_queue_without_required_keys():
     mod = get_module("geo_context")
     assert mod is not None and mod.queue == "media" and mod.inputs == ("image",) and mod.requires_env == ()
+
+
+# ----------------------------------------------------------------------------- live-test fixes (v2-geofix)
+PARIS_CLAIM = {"place": "Eiffel Tower, Paris", "lat": 48.86, "lon": 2.29, "taken_at": "2025-06-14T08:30:00+02:00"}
+QUOTA = {"error": True, "reason": "Daily API request limit exceeded"}
+
+
+def _claim_sun(found):
+    rows = _rows(found)
+    return next(m for m in _meta(rows["geo-sun"])["moments"] if m["label"] == "claim"), rows
+
+
+@pytest.mark.parametrize("weather_up", [True, False])
+async def test_paris_claim_reads_0830_local_with_and_without_the_weather_service(
+        respx_mock, store, fxj, monkeypatch, weather_up):
+    monkeypatch.setattr(geo, "zone_name_at", lambda lat, lon: "Europe/Paris")
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    if weather_up:
+        respx_mock.get(ARCHIVE).respond(json=fxj("geo_openmeteo_archive"))
+    else:
+        respx_mock.get(ARCHIVE).respond(429, json=QUOTA)
+        respx_mock.get(geo.NASA_POWER_HOURLY).respond(503)
+    respx_mock.get(REVERSE).respond(json=fxj("geo_nominatim_reverse"))
+    _, found = await _run(store, claim=PARIS_CLAIM)
+    sun, rows = _claim_sun(found)
+    assert sun["local_time"] == "2025-06-14T08:30" and sun["utc_time"] == "2025-06-14T06:30Z"
+    assert sun["utc_offset"] == "+02:00" and sun["timezone"] == "Europe/Paris" and sun["timezone_source"] == "offline"
+    assert "timezone_approximate" not in sun
+    note = rows["geo-sun"]["extra_metadata"]["extra"]["note"]
+    assert note.startswith("At 08:30 local time the sun was 24° above the horizon in the E")
+    checks = {c["key"]: c for c in _meta(rows["geo-checks"])["checks"]}
+    assert checks["time_zone"]["verdict"] == "consistent"
+
+
+async def test_without_any_zone_source_the_claims_own_offset_is_used(respx_mock, store, fxj):
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    respx_mock.get(ARCHIVE).respond(429, json=QUOTA)
+    respx_mock.get(geo.NASA_POWER_HOURLY).respond(json=fxj("geo_nasa_power_hourly"))
+    respx_mock.get(REVERSE).respond(json=fxj("geo_nominatim_reverse"))
+    _, found = await _run(store, claim=PARIS_CLAIM)
+    sun, rows = _claim_sun(found)
+    assert sun["local_time"] == "2025-06-14T08:30" and sun["timezone_source"] == "claim"
+    assert "08:30 local time (UTC+02:00, as the claim states)" in rows["geo-sun"]["extra_metadata"]["extra"]["note"]
+    checks = {c["key"]: c for c in _meta(rows["geo-checks"])["checks"]}
+    assert "time_zone" not in checks            # the claim's offset is never checked against itself
+
+
+async def test_approximate_zone_is_solar_time_never_local(respx_mock, store):
+    respx_mock.get(IMG).respond(content=_jpeg(when="2025:06:14 08:30:00"), headers={"content-type": "image/jpeg"})
+    respx_mock.get(ARCHIVE).respond(429, json=QUOTA)
+    respx_mock.get(geo.NASA_POWER_HOURLY).mock(side_effect=httpx.ConnectTimeout("down"))
+    respx_mock.get(REVERSE).respond(500)
+    _, found = await _run(store)
+    rows = _rows(found)
+    sun = _meta(rows["geo-sun"])["moments"][0]
+    assert sun["timezone_approximate"] is True and "local_time" not in sun and "utc_offset" not in sun
+    assert sun["solar_time"] == "2025-06-14T08:39"               # 08:30 read as UTC+0, plus 4 min per degree east
+    note = rows["geo-sun"]["extra_metadata"]["extra"]["note"]
+    assert note.startswith("At about 08:39 solar time") and "local" not in note
+    for c in _meta(rows["geo-checks"])["checks"]:
+        if c["key"].startswith("sun_"):
+            assert "local" not in c["reason"] and "solar time" in c["reason"]
+
+
+async def test_weather_falls_back_to_nasa_power_on_a_quota_error(respx_mock, store, fxj):
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    archive = respx_mock.get(ARCHIVE).respond(429, json=QUOTA)
+    nasa = respx_mock.get(geo.NASA_POWER_HOURLY).respond(json=fxj("geo_nasa_power_hourly"))
+    respx_mock.get(REVERSE).respond(json=fxj("geo_nominatim_reverse"))
+    _, found = await _run(store, claim=PARIS_CLAIM)
+    w = _rows(found)["geo-weather"]
+    assert archive.call_count == 1 and nasa.call_count == 1 and w["status"] == "found"
+    q = nasa.calls[0].request.url.params
+    assert (q["community"], q["time-standard"], q["latitude"], q["longitude"]) == ("RE", "UTC", "48.86", "2.29")
+    assert (q["start"], q["end"]) == ("20250613", "20250615") and "CLOUD_AMT" in q["parameters"]
+    assert w["extra_metadata"]["extra"]["source"] == "nasa-power" and "NASA" in _meta(w)["attribution"]
+    (m,) = _meta(w)["moments"]
+    assert m["hour_utc"] == "2025-06-14T07:00:00Z" and m["source"] == "nasa-power"
+    assert (m["summary"], m["kind"], m["temperature_c"], m["cloud_cover"]) == ("light rain", "wet", 21.9, 98)
+    assert any("Daily API request limit exceeded" in e for e in _meta(w)["errors"])
+
+
+async def test_weather_falls_back_to_nasa_power_on_a_timeout(respx_mock, store, fxj):
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    respx_mock.get(ARCHIVE).mock(side_effect=httpx.ReadTimeout("slow"))
+    nasa = respx_mock.get(geo.NASA_POWER_HOURLY).respond(json=fxj("geo_nasa_power_hourly"))
+    respx_mock.get(REVERSE).respond(json=fxj("geo_nominatim_reverse"))
+    _, found = await _run(store, claim={**PARIS_CLAIM, "taken_at": "2025-06-14T21:40:00+02:00"})
+    w = _rows(found)["geo-weather"]
+    assert nasa.called and w["status"] == "found" and _meta(w)["source"] == "nasa-power"
+    assert _meta(w)["moments"][0]["summary"] == "cloudy"         # 19 UTC: dry, 79 % cloud amount
+
+
+async def test_weather_cache_hit_avoids_a_second_request(respx_mock, store, fxj):
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    archive = respx_mock.get(ARCHIVE).respond(json=fxj("geo_openmeteo_archive"))
+    respx_mock.get(REVERSE).respond(json=fxj("geo_nominatim_reverse"))
+    await _run(store, claim=PARIS_CLAIM)
+    _, again = await _run(store, claim={**PARIS_CLAIM, "taken_at": "2025-06-14T10:00:00+02:00"})
+    assert archive.call_count == 1 and _rows(again)["geo-weather"]["status"] == "found"
+
+
+def test_nasa_power_hour_words(fxj):
+    from datetime import UTC, datetime
+
+    from sherlock_core.geo.weather import nasa_hour_at
+
+    body = fxj("geo_nasa_power_hourly")
+    noon = nasa_hour_at(body, datetime(2025, 6, 14, 12, 10, tzinfo=UTC))
+    assert noon["summary"] == "cloudy" and noon["precipitation_mm"] == 0.0 and noon["is_day"] is True
+    params = body["properties"]["parameter"]
+    params["CLOUD_AMT"] = {k: -999.0 for k in params["CLOUD_AMT"]}         # no cloud data: sunlight proxy
+    proxy = nasa_hour_at(body, datetime(2025, 6, 14, 12, 0, tzinfo=UTC))
+    assert proxy["cloud_cover"] is None and proxy["cloud_estimate"] and proxy["summary"] in ("partly cloudy", "cloudy")
+    for col in params.values():                                             # too recent: fill values only
+        for k in col:
+            col[k] = -999.0
+    assert nasa_hour_at(body, datetime(2025, 6, 14, 12, 0, tzinfo=UTC)) is None
+
+
+async def test_too_recent_for_nasa_power_says_so(respx_mock, store, fxj):
+    from datetime import UTC, datetime, timedelta
+
+    recent = (datetime.now(UTC) - timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0)
+    body = fxj("geo_nasa_power_hourly")
+    for col in body["properties"]["parameter"].values():
+        for k in col:
+            col[k] = -999.0
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    respx_mock.get(FORECAST).respond(429, json=QUOTA)
+    respx_mock.get(geo.NASA_POWER_HOURLY).respond(json=body)
+    respx_mock.get(REVERSE).respond(json=fxj("geo_nominatim_reverse"))
+    _, found = await _run(store, claim={"lat": 48.86, "lon": 2.29, "taken_at": recent.isoformat()})
+    w = _rows(found)["geo-weather"]
+    assert w["status"] == "not_found" and "trail real time" in _meta(w)["reason"]
+
+
+async def _street_run(store, mod, claim=None):
+    case = store.create_case([{"type": "image", "value": IMG}], owner_id="u1")
+    async with httpx.AsyncClient() as http:
+        (row,) = await mod.run(Target("image", IMG, {"claim": claim or {"lat": 48.86, "lon": 2.29}}),
+                               ModuleContext(case_id=case["id"], http=http))
+    return row
+
+
+async def test_mapillary_retries_once_on_a_timeout(respx_mock, store, fxj, monkeypatch):
+    monkeypatch.setenv("MAPILLARY_TOKEN", "test-token")
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    street = respx_mock.get(geo.MAPILLARY_IMAGES)
+    street.side_effect = [httpx.ReadTimeout("slow"), httpx.Response(200, json=fxj("geo_mapillary_images"))]
+    row = await _street_run(store, get_module("geo_street_images"))
+    assert street.call_count == 2 and row["status"] == "found" and len(_meta(row)["images"]) == 2
+
+
+async def test_mapillary_widens_the_radius_once_when_empty(respx_mock, store, fxj, monkeypatch):
+    monkeypatch.setenv("MAPILLARY_TOKEN", "test-token")
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    street = respx_mock.get(geo.MAPILLARY_IMAGES)
+    street.side_effect = [httpx.Response(200, json={"data": []}),
+                          httpx.Response(200, json=fxj("geo_mapillary_images"))]
+    row = await _street_run(store, get_module("geo_street_images"))
+    assert street.call_count == 2 and row["status"] == "found" and _meta(row)["radius_m"] == 1000
+    assert street.calls[1].request.url.params["bbox"] == "2.2763,48.851,2.3037,48.869"
+    assert "about 1 km" in row["extra_metadata"]["extra"]["note"]
+    street.side_effect = None
+    street.return_value = httpx.Response(200, json={"data": []})
+    empty = await _street_run(store, get_module("geo_street_images"))
+    assert empty["status"] == "not_found" and "within about 1 km" in _meta(empty)["reason"]
+
+
+async def test_mapillary_still_down_gives_a_links_only_row(respx_mock, store, monkeypatch):
+    monkeypatch.setenv("MAPILLARY_TOKEN", "test-token")
+    respx_mock.get(IMG).respond(content=_jpeg(gps=False, when=None), headers={"content-type": "image/jpeg"})
+    street = respx_mock.get(geo.MAPILLARY_IMAGES).mock(
+        side_effect=httpx.ReadTimeout("slow https://graph.mapillary.com/images?access_token=test-token"))
+    row = await _street_run(store, get_module("geo_street_images"))
+    assert street.call_count == 2 and row["status"] == "not_found"
+    meta = _meta(row)
+    assert "ReadTimeout, tried twice" in meta["reason"] and "links" in meta["reason"]
+    assert set(meta["links"]) == {"openstreetmap", "google_maps", "google_street_view", "mapillary"}
+    assert row["extra_metadata"]["url"].startswith("https://www.mapillary.com/app/")
+    assert "test-token" not in json.dumps(row)
+
+
+def test_offline_zone_lookup_when_installed():
+    pytest.importorskip("timezonefinder")
+    from sherlock_core.geo.tz import zone_name_at
+
+    assert zone_name_at(48.86, 2.29) == "Europe/Paris"
+    assert zone_name_at(35.68, 139.69) == "Asia/Tokyo"

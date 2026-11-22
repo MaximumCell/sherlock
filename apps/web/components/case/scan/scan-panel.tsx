@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { QueueWaiting } from "./queue-waiting";
 import { ScannerStage } from "./scanner-stage";
 import { SourceRow } from "./source-row";
+import { displayTargetValue } from "@/lib/uploads";
 
 const isTargetType = (t: string): t is TargetType =>
   (TARGET_TYPES as readonly string[]).includes(t);
@@ -186,7 +187,7 @@ export function ScanPanel({
           ticker={state.ticker}
           findings={findings}
           targetType={target?.type ?? "username"}
-          targetValue={target?.value ?? ""}
+          targetValue={displayTargetValue(target?.value ?? "")}
           actions={actions}
         />
       ) : (

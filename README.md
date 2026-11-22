@@ -75,7 +75,7 @@ Render's free plan gives one shared pool of 750 instance-hours a month, 512 MB a
 | Username | WhatsMyName dataset (690 sites, own async engine), user-scanner sweep, GitHub, profile data from Bluesky, Mastodon, GitLab, Keybase, Hacker News, DEV, Docker Hub, npm, Codeberg, Lichess, Chess.com, Codeforces, Hugging Face, public activity-time fingerprint |
 | Email | Gravatar, GitHub commits, breach exposure (XposedOrNot, LeakCheck), infostealer exposure (Hudson Rock), account sweep |
 | Domain / IP | Certificate transparency (crt.sh), RDAP, DNS records with SPF and DMARC checks, Shodan InternetDB, Wayback Machine, RIPEstat |
-| Image | Metadata and perceptual hash, Google Lens via SerpApi (needs `SERPAPI_KEY`), ready-made search links |
+| Image (link or uploaded photo) | Metadata and perceptual hash, Google Lens via SerpApi (needs `SERPAPI_KEY`), ready-made search links |
 | Phone | Region, carrier and line type only |
 | Wallet | Bitcoin and EVM balance and transaction summary |
 | Name | OpenAlex, ORCID, Wikidata, GitHub user search, web search, UK Companies House (needs `COMPANIES_HOUSE_API_KEY`) |
@@ -88,7 +88,7 @@ Requirements: [uv](https://docs.astral.sh/uv/), Node 22, Docker (optional), a Su
 
 ```bash
 # 1. Database: run supabase/setup.sql in the Supabase SQL editor (existing database: run the migrations it does not have yet,
-#    e.g. supabase/migrations/0003_limits.sql), then enable Anonymous and Email sign-ins under Authentication.
+#    e.g. supabase/migrations/0004_uploads.sql), then enable Anonymous and Email sign-ins under Authentication.
 
 # 2. Backend
 cp .env.example .env            # fill in SUPABASE_URL, SUPABASE_SERVICE_KEY, INTERNAL_SECRET
@@ -124,6 +124,12 @@ CI runs all of this on every pull request.
 - **Render:** New, then Blueprint, and select this repo. [`render.yaml`](render.yaml) creates the gateway and three workers with a shared generated secret. Enter the Supabase URL and service key when asked.
 - **Vercel:** root directory `apps/web`, with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_API_URL`.
 - **GitHub secrets** `SUPABASE_URL` and `SUPABASE_ANON_KEY` let the twice-weekly keepalive workflow stop the free Supabase project from pausing.
+
+## Photo uploads
+
+The start screen takes a photo for an image search (drop, paste or "Upload a photo"; JPEG, PNG, WebP or GIF up to 8 MB; sign-in required). It goes to the private Supabase Storage bucket `media` under `uploads/<user id>/<random id>.<ext>`, readable only by its uploader; the search runs on `storage://media/uploads/...`, which the gateway accepts only from that user. Workers read it with the service key; search engines get a signed link that expires after an hour. The photo is deleted with its investigation. Matches mean the same picture, never the same face.
+
+Run [`supabase/migrations/0004_uploads.sql`](supabase/migrations/0004_uploads.sql) once (it makes the bucket private, sets the limits and adds the per-user policies). Until it has run, uploads fail with "Photo upload is not set up on this server yet"; image search by link keeps working.
 
 ## Operator panel
 

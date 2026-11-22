@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException
-from sherlock_core import config
+from sherlock_core import config, uploads
 from sherlock_core.jobs import normalize_target, plan_scan
 from sherlock_core.store import LEGACY_OUTCOME, Store, get_store, window_reset_s
 
@@ -38,6 +38,7 @@ ACTIVE_SEARCH_MESSAGE = ("Your previous search is still running. "
                          "You can start another when it finishes, or stop it.")
 BUSY_MESSAGE = "Sherlock is busy right now. Try again in a few minutes."
 BUSY_RETRY_S = 180
+UPLOAD_NOT_YOURS_MESSAGE = "This uploaded photo belongs to another account."
 _STATUS_OUTCOME = {429: "rate_limited", 403: "forbidden", 503: "paused", 401: "sign_in_required"}
 _last_purge = 0.0
 
@@ -127,7 +128,9 @@ def record_searches(store: Store, principal: Principal, origin: Origin | None, a
     for t in attempt.targets:
         row = {
             "user_id": principal.user_id, "case_id": attempt.case_id, "target_type": t["type"],
-            "target_value": t["value"], "modules": t.get("modules"), "outcome": outcome, "detail": detail,
+            # an uploaded photo is logged as "uploaded photo", never by its storage path
+            "target_value": uploads.display_target(t["type"], t["value"]),
+            "modules": t.get("modules"), "outcome": outcome, "detail": detail,
             "ip_hash": origin.ip_hash, "country": origin.country, "is_anonymous": principal.is_anonymous,
         }
         try:
@@ -190,6 +193,29 @@ def check_target_allowed(principal: Principal, target_type: str) -> None:
     if target_type == "name" and principal.is_anonymous:
         raise SearchRefused(403, "Searching by name requires a signed-in account. Sign in and try again.",
                             "forbidden")
+
+
+def check_upload_owner(principal: Principal, target_type: str, value: str) -> None:
+    """An uploaded photo (`storage://media/uploads/<uid>/...`, already normalised) may only be
+    searched by the account that uploaded it."""
+    if target_type != "image" or not uploads.is_upload(value):
+        return
+    if uploads.parse_upload(value).owner_id != principal.user_id.lower():
+        raise SearchRefused(403, UPLOAD_NOT_YOURS_MESSAGE, "forbidden")
+
+
+def remove_case(store: Store, case: Row) -> None:
+    """Delete a case and the photos uploaded for it (owner and operator deletion)."""
+    removed = uploads.delete_case_uploads(store, case)
+    store.delete_case(case["id"])
+    if removed:
+        log.info("deleted %s uploaded photo(s) with case %s", removed, case["id"])
+
+
+def case_title(identifiers: list[Row]) -> str:
+    """Default title: the first target's value ("Uploaded photo" for an upload, never its path)."""
+    first = identifiers[0]
+    return "Uploaded photo" if first["type"] == "image" and uploads.is_upload(first["value"]) else first["value"]
 
 
 @dataclass(frozen=True)
@@ -339,6 +365,7 @@ def start_scan(store: Store, principal: Principal, case_id: str, target_type: st
             params = name_params(target_type, hints)
         check_target_allowed(principal, target_type)
         planned = plan_or_400(case_id, target_type, value, modules, params=params)
+        check_upload_owner(principal, target_type, planned[0]["target_value"])
         attempt.targets = [{"type": target_type, "value": planned[0]["target_value"],
                             "modules": [j["module"] for j in planned]}]
         enforce_search_limits(store, principal, origin, [target_type], {j["queue"] for j in planned})

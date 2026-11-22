@@ -10,6 +10,7 @@ import { findingTitle, parseFinding } from "@/lib/findings";
 import { bestPlatformLabel } from "@/lib/platforms";
 import { sourceTitle } from "@/lib/sources";
 import type { Correlation, EvidenceRef, Finding, ReviewDecision } from "@/lib/types";
+import { displayTargetValue } from "@/lib/uploads";
 
 /**
  * An account the engine merged automatically because several sources or lookups
@@ -87,7 +88,7 @@ export function MergeCard({
             </button>
             <span className="min-w-0 break-words text-muted-foreground">
               {findingTitle(f)}, searched {f.identifier_type}{" "}
-              <span className="font-mono text-xs">{f.identifier_value}</span>
+              <span className="font-mono text-xs">{displayTargetValue(f.identifier_value)}</span>
               {contributions.get(f.id) ? ` · ${contributions.get(f.id)}` : ""}
             </span>
           </li>

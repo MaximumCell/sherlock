@@ -18,8 +18,10 @@ import { TARGET_TYPE_META, validateTarget } from "@/lib/validation";
 import { AckDialog } from "./ack-dialog";
 import { SearchOptions, type SearchOptionsValue } from "./search-options";
 import { TypeChip } from "./type-chip";
-import { TypewriterPlaceholder } from "./typewriter-placeholder";
 import { chipState } from "@/lib/ui/search-hints";
+import { PhotoButton, PhotoChip, PhotoRepickNotice } from "./photo-chip";
+import { SearchInput } from "./search-input";
+import { usePhotoSearch } from "./use-photo-search";
 
 export interface SmartSearchSubmit {
   type: TargetType;
@@ -33,7 +35,8 @@ export interface SmartSearchSubmit {
 /**
  * The one search box. It guesses the kind of target as you type, shows the guess as a chip
  * you can change, asks for the one-time acknowledgement, and hands a validated value to
- * `onSubmit` (which creates a case or adds a target).
+ * `onSubmit` (which creates a case or adds a target). With `allowPhoto` it also takes a photo
+ * (drop, paste or "Upload a photo"), uploads it privately and submits it as an image target.
  */
 export function SmartSearch({
   size = "hero",
@@ -46,6 +49,7 @@ export function SmartSearch({
   pending = false,
   examples,
   caseId,
+  allowPhoto = false,
   onSubmit,
 }: {
   size?: "hero" | "compact";
@@ -60,6 +64,8 @@ export function SmartSearch({
   examples?: readonly string[];
   /** The case a submission adds a target to (kept with a search saved for after sign-in). */
   caseId?: string;
+  /** Accept a photo upload (start screen). */
+  allowPhoto?: boolean;
   onSubmit: (input: SmartSearchSubmit) => void;
 }) {
   const id = useId();
@@ -74,17 +80,27 @@ export function SmartSearch({
   const [options, setOptions] = useState<SearchOptionsValue>({ title: "", tags: "", excluded: [] });
   const [error, setError] = useState<string | null>(null);
   const [ackOpen, setAckOpen] = useState(false);
-  const [queued, setQueued] = useState<SmartSearchSubmit | null>(null);
+  const [queued, setQueued] = useState<SmartSearchSubmit | "photo" | null>(null);
+  const anonymous = session.data?.anonymous ?? true;
+  const photo = usePhotoSearch({
+    enabled: allowPhoto,
+    pending,
+    onUploaded: (uploaded) =>
+      onSubmit({ type: "image", value: uploaded, hints: {}, options, modules: narrowedModules }),
+    askAcknowledgement: () => {
+      setQueued("photo");
+      setAckOpen(true);
+    },
+  });
 
   const detected = useMemo(() => detectTarget(value), [value]);
-  const type: TargetType | null = chosen ?? detected?.type ?? null;
+  const type: TargetType | null = photo.active ? "image" : (chosen ?? detected?.type ?? null);
   const chip = chipState(value, chosen, detected?.type ?? null);
   const sources = useMemo(
     () => (type ? sourcesFor(catalogue.data?.modules ?? [], type) : []),
     [catalogue.data, type],
   );
-  const needsSignIn =
-    type !== null && TARGET_TYPE_META[type].requiresSignIn && (session.data?.anonymous ?? true);
+  const needsSignIn = type !== null && TARGET_TYPE_META[type].requiresSignIn && anonymous;
 
   const setValue = (next: string) => {
     if (onValueChange) onValueChange(next);
@@ -92,8 +108,24 @@ export function SmartSearch({
     if (error) setError(null);
   };
 
+  const included = sources.filter((m) => m.available && !options.excluded.includes(m.name));
+  const narrowedModules =
+    included.length < sources.filter((m) => m.available).length
+      ? included.map((m) => m.name)
+      : undefined;
+
+  const choosePhoto = (file: File | undefined) => {
+    setError(null);
+    photo.choose(file);
+  };
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if (photo.active) {
+      if (sources.length > 0 && included.length === 0)
+        return setError("Pick at least one data source in More options.");
+      return photo.submit();
+    }
     if (!value.trim())
       return setError("Type a username, email, website, IP, phone, wallet, image link or name.");
     if (!type)
@@ -101,18 +133,16 @@ export function SmartSearch({
     const result = validateTarget(type, value);
     if (!result.ok) return setError(result.error);
     if (needsSignIn) return setError("Searching a person's name needs a signed-in account.");
-    const included = sources.filter((m) => m.available && !options.excluded.includes(m.name));
     if (sources.length > 0 && included.length === 0)
       return setError("Pick at least one data source in More options.");
-    const narrowed = included.length < sources.filter((m) => m.available).length;
     const input: SmartSearchSubmit = {
       type,
       value: result.value,
       hints,
       options,
-      modules: narrowed ? included.map((m) => m.name) : undefined,
+      modules: narrowedModules,
     };
-    if (ds.searchNeedsAccount && (session.data?.anonymous ?? true)) {
+    if (ds.searchNeedsAccount && anonymous) {
       // Keep the search for after the sign-in round trip; the resumer runs it (ack included).
       savePendingSearch({
         type,
@@ -137,6 +167,7 @@ export function SmartSearch({
 
   const hero = size === "hero";
   const errorId = `${id}-error`;
+  const shownError = error ?? photo.error;
 
   return (
     <form
@@ -145,14 +176,17 @@ export function SmartSearch({
       className="group/search w-full space-y-3"
       role="search"
       aria-label="Start a search"
+      {...photo.formProps}
     >
       <div
-        data-pending={pending || undefined}
+        data-pending={pending || photo.busy || undefined}
+        data-dragging={photo.dragging || undefined}
         className={cn(
           "relative flex items-center gap-2 border transition-[border-color,box-shadow,transform] duration-3 ease-out",
           hero
             ? "glass rounded-xl border-input p-2 pl-5 shadow-lift focus-within:border-accent/70 focus-within:shadow-glow data-[pending]:scale-[0.99] data-[pending]:border-accent data-[pending]:shadow-glow"
             : "rounded-lg border-input bg-background/60 p-1.5 pl-3 focus-within:border-accent/70 focus-within:ring-2 focus-within:ring-ring/25",
+          "data-[dragging]:border-accent data-[dragging]:border-dashed",
         )}
       >
         {hero ? (
@@ -165,35 +199,23 @@ export function SmartSearch({
           className={cn("shrink-0 text-muted-foreground", hero ? "h-5 w-5" : "h-4 w-4")}
           aria-hidden
         />
-        <div className="relative min-w-0 flex-1">
-          <input
+        {photo.active && photo.state.phase !== "idle" ? (
+          <PhotoChip state={photo.state} onChange={choosePhoto} onRemove={photo.clear} />
+        ) : (
+          <SearchInput
             id={`${id}-input`}
-            aria-label="What do you want to look into?"
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? errorId : undefined}
-            autoFocus={autoFocus}
-            autoComplete="off"
-            spellCheck={false}
+            hero={hero}
             value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={hero && examples ? "" : "Username, email, website, IP, name…"}
-            className={cn(
-              "w-full min-w-0 bg-transparent outline-none placeholder:text-muted-foreground/80 focus-visible:ring-0 focus-visible:ring-offset-0",
-              hero ? "h-12 text-lg sm:text-xl" : "h-9 text-base",
-            )}
+            onChange={setValue}
+            autoFocus={autoFocus}
+            examples={examples}
+            describedBy={shownError ? errorId : undefined}
           />
-          {hero && examples && !value ? (
-            <TypewriterPlaceholder
-              examples={examples}
-              fallback="Username, email, website, IP, name…"
-              className="pointer-events-none absolute inset-y-0 left-0 flex items-center truncate text-lg text-muted-foreground/80 sm:text-xl"
-            />
-          ) : null}
-        </div>
+        )}
         <Button
           type="submit"
           size={hero ? "lg" : "default"}
-          disabled={pending}
+          disabled={pending || photo.busy}
           className={hero ? "rounded-lg px-5" : "rounded-md"}
         >
           <span className={cn(hero ? "" : "sr-only sm:not-sr-only")}>
@@ -204,7 +226,10 @@ export function SmartSearch({
       </div>
 
       <div className="flex min-h-8 flex-wrap items-center gap-2" aria-live="polite">
-        {chip.kind !== "empty" ? (
+        {allowPhoto && !photo.active ? (
+          <PhotoButton onFile={choosePhoto} disabled={pending} />
+        ) : null}
+        {chip.kind !== "empty" && !photo.active ? (
           <TypeChip
             chip={chip}
             onChange={(next) => {
@@ -227,11 +252,12 @@ export function SmartSearch({
         </button>
       </div>
 
-      {error ? (
+      {shownError ? (
         <p id={errorId} role="alert" className="text-sm text-danger">
-          {error}
+          {shownError}
         </p>
       ) : null}
+      {photo.repick ? <PhotoRepickNotice /> : null}
 
       {type === "name" ? (
         <div className="space-y-3 text-left">
@@ -266,7 +292,8 @@ export function SmartSearch({
         onConfirm={() => {
           recordAcknowledgement();
           setAckOpen(false);
-          if (queued) onSubmit(queued);
+          if (queued === "photo") photo.run();
+          else if (queued) onSubmit(queued);
         }}
       />
     </form>

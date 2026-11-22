@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { displayTargetValue } from "@/lib/uploads";
 
 const TARGET_ICONS: Record<string, LucideIcon> = {
   username: AtSign,
@@ -39,7 +40,7 @@ export function TargetChip({
 }) {
   return (
     <span
-      title={`${type}: ${value}`}
+      title={`${type}: ${displayTargetValue(value)}`}
       className={cn(
         "inline-flex max-w-full items-center gap-1.5 rounded-[5px] border border-border bg-surface px-1.5 py-0.5 font-mono text-xs",
         className,
@@ -47,7 +48,7 @@ export function TargetChip({
     >
       <TargetIcon type={type} className="h-3 w-3 shrink-0 text-muted-foreground" />
       <span className="sr-only">{type}: </span>
-      <span className="truncate">{value}</span>
+      <span className="truncate">{displayTargetValue(value)}</span>
     </span>
   );
 }

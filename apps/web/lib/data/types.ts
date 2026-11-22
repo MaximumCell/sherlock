@@ -111,4 +111,11 @@ export interface DataSource {
   listCandidates(caseId: string): Promise<Candidate[] | null>;
   /** Records the choice; returns the entities added as pivot suggestions (no scans start). */
   confirmCandidate(caseId: string, candidateId: string): Promise<Entity[]>;
+
+  // photo uploads (private Storage bucket `media`, see lib/uploads.ts)
+  /** Uploads a checked photo to `media/uploads/<uid>/<random uuid>.<ext>`; returns the
+   *  `storage://` target value. Rejects with the Storage error (see `classifyUploadError`). */
+  uploadPhoto(file: Blob, ext: string): Promise<string>;
+  /** A short-lived URL to show an uploaded photo to its owner; null when it cannot be shown. */
+  photoUrl(value: string): Promise<string | null>;
 }

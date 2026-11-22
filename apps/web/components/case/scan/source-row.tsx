@@ -17,6 +17,7 @@ import { formatDateTime, timeAgo } from "@/lib/format";
 import type { Job, JobStatus, ModuleInfo } from "@/lib/types";
 import { sourceTitle } from "@/lib/sources";
 import { cn } from "@/lib/utils";
+import { displayTargetValue } from "@/lib/uploads";
 
 const STATE: Record<JobStatus, { label: string; icon: LucideIcon; tone: string }> = {
   queued: { label: "Waiting", icon: Clock, tone: "text-muted-foreground" },
@@ -95,8 +96,11 @@ export function SourceRow({
           >
             {outcome(job)}
             <span className="text-muted-foreground"> · </span>
-            <span className="font-mono text-xs text-muted-foreground" title={job.target_value}>
-              {job.target_value}
+            <span
+              className="font-mono text-xs text-muted-foreground"
+              title={displayTargetValue(job.target_value)}
+            >
+              {displayTargetValue(job.target_value)}
             </span>
           </p>
         </div>

@@ -33,8 +33,10 @@ from gateway.schemas import (
 )
 from gateway.service import (
     StoreDep,
+    case_title,
     check_scans_allowed,
     check_target_allowed,
+    check_upload_owner,
     consume_llm_quota,
     enforce_search_limits,
     enqueue_planned,
@@ -43,6 +45,7 @@ from gateway.service import (
     name_params,
     normalize_or_400,
     plan_or_400,
+    remove_case,
     search_attempt,
     start_scan,
 )
@@ -80,6 +83,7 @@ def create_case(body: CaseCreate, principal: CurrentPrincipal, store: StoreDep,
         for ident in body.identifiers:
             check_target_allowed(principal, ident.type)
             value = normalize_or_400(ident.type, ident.value)
+            check_upload_owner(principal, ident.type, value)
             if not any(i["type"] == ident.type and i["value"] == value for i in identifiers):
                 identifiers.append({"type": ident.type, "value": value})
 
@@ -96,7 +100,7 @@ def create_case(body: CaseCreate, principal: CurrentPrincipal, store: StoreDep,
             enforce_search_limits(store, principal, origin, [i["type"] for i in identifiers],
                                   {j["queue"] for b in batches for j in b})
 
-        title = (body.title or "").strip() or identifiers[0]["value"]
+        title = (body.title or "").strip() or case_title(identifiers)
         case = store.create_case(identifiers, owner_id=principal.user_id, title=title,
                                  tags=[t.strip() for t in body.tags if t.strip()])
         attempt.case_id = case["id"]
@@ -132,8 +136,8 @@ def update_case(case_id: str, body: CasePatch, principal: CurrentPrincipal, stor
 
 @router.delete("/{case_id}", status_code=204, response_class=Response, response_model=None)
 def delete_case(case_id: str, principal: CurrentPrincipal, store: StoreDep):
-    load_case(store, case_id, principal, write=True)
-    store.delete_case(case_id)
+    case = load_case(store, case_id, principal, write=True)
+    remove_case(store, case)
     store.log(None, "case_deleted", "user", {"case_id": case_id, "user": principal.user_id})
     return Response(status_code=204)
 

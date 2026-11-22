@@ -1,7 +1,9 @@
 """Image metadata: perceptual hash, dimensions, format, a small EXIF subset and SHA-256.
 
-The image is fetched once (8 MB cap) and discarded. GPS coordinates, when present, are
-rounded to two decimals (about 1 km). No face detection or recognition is performed.
+The image is fetched once (8 MB cap) and discarded: an http(s) URL through the capped,
+private-host-guarded download, an uploaded photo (`storage://media/uploads/...`) through the
+store with the service key. GPS coordinates, when present, are rounded to two decimals (about
+1 km). No face detection or recognition is performed.
 """
 from __future__ import annotations
 
@@ -13,12 +15,14 @@ import httpx
 import imagehash  # noqa: F401 - optional deps: ImportError => module skipped by the registry
 import PIL  # noqa: F401
 
+from sherlock_core import uploads
 from sherlock_core.modules import register
 from sherlock_core.modules._util import UpstreamError, clean, error_finding, fetch_capped, is_public_http_url
 from sherlock_core.modules.avatar_hash import open_image, phash_hex
 from sherlock_core.modules.base import Module, ModuleContext, Target
 
-MAX_IMAGE_BYTES = 8_000_000
+MAX_IMAGE_BYTES = uploads.MAX_BYTES
+GPS_NOTE = "This photo contains location data"
 _TAG_MAKE, _TAG_MODEL, _TAG_SOFTWARE, _TAG_DATETIME = 271, 272, 305, 306
 _IFD_EXIF, _IFD_GPS, _TAG_DATETIME_ORIGINAL = 0x8769, 0x8825, 36867
 
@@ -85,21 +89,30 @@ def analyse(data: bytes) -> dict[str, Any]:
 class ImageMeta(Module):
     name = "image_meta"
     title = "Image metadata and perceptual hash"
-    description = "Dimensions, format, SHA-256, perceptual hash and a small EXIF subset of an image URL."
+    description = "Dimensions, format, SHA-256, perceptual hash and a small EXIF subset of an image URL or uploaded photo."
     inputs = ("image",)
     queue = "media"
     timeout_s = 60.0
 
     async def run(self, target: Target, ctx: ModuleContext) -> list[dict[str, Any]]:
-        url = target.value.strip()
-        if not is_public_http_url(url):
-            return [error_finding(ctx, self, target, "image", "not a public http(s) image URL")]
-        try:
-            data, content_type = await fetch_capped(ctx.http, url, max_bytes=MAX_IMAGE_BYTES, timeout=20.0)
-        except UpstreamError as e:
-            return [error_finding(ctx, self, target, "image", f"could not fetch image: {e}", url=url)]
-        except httpx.HTTPError as e:
-            return [error_finding(ctx, self, target, "image", f"could not fetch image: {type(e).__name__}", url=url)]
+        value = target.value.strip()
+        url: str | None = None
+        if uploads.is_upload(value):
+            try:
+                _, data = await uploads.read_upload(value, max_bytes=MAX_IMAGE_BYTES)
+            except (ValueError, uploads.UploadUnavailable) as e:
+                return [error_finding(ctx, self, target, "image", str(e))]
+            content_type = None
+        else:
+            url = value
+            if not is_public_http_url(url):
+                return [error_finding(ctx, self, target, "image", "not a public http(s) image URL")]
+            try:
+                data, content_type = await fetch_capped(ctx.http, url, max_bytes=MAX_IMAGE_BYTES, timeout=20.0)
+            except UpstreamError as e:
+                return [error_finding(ctx, self, target, "image", f"could not fetch image: {e}", url=url)]
+            except httpx.HTTPError as e:
+                return [error_finding(ctx, self, target, "image", f"could not fetch image: {type(e).__name__}", url=url)]
         await ctx.progress(60, "image downloaded")
         sha256 = hashlib.sha256(data).hexdigest()
         try:
@@ -107,11 +120,17 @@ class ImageMeta(Module):
         except ValueError as e:
             return [error_finding(ctx, self, target, "image", str(e), url=url)]
         exif = info.pop("exif")
+        gps = bool(exif.get("gps_present"))
+        if content_type is None and info.get("format"):
+            content_type = _CONTENT_TYPES.get(str(info["format"]).upper())
         return [ctx.finding(
             self, target, platform="image", url=url,
-            extra={"avatar_phash": info.pop("phash")},
+            extra=clean({"avatar_phash": info.pop("phash"), "note": GPS_NOTE if gps else None}),
             meta=clean({
                 **info, "content_type": content_type, "size_bytes": len(data), "sha256": sha256,
-                "exif": exif, "gps_present": bool(exif.get("gps_present")),
+                "exif": exif, "gps_present": gps,
             }),
         )]
+
+
+_CONTENT_TYPES = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp", "GIF": "image/gif"}

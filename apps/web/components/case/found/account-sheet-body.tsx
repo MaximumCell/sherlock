@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { FindingDetail, ProfileSection, RelatedLinks } from "./finding-detail";
 import { Section } from "./finding-sections";
 import { sourceNames } from "./result-card";
+import { displayTargetValue } from "@/lib/uploads";
 
 const SEARCHED: Record<string, string> = {
   username: "username",
@@ -128,7 +129,9 @@ export function AccountSheetBody({
                       <span className="text-muted-foreground">
                         {" "}
                         · searched {SEARCHED[f.identifier_type] ?? f.identifier_type}{" "}
-                        <span className="font-mono text-xs">{f.identifier_value}</span>
+                        <span className="font-mono text-xs">
+                          {displayTargetValue(f.identifier_value)}
+                        </span>
                       </span>
                     </span>
                   </summary>

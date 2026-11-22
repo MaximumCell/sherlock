@@ -18,6 +18,8 @@ import { FacesStrip } from "./faces-strip";
 import { RemediationList } from "./remediation-list";
 import { ScoreCard } from "./score-card";
 import { ScoreDetails } from "./score-details";
+import { UploadedPhoto } from "./uploaded-photo";
+import { displayTargetValue, isUploadedPhoto } from "@/lib/uploads";
 
 function KeyNumber({
   label,
@@ -75,7 +77,7 @@ export function SummarySection({
   const progress = sourceProgress(jobs);
   const results = findings.filter((f) => f.status === "found").length;
   const sentence = buildSummarySentence({
-    subject: c.identifiers[0]?.value ?? caseDisplayTitle(c),
+    subject: c.identifiers[0] ? displayTargetValue(c.identifiers[0].value) : caseDisplayTitle(c),
     accounts,
     results,
     sources: stats.platformsChecked,
@@ -84,6 +86,7 @@ export function SummarySection({
     scanning: progress.scanning ? { done: progress.done, total: progress.total } : null,
   });
   const steps = useMemo(() => prioritisedSteps(exposure.data?.factors ?? []), [exposure.data]);
+  const upload = c.identifiers.find((i) => i.type === "image" && isUploadedPhoto(i.value));
 
   return (
     <CaseSection id="summary" title="Summary">
@@ -98,6 +101,7 @@ export function SummarySection({
             {sentence}
           </p>
         )}
+        {upload ? <UploadedPhoto value={upload.value} findings={findings} /> : null}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
           <div className="xl:col-span-4 xl:row-span-2">
             <ScoreCard

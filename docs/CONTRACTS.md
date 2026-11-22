@@ -9,7 +9,7 @@ apps/web                     Next.js app (Vercel)
 services/gateway/gateway     FastAPI: commands, auth, rate limits, agent, report
 services/worker/worker       Queue worker, deployed once per queue (WORKER_QUEUE)
 packages/core/sherlock_core  Shared: config, models, store, modules, correlation
-supabase/migrations          Versioned SQL (0001_v2.sql is the v2 schema, 0002_admin.sql the operator panel, 0003_limits.sql search limits + fair claims)
+supabase/migrations          Versioned SQL (0001_v2.sql is the v2 schema, 0002_admin.sql the operator panel, 0003_limits.sql search limits + fair claims, 0004_uploads.sql private photo uploads)
 ```
 
 Python packages: `sherlock_core`, `gateway`, `worker` (uv workspace, Python 3.11).
@@ -26,6 +26,18 @@ Run tests with `uv run pytest`. Tests are offline: use `MemoryStore` and `respx`
 ## Storage: `sherlock_core.store`
 
 `get_store()` returns the process-wide `Store`. `SupabaseStore` for real use, `MemoryStore` for tests (`set_store(MemoryStore())`). The method docstrings on `Store` are the contract. Do not call Supabase from anywhere else in Python.
+
+Object storage (uploaded photos, service key): `download_object(bucket, path, max_bytes=)` (LookupError when missing, ValueError when larger), `create_signed_url(bucket, path, expires_s)`, `delete_objects(bucket, paths)`. `MemoryStore` keeps bytes in `objects` (`put_object` for tests).
+
+## Uploaded photos (`sherlock_core.uploads`)
+
+- Bucket `media` is private (0004_uploads.sql: 8 MB, image/jpeg, image/png, image/webp, image/gif). Storage policies let a signed-in user insert, select and delete only under `uploads/<auth.uid()>/`.
+- The browser uploads with the Supabase client to `uploads/<uid>/<random uuid>.<ext>` (never the original file name) and searches `{"type": "image", "value": "storage://media/uploads/<uid>/<uuid>.<ext>"}`.
+- `normalize_target("image", ...)` accepts exactly that shape (anything else, traversal and other buckets included, is 400). The gateway accepts it only when `<uid>` is the caller's user id: otherwise 403 `This uploaded photo belongs to another account.` (outcome `forbidden`). http(s) URLs are unchanged.
+- The path stays on the case (`identifiers`, job `target_value`, entities). The default case title is "Uploaded photo". `search_log.target_value` is `"uploaded photo"`, never the path; operator target counts and the shared-target flag leave it out.
+- `image_meta` reads the object through the store (same 8 MB cap); with GPS it adds `extra.note = "This photo contains location data"` (coordinates stay rounded and are never shown). `reverse_image_links` and `reverse_image` sign a one-hour URL; it only lives inside the links finding (`extra.note` says the links stop working after an hour, `expires_s: 3600`) and the SerpApi request, never in logs, job rows or error reasons.
+- Deleting a case (`DELETE /cases/{id}` or `DELETE /admin/cases/{id}`) deletes its owner's uploaded objects first (`delete_case_uploads`); a storage failure is logged and the case is still deleted.
+- Web: `DataSource.uploadPhoto(file, ext)` and `photoUrl(value)` (signed URL for the owner; fixtures use an object URL). A Storage permission error before 0004 has run reads "Photo upload is not set up on this server yet".
 
 ## Finding row (`sherlock_core.models.make_finding`)
 

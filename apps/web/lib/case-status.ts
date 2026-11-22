@@ -1,3 +1,4 @@
+import { displayTargetValue } from "./uploads";
 import type { Case, Job, JobStatus } from "./types";
 
 export type CaseStatusKind = "archived" | "scanning" | "needs_review" | "idle";
@@ -72,5 +73,6 @@ export function caseDisplayTitle(c: Pick<Case, "title" | "identifiers">): string
   const first = c.identifiers[0];
   if (!first) return "Untitled case";
   const more = c.identifiers.length - 1;
-  return more > 0 ? `${first.value} +${more}` : first.value;
+  const label = displayTargetValue(first.value);
+  return more > 0 ? `${label} +${more}` : label;
 }

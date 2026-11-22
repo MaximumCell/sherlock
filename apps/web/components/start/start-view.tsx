@@ -92,7 +92,7 @@ export function StartView() {
               </h1>
               <p className="max-w-xl text-lg text-muted-foreground">
                 Search what is public about a username, email, website, IP, phone, wallet, image or
-                name. You decide what is real.
+                name, or upload a photo. You decide what is real.
               </p>
             </div>
             <SmartSearch
@@ -102,6 +102,7 @@ export function StartView() {
               autoFocus
               examples={TYPED}
               pending={start.pending}
+              allowPhoto
               onSubmit={start.submit}
             />
             <div className="space-y-5">

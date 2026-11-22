@@ -27,7 +27,8 @@ import { scoreFixtureCase } from "./exposure";
 import { entitiesForCandidate, syntheticCandidates } from "./people";
 import { renderFixtureReport } from "./report";
 import { FIXTURE_USER_ID, createFixtureState, type FixtureState } from "./state";
-import { progressNote, syntheticFindings } from "./synthetic";
+import { progressNote, syntheticFindings, type FixturePhoto } from "./synthetic";
+import { hasExifGps, photoObjectPath, photoPath, photoTarget } from "../../uploads";
 
 export interface FixtureOptions {
   /** Artificial latency per call, to exercise loading states. */
@@ -62,6 +63,8 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
   const needsAccount = options.requireSignIn ?? fixtureSignInRequired(env.fixtureRequireSignIn);
   /** Cases whose search waits behind invented searches (`demo-queued`): ticks left. */
   const held = new Map<string, number>();
+  /** Demo "uploads": the photo never leaves the browser; an object URL stands in for Storage. */
+  const photos = new Map<string, FixturePhoto & { url: string }>();
 
   /**
    * The operator's read-only view: a sandbox case as it is, or for an invented visitor case of
@@ -188,7 +191,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
     job.status = "succeeded";
     job.progress = 100;
     job.finished_at = nowIso();
-    const produced = job.params.synthetic === true ? syntheticFindings(job, now()) : [];
+    const produced = job.params.synthetic === true ? syntheticFindings(job, now(), photos.get(job.target_value)) : [];
     const fresh = produced.filter((f) => !state.findings.some((x) => x.id === f.id));
     state.findings.push(...fresh);
     fresh.forEach((f) => emit("raw_findings", "INSERT", job.case_id, f.id, f));
@@ -415,7 +418,13 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
     },
 
     async deleteCase(id) {
-      requireCase(id);
+      const doomed = requireCase(id);
+      for (const idf of doomed.identifiers) {
+        // like the gateway: the case's uploaded photos go with it
+        const photo = photos.get(idf.value);
+        if (photo) URL.revokeObjectURL(photo.url);
+        photos.delete(idf.value);
+      }
       state.cases = state.cases.filter((c) => c.id !== id);
       state.findings = state.findings.filter((f) => f.case_id !== id);
       state.correlations = state.correlations.filter((x) => x.case_id !== id);
@@ -537,6 +546,31 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       audit(caseId, "candidate_confirmed", "investigator", { candidate: chosen.label });
       touch(c);
       return respond(added);
+    },
+
+    async uploadPhoto(file, ext) {
+      if (needsAccount && session.anonymous) throw new GatewayError(401, SIGN_IN_DETAIL);
+      const head = new Uint8Array(await file.slice(0, 131_072).arrayBuffer());
+      const value = photoTarget(photoObjectPath(session.userId, crypto.randomUUID(), ext)).value;
+      let sha256: string | null = null;
+      try {
+        const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+        sha256 = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+      } catch {
+        sha256 = null; // no WebCrypto (insecure context): the demo just shows less
+      }
+      photos.set(value, {
+        size: file.size,
+        mime: file.type,
+        gps: hasExifGps(head),
+        sha256,
+        url: URL.createObjectURL(file),
+      });
+      await new Promise((resolve) => setTimeout(resolve, Math.max(latency, 0) * 4));
+      return value;
+    },
+    async photoUrl(value) {
+      return photoPath(value) ? (photos.get(value)?.url ?? null) : null;
     },
   };
 }

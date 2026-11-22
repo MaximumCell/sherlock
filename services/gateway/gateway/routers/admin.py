@@ -40,7 +40,15 @@ from gateway.schemas import (
     SessionPage,
     VisitorSession,
 )
-from gateway.service import DAY_S, SEARCH_LOG_RETENTION_DAYS, StoreDep, is_operator, is_uuid, scans_paused
+from gateway.service import (
+    DAY_S,
+    SEARCH_LOG_RETENTION_DAYS,
+    StoreDep,
+    is_operator,
+    is_uuid,
+    remove_case,
+    scans_paused,
+)
 
 log = logging.getLogger("sherlock.gateway.admin")
 Row = dict[str, Any]
@@ -291,13 +299,13 @@ def view_case(case_id: str, admin: Admin, store: StoreDep,
 
 @router.delete("/cases/{case_id}", status_code=204, response_class=Response, response_model=None)
 def delete_case(case_id: str, admin: Admin, store: StoreDep):
-    """Operator removal of a case (and its findings). The search log keeps its rows, without the case id."""
+    """Operator removal of a case (its findings and uploaded photos). The search log keeps its rows, without the case id."""
     case = store.get_case(case_id) if is_uuid(case_id) else None
     if case is None:
         raise HTTPException(404, "case not found")
     if case.get("is_demo"):
         raise HTTPException(400, "demo cases are part of the app and cannot be removed here")
-    store.delete_case(case_id)
+    remove_case(store, case)   # its uploaded photos go with it
     _audit(store, admin, "case_deleted", {"case_id": case_id, "owner_id": case.get("owner_id"),
                                           "title": case.get("title")})
     return Response(status_code=204)

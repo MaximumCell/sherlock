@@ -12,6 +12,7 @@ import { sourceTitle } from "@/lib/sources";
 import { resolvePlatform } from "@/lib/platforms";
 import { findingPlatform } from "@/lib/profile";
 import { cn } from "@/lib/utils";
+import { displayTargetValue } from "@/lib/uploads";
 
 /** The two or three facts that make a result worth a look, by kind. */
 export function keyFacts(view: FindingView): string[] {
@@ -79,7 +80,7 @@ export function ResultCard({
   const snippet = view.bio ?? view.error ?? null;
   const pinned = account.findings.some((f) => f.curated);
   const readOnly = useReadOnly();
-  const shownId = account.handle ?? primary.identifier_value;
+  const shownId = displayTargetValue(account.handle ?? primary.identifier_value);
 
   return (
     <li

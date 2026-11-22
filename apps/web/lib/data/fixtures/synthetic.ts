@@ -3,7 +3,16 @@
  * and pivot scans visibly produce data. All values are invented and reserved.
  */
 import type { Finding, FindingStatus, Job, JsonObject, JsonValue } from "../../types";
-import { avatar } from "./demo-case";
+import { avatar, geoAvatar } from "./demo-case";
+import { isUploadedPhoto } from "../../uploads";
+
+/** What the fixture "upload" learnt about a photo chosen in the demo (the file itself stays in the browser). */
+export interface FixturePhoto {
+  size: number;
+  mime: string;
+  gps: boolean | null;
+  sha256: string | null;
+}
 
 function hash(text: string): number {
   let h = 2166136261;
@@ -33,9 +42,71 @@ interface Draft {
   meta?: Record<string, JsonValue>;
 }
 
-function drafts(job: Job): Draft[] {
+/** Results for a demo search on an uploaded photo: real size and location flag, invented matches. */
+function photoDrafts(job: Job, photo: FixturePhoto | undefined, seed: number): Draft[] | null {
+  switch (job.module) {
+    case "image_meta":
+      return [
+        {
+          platform: "image",
+          url: null,
+          extra: {
+            avatar_phash: seed.toString(16).padStart(16, "a1b2c3d4"),
+            ...(photo?.gps ? { note: "This photo contains location data" } : {}),
+          },
+          meta: {
+            category: "media",
+            format: (photo?.mime.split("/")[1] ?? "jpeg").toUpperCase(),
+            content_type: photo?.mime ?? "image/jpeg",
+            size_bytes: photo?.size ?? 0,
+            ...(photo?.sha256 ? { sha256: photo.sha256 } : {}),
+            gps_present: photo?.gps === true,
+          },
+        },
+      ];
+    case "reverse_image_links": {
+      const signed = encodeURIComponent(`https://storage.example/object/sign/media/demo.jpg?token=demo-${seed % 9999}`);
+      const engines = {
+        google_lens: `https://lens.google.com/uploadbyurl?url=${signed}`,
+        yandex: `https://yandex.com/images/search?rpt=imageview&url=${signed}`,
+        tineye: `https://tineye.com/search?url=${signed}`,
+        bing: `https://www.bing.com/images/search?view=detailv2&iss=sbi&q=imgurl:${signed}`,
+      };
+      return [
+        {
+          platform: "reverse-image-links",
+          url: engines.google_lens,
+          extra: {
+            links: Object.values(engines).join(", "),
+            note: "These links use a private link to your photo that stops working after an hour.",
+          },
+          meta: { engines, manual: true, expires_s: 3600 },
+        },
+      ];
+    }
+    case "reverse_image":
+      return ["Example Gallery", "Fixture Blog", "Sample Forum"].map((source, i) => ({
+        platform: "google-lens",
+        url: `https://${source.toLowerCase().replace(/\s+/g, "-")}.example/post/${(seed >> i) % 900}`,
+        meta: {
+          title: `A copy of this picture on ${source}`,
+          source,
+          thumbnail: geoAvatar((seed + i * 70) % 360, (i % 3) as 0 | 1 | 2),
+          position: i + 1,
+        },
+      }));
+    default:
+      return null;
+  }
+}
+
+function drafts(job: Job, photo?: FixturePhoto): Draft[] {
   const v = job.target_value;
   const seed = hash(`${job.module}:${v}`);
+  if (job.target_type === "image" && isUploadedPhoto(v)) {
+    const own = photoDrafts(job, photo, seed);
+    if (own) return own;
+  }
   const host = (platform: string) => platform.toLowerCase().replace(/[^a-z0-9]+/g, "");
   switch (job.module) {
     case "user_scanner":
@@ -235,8 +306,8 @@ function drafts(job: Job): Draft[] {
   }
 }
 
-export function syntheticFindings(job: Job, now: number): Finding[] {
-  return drafts(job).map((d, i) => ({
+export function syntheticFindings(job: Job, now: number, photo?: FixturePhoto): Finding[] {
+  return drafts(job, photo).map((d, i) => ({
     id: `f2${hash(`${job.id}:${i}`).toString(16).padStart(6, "0")}-0000-4000-8000-${String(i).padStart(12, "0")}`,
     case_id: job.case_id,
     identifier_type: job.target_type,

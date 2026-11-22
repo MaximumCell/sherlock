@@ -9,6 +9,8 @@ from collections.abc import Iterable
 from datetime import date, datetime, timedelta
 from typing import Any, Literal
 
+from sherlock_core.store import is_upload_placeholder
+
 Row = dict[str, Any]
 Severity = Literal["high", "medium", "low"]
 
@@ -93,6 +95,8 @@ def session_flags(searches: list[Row], *, ip_hash: str | None,
 def target_session_counts(searches: Iterable[Row]) -> dict[tuple[str, str], int]:
     seen: dict[tuple[str, str], set[str]] = {}
     for r in searches:
+        if is_upload_placeholder(r):   # every uploaded photo is logged as "uploaded photo"
+            continue
         seen.setdefault((r["target_type"], r["target_value"]), set()).add(str(r["user_id"]))
     return {k: len(v) for k, v in seen.items()}
 

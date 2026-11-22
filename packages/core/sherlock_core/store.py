@@ -193,6 +193,19 @@ class Store:
         """Number of queued or running jobs."""
         raise NotImplementedError
 
+    # ---- object storage (uploaded photos; service key, so Storage policies do not apply)
+    def download_object(self, bucket: str, path: str, *, max_bytes: int) -> bytes:
+        """The object's bytes. Raises LookupError when it does not exist and ValueError when it is
+        larger than `max_bytes` (never returns more than that)."""
+        raise NotImplementedError
+    def create_signed_url(self, bucket: str, path: str, expires_s: int) -> str:
+        """A URL anyone can GET the object from for `expires_s` seconds. Raises LookupError when the
+        object does not exist. Never log or store the result outside the finding that needs it."""
+        raise NotImplementedError
+    def delete_objects(self, bucket: str, paths: list[str]) -> int:
+        """Delete objects (missing ones are ignored). Returns how many were deleted."""
+        raise NotImplementedError
+
     def search_stats(self, since: str, *, max_rows: int = 20000) -> Row:
         """Aggregates of search_log rows created since `since` (UTC days):
         `{rows, sessions (distinct user ids), truncated, by_day: {YYYY-MM-DD: {outcome: n}}, by_type: {type: n},
@@ -210,6 +223,13 @@ LEGACY_OUTCOME = {"burst_limited": "rate_limited", "active_search": "rate_limite
                   "sign_in_required": "forbidden"}
 USER_AGENT_MAX = 300
 TARGET_MAX = 300
+# search_log's stand-in for an uploaded photo (never its storage path). Every upload logs the same
+# value, so it is not a comparable target: left out of `targets` and of shared-target flags.
+UPLOAD_DISPLAY_VALUE = "uploaded photo"
+
+
+def is_upload_placeholder(row: Row) -> bool:
+    return row.get("target_type") == "image" and row.get("target_value") == UPLOAD_DISPLAY_VALUE
 
 
 def aggregate_searches(rows: list[Row], *, truncated: bool = False) -> Row:
@@ -224,6 +244,8 @@ def aggregate_searches(rows: list[Row], *, truncated: bool = False) -> Row:
         by_day[day][r["outcome"]] = by_day[day].get(r["outcome"], 0) + 1
         by_type[r["target_type"]] = by_type.get(r["target_type"], 0) + 1
         by_outcome[r["outcome"]] = by_outcome.get(r["outcome"], 0) + 1
+        if is_upload_placeholder(r):
+            continue
         t = targets.setdefault((r["target_type"], r["target_value"]), {"count": 0, "sessions": set()})
         t["count"] += 1
         t["sessions"].add(str(r["user_id"]))
@@ -651,6 +673,42 @@ class SupabaseStore(Store):
         return int(res.count or 0)
 
 
+    # ---- object storage
+    @staticmethod
+    def _storage_missing(e: Exception) -> bool:
+        text = f"{getattr(e, 'status', '')} {getattr(e, 'code', '')} {e}".lower()
+        return "not found" in text or "404" in text
+
+    def download_object(self, bucket, path, *, max_bytes):
+        try:
+            data = self.c.storage.from_(bucket).download(path)
+        except Exception as e:
+            if self._storage_missing(e):
+                raise LookupError(f"{bucket}/{path} does not exist") from e
+            raise
+        if len(data) > max_bytes:   # the bucket's file_size_limit normally prevents this
+            raise ValueError(f"larger than {max_bytes} bytes")
+        return bytes(data)
+
+    def create_signed_url(self, bucket, path, expires_s):
+        try:
+            res = self.c.storage.from_(bucket).create_signed_url(path, int(expires_s))
+        except Exception as e:
+            if self._storage_missing(e):
+                raise LookupError(f"{bucket}/{path} does not exist") from e
+            raise
+        url = (res or {}).get("signedURL") or (res or {}).get("signedUrl")
+        if not url:
+            raise LookupError(f"{bucket}/{path} does not exist")
+        return str(url)
+
+    def delete_objects(self, bucket, paths):
+        if not paths:
+            return 0
+        removed = self.c.storage.from_(bucket).remove(list(paths))
+        return len(removed or [])
+
+
 class MemoryStore(Store):
     """In-memory Store with the same semantics, for offline tests."""
 
@@ -665,6 +723,7 @@ class MemoryStore(Store):
         self.sessions: dict[str, Row] = {}
         self.search_log: list[Row] = []
         self.settings: dict[str, Row] = {}
+        self.objects: dict[tuple[str, str], bytes] = {}   # (bucket, path) -> bytes
         self._purged = 0
         self.stale_seconds = config.JOB_STALE_SECONDS
 
@@ -1013,6 +1072,31 @@ class MemoryStore(Store):
 
     def count_active_jobs(self):
         return sum(1 for j in self.jobs.values() if j["status"] in ("queued", "running"))
+
+    # ---- object storage
+    def put_object(self, bucket: str, path: str, data: bytes) -> None:
+        """Tests: what a browser upload would have stored."""
+        self.objects[(bucket, path)] = bytes(data)
+
+    def download_object(self, bucket, path, *, max_bytes):
+        data = self.objects.get((bucket, path))
+        if data is None:
+            raise LookupError(f"{bucket}/{path} does not exist")
+        if len(data) > max_bytes:
+            raise ValueError(f"larger than {max_bytes} bytes")
+        return data
+
+    def create_signed_url(self, bucket, path, expires_s):
+        if (bucket, path) not in self.objects:
+            raise LookupError(f"{bucket}/{path} does not exist")
+        return f"https://storage.test/object/sign/{bucket}/{path}?token=signed-{uuid.uuid4().hex[:12]}&expires={int(expires_s)}"
+
+    def delete_objects(self, bucket, paths):
+        n = 0
+        for p in paths:
+            if self.objects.pop((bucket, p), None) is not None:
+                n += 1
+        return n
 
 
 _store: Store | None = None

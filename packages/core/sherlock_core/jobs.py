@@ -22,7 +22,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from sherlock_core import config, modules
+from sherlock_core import config, modules, uploads
 from sherlock_core import correlation as _correlation
 from sherlock_core.models import TARGET_TYPES
 from sherlock_core.modules.base import ModuleContext, Target, new_http_client
@@ -113,10 +113,12 @@ def normalize_target(target_type: str, value: str) -> str:
         return v
 
     if target_type == "image":
+        if uploads.is_upload(v):     # a photo the user uploaded; the gateway checks it is theirs
+            return uploads.parse_upload(v).value
         parts = urlsplit(v)
         host = (parts.hostname or "").lower()
         if parts.scheme not in ("http", "https") or not host:
-            raise ValueError("image must be an http(s) URL")
+            raise ValueError("image must be an http(s) URL or an uploaded photo")
         ip = _public_ip(host)
         if host == "localhost" or host.endswith((".localhost", ".local", ".internal")) or (ip and not ip.is_global):
             raise ValueError("image URL must point to a public host")

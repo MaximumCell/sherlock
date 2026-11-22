@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ListFilter, Pin, SearchCheck } from "lucide-react";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { CaseSection } from "../section";
 import { AccountGroupBody, MissesNote, ViewToggle, useCompactView } from "./account-group";
 import { ResultCard } from "./result-card";
+import { UncheckedSection } from "./unchecked-section";
+import { uncheckedSites } from "@/lib/unchecked";
 import { CLEAR_RESULT_FILTERS, ResultsExplorer } from "./results-explorer";
 
 const HIGHLIGHTS = 6;
@@ -133,6 +135,7 @@ export function FoundSection({
   const curate = useCurate(caseId);
   const [compact, setCompact] = useCompactView();
   const groups = useMemo(() => groupFindings(findings, correlations), [findings, correlations]);
+  const unchecked = useMemo(() => uncheckedSites(findings), [findings]);
   const explorerOpen = FILTER_KEYS.some((k) => params.get(k));
   const pinned = findings.filter((f) => f.curated).length;
   const found = groups.reduce((n, g) => n + g.items.length, 0);
@@ -215,22 +218,28 @@ export function FoundSection({
               </p>
             ) : (
               groups.map((g) => (
-                <GroupBlock
-                  key={g.id}
-                  group={g}
-                  misses={missedPlatforms(findings, g)}
-                  compact={compact}
-                  onCompact={setCompact}
-                  onShowAll={() =>
-                    openExplorer({
-                      group: g.id,
-                      show: g.misses ? "all" : null,
-                    })
-                  }
-                  onOpen={(id) => set({ finding: id })}
-                  onPin={(id, p) => curate.mutate({ findingId: id, curated: p })}
-                />
+                <Fragment key={g.id}>
+                  <GroupBlock
+                    group={g}
+                    misses={missedPlatforms(findings, g)}
+                    compact={compact}
+                    onCompact={setCompact}
+                    onShowAll={() =>
+                      openExplorer({
+                        group: g.id,
+                        show: g.misses ? "all" : null,
+                      })
+                    }
+                    onOpen={(id) => set({ finding: id })}
+                    onPin={(id, p) => curate.mutate({ findingId: id, curated: p })}
+                  />
+                  {/* right under the accounts it qualifies */}
+                  {g.id === "accounts" ? <UncheckedSection sites={unchecked} /> : null}
+                </Fragment>
               ))
+            )}
+            {groups.some((g) => g.id === "accounts") ? null : (
+              <UncheckedSection sites={unchecked} />
             )}
           </div>
         </div>

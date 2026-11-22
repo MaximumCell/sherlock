@@ -72,7 +72,7 @@ Render's free plan gives one shared pool of 750 instance-hours a month, 512 MB a
 
 | Target | Sources |
 |---|---|
-| Username | WhatsMyName dataset (690 sites, own async engine), user-scanner sweep, GitHub, profile data from Bluesky, Mastodon, GitLab, Keybase, Hacker News, DEV, Docker Hub, npm, Codeberg, Lichess, Chess.com, Codeforces, Hugging Face, public activity-time fingerprint |
+| Username | WhatsMyName dataset (690 sites, own async engine; only rules that pass the rule health check run), user-scanner checks for ~70 well-known platforms (Instagram, Facebook, TikTok, Threads, LinkedIn, Snapchat, X, YouTube...; the full 2,500-site sweep with `USER_SCANNER_USERNAMES=1`), GitHub, profile data from Bluesky, Mastodon, GitLab, Keybase, Hacker News, DEV, Docker Hub, npm, Codeberg, Lichess, Chess.com, Codeforces, Hugging Face, public activity-time fingerprint |
 | Email | Gravatar, GitHub commits, breach exposure (XposedOrNot, LeakCheck), infostealer exposure (Hudson Rock), account sweep |
 | Domain / IP | Certificate transparency (crt.sh), RDAP, DNS records with SPF and DMARC checks, Shodan InternetDB, Wayback Machine, RIPEstat |
 | Image (link or uploaded photo) | Metadata and perceptual hash, Google Lens via SerpApi (needs `SERPAPI_KEY`), ready-made search links |
@@ -158,6 +158,9 @@ To use it for real:
 - The first scan after an idle period waits about a minute for Render to wake the services.
 - One worker per queue on 0.1 CPU: when several people search at once, later searches wait. The scan panel then says "Waiting for other searches to finish · N ahead of you" with a rough estimate. Memory under 3 concurrent jobs is bounded by design (one heavy module at a time, shared download limit) but was not measured on a 512 MB instance.
 - Free sources rate-limit and occasionally block datacentre IPs; a blocked source shows as an error finding and the rest of the scan continues.
+- Instagram, Facebook, TikTok and LinkedIn cannot be checked reliably by opening the profile page anonymously: Instagram, Facebook and Threads show every logged-out visitor the same page whether the account exists or not, TikTok's profile page is the same shell for every name, and LinkedIn answers many anonymous requests with a bot block (HTTP 999). Sherlock never uses logged-in accounts, fake accounts, paid proxies or third-party "viewer" sites. It asks the user-scanner library's own checks for these platforms, and when those give no clear answer (blocked, rate limited, private-looking) the platform is listed under "Couldn't check automatically" with a link to open the profile yourself. Sherlock says so instead of guessing; such a site is never counted as found or not found.
+- The WhatsMyName dataset is no longer maintained (archived 2026-11-09) and its rules rot as sites change. `uv run python -m sherlock_core.data.rule_health` re-checks every rule against the site's own known accounts and a made-up name and writes `packages/core/sherlock_core/data/rule_health.json`; only rules marked `ok` run (369 of 690 on 2026-11-22, from a home connection; a datacentre run would disable more). Re-run it now and then and commit the file.
+- From datacentre IPs many sites answer with walls or landing pages that look like "this account exists". When the profile preview already fetched such a page for a WhatsMyName or user-scanner hit, the hit is shown as "couldn't check" instead of found. Only the first 40 hits get a preview, so some false positives can remain.
 - Existence checks say an account exists, not who owns it. Links come from profile data, so sparse profiles produce few correlations.
 - Keyless web search for name lookups is best-effort. A SerpApi key (250 free searches a month) makes it reliable.
 

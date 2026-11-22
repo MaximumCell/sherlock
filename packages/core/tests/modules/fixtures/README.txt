@@ -22,3 +22,7 @@ previews/*.html     real anonymous GETs of public organisational / brand profile
                     and trimmed to the tags a preview reads: <title>, og:/twitter:/profile:
                     meta, canonical, Person/ProfilePage JSON-LD and rel="me" links, verbatim.
                     Walls / blocks: replit, strava, lastfm, reddit, tiktok, pinterest.
+
+walled/instagram_shell.html  real logged-out answer of an Instagram profile URL (2026-11-22,
+                    home connection), trimmed around the `"routePath":null` marker; the
+                    same shell comes back for /nasa/ and for a made-up name

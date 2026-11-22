@@ -26,6 +26,7 @@ import { QueueWaiting } from "./queue-waiting";
 import { ScannerStage } from "./scanner-stage";
 import { SourceRow } from "./source-row";
 import { displayTargetValue } from "@/lib/uploads";
+import { coverageText, foundSiteCount, uncheckedSites } from "@/lib/unchecked";
 
 const isTargetType = (t: string): t is TargetType =>
   (TARGET_TYPES as readonly string[]).includes(t);
@@ -118,13 +119,17 @@ export function ScanPanel({
     [jobs],
   );
 
+  const coverage = useMemo(
+    () => coverageText(foundSiteCount(findings), uncheckedSites(findings).length),
+    [findings],
+  );
   const headline = loading
     ? "Loading scan progress…"
     : jobs.length === 0
       ? "No search has run yet"
       : p.scanning
         ? `Scanning · ${sourceProgressText(p)}`
-        : `Scan finished · ${jobs.length} source${jobs.length === 1 ? "" : "s"} checked · ${state.found} found${p.failed ? ` · ${p.failed} could not be checked` : ""}`;
+        : `Scan finished · ${jobs.length} source${jobs.length === 1 ? "" : "s"} checked · ${coverage}${p.failed ? ` · ${p.failed} source${p.failed === 1 ? "" : "s"} failed` : ""}`;
 
   const actions = (
     <>
@@ -203,9 +208,12 @@ export function ScanPanel({
             </p>
             {jobs.length ? (
               <p className="text-sm text-muted-foreground" aria-hidden>
-                {jobs.length} source{jobs.length === 1 ? "" : "s"} checked · {state.found} found
+                {jobs.length} source{jobs.length === 1 ? "" : "s"} checked · {coverage}
                 {p.failed ? (
-                  <span className="text-warning"> · {p.failed} could not be checked</span>
+                  <span className="text-warning">
+                    {" "}
+                    · {p.failed} source{p.failed === 1 ? "" : "s"} failed
+                  </span>
                 ) : null}
               </p>
             ) : null}

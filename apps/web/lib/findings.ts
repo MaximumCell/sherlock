@@ -129,6 +129,10 @@ const KNOWN_META = new Set([
   "error",
   "curated",
   "summary",
+  // "could not be checked" rows (lib/unchecked.ts): shown as the error line, not as raw keys
+  "unknown",
+  "detail",
+  "was",
 ]);
 
 export const humanizeKey = (key: string): string => key.replace(/_/g, " ");
@@ -153,6 +157,7 @@ export function parseFinding(f: Finding): FindingView {
   const owned = dns || network || wallet || image || activity;
   for (const [k, v] of Object.entries(meta)) {
     if (KNOWN_META.has(k) || (owned && STRUCTURED_META.has(k))) continue;
+    if (k === "reason" && meta.unknown === true) continue;
     flattenEntries(humanizeKey(k), v, other);
   }
   const breachName = str(meta.breach_name);
@@ -186,7 +191,7 @@ export function parseFinding(f: Finding): FindingView {
     wallet,
     image,
     activity,
-    error: str(meta.error),
+    error: str(meta.error) ?? (f.status === "error" ? str(meta.detail) : null),
     other,
   };
 }

@@ -5,6 +5,7 @@ import { CountUp } from "@/components/motion/count-up";
 import { Skeleton } from "@/components/ui/skeleton";
 import { sourceProgress } from "@/lib/case-progress";
 import { buildSummarySentence } from "@/lib/case-summary";
+import { uncheckedSites } from "@/lib/unchecked";
 import { caseDisplayTitle } from "@/lib/case-status";
 import { accountsInLink, buildAccounts, linkRows } from "@/lib/accounts";
 import { countAccounts } from "@/lib/finding-groups";
@@ -83,6 +84,7 @@ export function SummarySection({
     sources: stats.platformsChecked,
     breaches: stats.breaches,
     pendingLinks: stats.pendingReviews,
+    unchecked: uncheckedSites(findings).length,
     scanning: progress.scanning ? { done: progress.done, total: progress.total } : null,
   });
   const steps = useMemo(() => prioritisedSteps(exposure.data?.factors ?? []), [exposure.data]);

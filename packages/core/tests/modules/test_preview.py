@@ -211,7 +211,9 @@ async def test_enrich_previews_end_to_end(respx_mock):
     async with httpx.AsyncClient() as http:
         out = await pv.enrich_previews(rows, http, report=report)
     assert rows == before                                     # inputs are never mutated
-    assert [r["platform"] for r in out] == ["Instagram", "Twitter"]
+    assert [r["platform"] for r in out] == ["Instagram", "Twitter", "Replit"]
+    # a sweep hit whose page is a login redirect is no longer a found account
+    assert out[2]["status"] == "error" and out[2]["extra_metadata"]["reason"] == "ambiguous"
     ig = out[0]["extra_metadata"]["extra"]
     assert ig["fullname"] == "NASA" and ig["avatar_url"].startswith("https://scontent")
     assert ig["username"] == "nasa"                           # module data kept

@@ -34,6 +34,16 @@ profile meta (rendered by JavaScript), so no preview.
     js-only  Pinterest (only og:site_name)
 Instagram / X / Facebook answered with real profile meta on this date; they change this
 often, which is what the wall gates are for. `PLATFORM_OUTCOMES` holds the same table.
+(2026-11-22: Instagram, Facebook, TikTok and Threads now answer every logged-out profile
+URL with the same shell, see `sherlock_core.walled`.)
+
+Confirmation of username-sweep hits: a `found` row from WhatsMyName or user-scanner whose
+page, fetched here anyway, turns out to be a login wall, a generic landing page or a
+redirect away from the profile (`AMBIGUOUS_REASONS`) is returned downgraded to `unknown`
+(status `error`, `reason = "ambiguous"`): datacenter clients often get such pages for
+names that do not exist, and the rules read them as "exists". No extra request is made.
+Walled platforms are exempt: their page says nothing either way, and their verdict comes
+from a check that does not read the page.
 """
 from __future__ import annotations
 
@@ -56,6 +66,7 @@ from sherlock_core.correlation.norm import NON_SOCIAL_PLATFORMS, canonical_platf
 from sherlock_core.modules._util import is_public_http_url
 from sherlock_core.modules.base import DEFAULT_UA
 from sherlock_core.modules.person_util import coarse_location
+from sherlock_core.walled import WALLED, unknown_meta
 
 log = logging.getLogger(__name__)
 
@@ -126,6 +137,27 @@ ID_CANONICAL: dict[str, re.Pattern[str]] = {
     "steamcommunity.com": re.compile(r"^/profiles/\d{17}$"),
 }
 _TITLE_SEP = re.compile(r"\s+(?:\||-|–|—|•|·|/|::|»)\s+|\s*::\s*|\s*\|\s*")
+
+
+# Modules whose `found` verdict comes from matching a page against a rule, so a wall or a
+# redirect seen by the preview means the verdict cannot be trusted.
+CONFIRM_MODULES = frozenset({"whatsmyname", "user_scanner"})
+# Gate reasons (prefixes) that mean "this was not the profile page".
+AMBIGUOUS_REASONS = ("redirected to a login / consent page", "canonical URL no longer points at the profile",
+                     "redirected away from the profile", "wall / error page")
+
+
+def needs_downgrade(f: dict[str, Any], reason: str) -> bool:
+    """Whether a preview that failed with `reason` turns this found row into an unknown one."""
+    return (f.get("module") in CONFIRM_MODULES and f.get("status") == "found"
+            and _platform(f) not in WALLED and reason.startswith(AMBIGUOUS_REASONS))
+
+
+def downgrade(f: dict[str, Any], reason: str) -> dict[str, Any]:
+    row = copy.deepcopy(f)
+    row["status"] = "error"
+    row["extra_metadata"].update(unknown_meta("ambiguous", f"profile page check: {reason}", was="found"))
+    return row
 
 
 # ----------------------------------------------------------------------------- parsing
@@ -611,7 +643,8 @@ async def enrich_previews(findings: list[dict[str, Any]], http: httpx.AsyncClien
                           budget_s: float = TOTAL_BUDGET_S,
                           report: dict[str, str] | None = None,
                           shared: asyncio.Semaphore | None = None) -> list[dict[str, Any]]:
-    """Return updated copies of the found account findings that gained preview data.
+    """Return updated copies of the found account findings that gained preview data, and
+    downgraded (unknown) copies of sweep hits whose page was not the profile (`needs_downgrade`).
 
     See the module docstring. Best effort: a page that fails, is walled, times out or is
     generic is skipped silently. Findings that gained nothing are not returned.
@@ -626,6 +659,7 @@ async def enrich_previews(findings: list[dict[str, Any]], http: httpx.AsyncClien
     host_locks: dict[str, asyncio.Lock] = {}
     blocked: set[str] = set()
     results: dict[int, tuple[dict[str, Any], str, str]] = {}
+    downgraded: dict[int, str] = {}
     self_report: dict[str, str] = report if report is not None else {}
 
     async def one(i: int, f: dict[str, Any]) -> None:
@@ -650,6 +684,8 @@ async def enrich_previews(findings: list[dict[str, Any]], http: httpx.AsyncClien
         if fields is None:
             self_report[url] = reason
             log.info("preview %s skipped: %s", url, reason)
+            if needs_downgrade(f, reason):
+                downgraded[i] = reason
             return
         results[i] = (fields, datetime.now(UTC).isoformat(), hops[-1])
 
@@ -675,4 +711,5 @@ async def enrich_previews(findings: list[dict[str, Any]], http: httpx.AsyncClien
             fields = {k: v for k, v in fields.items() if k != "avatar_url"}
         if row := _merge(todo[i], fields, fetched_at, final):
             out.append(row)
+    out.extend(downgrade(todo[i], downgraded[i]) for i in sorted(downgraded))
     return out

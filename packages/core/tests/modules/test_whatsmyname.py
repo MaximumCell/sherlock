@@ -27,6 +27,7 @@ SITES = (
 @pytest.fixture
 def sites(monkeypatch):
     monkeypatch.setattr(wmn, "load_sites", lambda: SITES)
+    monkeypatch.setattr(wmn, "load_health", lambda: {})
 
 
 def test_bundled_dataset_loads_and_skips_invalid_entries():
@@ -80,6 +81,7 @@ async def test_whatsmyname_found_rows_and_one_summary(respx_mock, run, meta, sit
     assert summary["platform"] == "whatsmyname" and summary["status"] == "found"
     assert meta(summary) == {
         "summary": True, "checked": 7, "found": 3, "not_found": 2, "inconclusive": 1, "errors": 1,
+        "unknown": 2, "disabled": 0, "covered": 0, "walled": 0,
     }
     assert len({r["finding_key"] for r in rows}) == len(rows)
 
@@ -132,3 +134,96 @@ def test_optional_dependency_modules_register_when_installed():
     ):
         pytest.importorskip(dep)
         assert get_module(name) is not None and get_module(name).queue == queue
+
+
+# ------------------------------------------------------------------ rotten rules, walled platforms, health file
+from pathlib import Path  # noqa: E402
+
+from sherlock_core.walled import is_unknown  # noqa: E402
+
+SHELL = (Path(__file__).parent / "fixtures" / "walled" / "instagram_shell.html").read_text(encoding="utf-8")
+INSTAGRAM = {  # the dataset's rule as bundled (archived 2026-11-09)
+    "name": "Instagram", "uri_check": "https://www.instagram.com/{account}/", "e_code": 200,
+    "e_string": "Posts - See Instagram photos and videos from", "m_string": '"routePath":null', "m_code": 200,
+    "known": ["jennaortega", "cristiano"], "cat": "social",
+}
+GITHUB = {"name": "GitHub", "uri_check": "https://github.com/{account}", "e_code": 200, "e_string": "x",
+          "m_code": 404, "m_string": "y", "cat": "coding"}
+
+
+def test_the_instagram_shell_fools_the_old_rule():
+    """Why the rule is never run: the login shell reads as "missing" for every name, nasa included."""
+    assert classify(INSTAGRAM, 200, SHELL.replace("{account}", "nasa")) == "not_found"
+
+
+async def test_instagram_shell_is_unknown_never_not_found(respx_mock, run, meta, monkeypatch):
+    monkeypatch.setattr(wmn, "load_sites", lambda: (INSTAGRAM, SITES[0]))
+    monkeypatch.setattr(wmn, "load_health", lambda: {})
+    monkeypatch.setattr(wmn, "covered_elsewhere", lambda: frozenset())   # no user-scanner
+    ig = respx_mock.get("https://www.instagram.com/someone/").respond(html=SHELL.replace("{account}", "someone"))
+    respx_mock.get("https://alpha.example/u/someone").respond(404, text="Not Found")
+    rows = await run("whatsmyname", "username", "someone")
+    assert not ig.called                                    # the rotten rule is not even asked
+    walled = [r for r in rows if r["platform"] in ("Instagram", "Facebook", "Threads")]
+    assert {r["platform"] for r in walled} == {"Instagram", "Facebook", "Threads"}
+    assert all(r["status"] == "error" and is_unknown(r) and meta(r)["reason"] == "login_wall" for r in walled)
+    by = {r["platform"]: r for r in walled}
+    assert by["Instagram"]["extra_metadata"]["url"] == "https://www.instagram.com/someone/"
+    assert by["Threads"]["extra_metadata"]["url"] == "https://www.threads.com/@someone"
+    assert "signed-in" in meta(by["Instagram"])["detail"]
+    summary = rows[-1]
+    assert meta(summary)["not_found"] == 1 and meta(summary)["walled"] == 3 and meta(summary)["covered"] == 1
+    assert all(r["status"] != "not_found" for r in rows[:-1])
+
+
+async def test_platforms_user_scanner_checks_are_skipped(respx_mock, run, meta, monkeypatch):
+    monkeypatch.setattr(wmn, "load_sites", lambda: (INSTAGRAM, GITHUB, SITES[0]))
+    monkeypatch.setattr(wmn, "load_health", lambda: {})
+    monkeypatch.setattr(wmn, "covered_elsewhere", lambda: frozenset({"instagram", "facebook", "threads", "github"}))
+    ig = respx_mock.get("https://www.instagram.com/someone/").respond(200, text="x")
+    gh = respx_mock.get("https://github.com/someone").respond(200, text="x")
+    respx_mock.get("https://alpha.example/u/someone").respond(404, text="Not Found")
+    rows = await run("whatsmyname", "username", "someone")
+    assert not ig.called and not gh.called
+    assert [r["platform"] for r in rows] == ["whatsmyname"]          # no walled rows: user-scanner checks them
+    assert meta(rows[0])["covered"] == 2 and meta(rows[0])["checked"] == 1
+
+
+def test_covered_elsewhere_follows_the_user_scanner_module():
+    pytest.importorskip("user_scanner")
+    assert {"instagram", "facebook", "threads", "linkedin"} <= wmn.covered_elsewhere()
+
+
+async def test_rules_not_marked_ok_are_skipped_and_counted(respx_mock, run, meta, monkeypatch, sites):
+    health = {"Alpha": {"status": "ok"}, "Beta": {"status": "false_negative"}, "Gamma": {"status": "indistinguishable"},
+              "Delta": {"status": "error"}, "Slow": {"status": "false_positive"}}   # Walled, Adult: not in the file
+    monkeypatch.setattr(wmn, "load_health", lambda: health)
+    route = respx_mock.route(host__regex=r".*\.example").respond(404, text="Not Found missing y")
+    rows = await run("whatsmyname", "username", "exampleuser")
+    hosts = {c.request.url.host for c in route.calls}
+    assert hosts == {"alpha.example", "walled.example", "adult.example"}
+    assert meta(rows[-1])["disabled"] == 4 and meta(rows[-1])["checked"] == 3
+    assert all(not is_unknown(r) for r in rows)              # silently skipped: not shown as unknown
+
+
+def test_health_file_missing_runs_every_rule(monkeypatch):
+    class Missing:
+        def joinpath(self, name):
+            raise FileNotFoundError(name)
+
+    wmn.load_health.cache_clear()
+    monkeypatch.setattr(wmn.resources, "files", lambda pkg: Missing())
+    try:
+        assert wmn.load_health() == {}
+        assert wmn.rule_enabled(GITHUB) is True
+    finally:
+        wmn.load_health.cache_clear()
+
+
+def test_bundled_health_file_disables_the_rotten_instagram_rule():
+    wmn.load_health.cache_clear()
+    health = wmn.load_health()
+    assert len(health) > 600
+    assert health["Instagram"]["status"] != "ok" and not wmn.rule_enabled(INSTAGRAM)
+    counts = wmn.health_counts()
+    assert sum(counts.values()) == len(health) and counts.get("ok", 0) > 0

@@ -14,6 +14,7 @@ from typing import Any
 from sherlock_core.correlation import summarize
 from sherlock_core.correlation.accounts import group_accounts
 from sherlock_core.store import Store, get_store
+from sherlock_core.walled import is_unknown
 
 MAX_PER_PLATFORM = 25
 MAX_LIST = 20
@@ -72,8 +73,12 @@ def generate_markdown(case_id: str, store: Store | None = None) -> str:
     out.append("")
 
     out.append("## Summary\n")
+    unknown = f"{stats['unknown']} could not be checked, " if stats["unknown"] else ""
     out.append(f"- Checks run: {stats['total']} ({stats['found']} found, {stats['not_found']} not found, "
-               f"{stats['error']} errors)")
+               f"{unknown}{stats['error'] - stats['unknown']} errors)")
+    unchecked = sorted({str(f.get("platform")) for f in findings if is_unknown(f)}, key=str.casefold)
+    if unchecked:
+        out.append(f"- Could not be checked automatically (open these by hand): {_md(', '.join(unchecked))}")
     out.append(f"- Accounts found: {stats['account_count']} on {stats['platforms_found']} platform(s)")
     for h in stats["handles"][:MAX_LIST]:
         out.append(f"- Handle `{_md(h['handle'])}` found on {h['platform_count']} platform(s)")

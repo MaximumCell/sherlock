@@ -11,16 +11,89 @@ HUDSON = "https://cavalier.hudsonrock.com/api/json/v2/osint-tools"
 
 
 # ------------------------------------------------------------------ user_scanner
-def test_user_scanner_username_sweep_is_opt_in():
-    """~2,500 sites cannot finish on a 0.1-CPU host, so usernames are off unless enabled."""
+def test_user_scanner_username_checks_are_focused_by_default():
+    """The full ~2,500-site sweep cannot finish on a 0.1-CPU host: usernames get the focused set."""
     pytest.importorskip("user_scanner")
     import sherlock_core.modules.user_scanner as mod
 
     assert mod._USERNAME_SWEEP is False
-    assert mod.UserScanner.inputs == ("email",)
+    assert mod.UserScanner.inputs == ("username", "email")
+    names = [m.__name__ for m in mod.focused_modules()]
+    assert 40 <= len(names) < 150
+    assert {"instagram", "facebook", "tiktok", "threads", "linkedin", "snapchat", "x", "youtube"} <= set(names)
+    covered = mod.covered_platforms()
+    assert {"instagram", "facebook", "tiktok", "threads", "linkedin", "twitter", "github"} <= covered
 
 
-async def test_user_scanner_maps_library_results(monkeypatch, run, meta):
+def _fake_check(outcomes):
+    """A stand-in for user_scanner.core.engine.check answering from a {module name: Result} table."""
+    from user_scanner.core.helpers import get_site_name
+
+    async def check(module, target, configs=None):
+        name = module.__name__
+        r = outcomes.get(name)
+        if r is None:
+            from user_scanner.core.result import Result
+            r = Result.available(url=f"https://{name}.example/{target}")
+        return r.update(site_name=get_site_name(module), username=target, category="Social")
+    return check
+
+
+async def test_user_scanner_focused_outcomes_recorded_2026_11_22(monkeypatch, run, meta):
+    """Real verdicts for a public Instagram account (`bugonspectrum`) seen from a home connection."""
+    pytest.importorskip("user_scanner")
+    import sherlock_core.modules.user_scanner as mod
+    from user_scanner.core.result import Result
+
+    outcomes = {
+        "instagram": Result.taken(url="https://www.instagram.com/bugonspectrum/"),
+        "threads": Result.taken(url="https://www.threads.net/@bugonspectrum"),
+        "x": Result.taken(url="https://x.com/bugonspectrum"),
+        "tiktok": Result.error("No public account (a private one looks the same)",
+                               url="https://www.tiktok.com/@bugonspectrum"),
+        "telegram": Result.error("timed out", url="https://t.me/bugonspectrum"),
+        "reddit": Result.error("HTTP 429 Too Many Requests", url="https://www.reddit.com/user/bugonspectrum/"),
+    }
+    monkeypatch.setattr(mod, "check", _fake_check(outcomes))
+    rows = await run("user_scanner", "username", "bugonspectrum")
+    *hits, summary = rows
+    found = sorted(r["platform"] for r in hits if r["status"] == "found")
+    assert found == ["Instagram", "Threads", "X (Twitter)"]
+    ig = next(r for r in hits if r["platform"] == "Instagram")
+    assert ig["extra_metadata"]["url"] == "https://www.instagram.com/bugonspectrum/"
+    unknown = {r["platform"]: r["extra_metadata"] for r in hits if r["status"] == "error"}
+    assert set(unknown) == {"Tiktok", "Telegram", "Reddit"}
+    assert all(m["unknown"] is True for m in unknown.values())
+    assert unknown["Tiktok"]["reason"] == "ambiguous" and unknown["Tiktok"]["url"].endswith("@bugonspectrum")
+    assert unknown["Reddit"]["reason"] == "rate_limited" and unknown["Telegram"]["reason"] == "blocked"
+    assert "not_found" not in {r["status"] for r in hits}     # misses are counted, not listed
+    m = meta(summary)
+    total = len(mod.focused_modules())
+    assert (m["checked"], m["found"], m["unknown"], m["not_found"]) == (total, 3, 3, total - 6)
+    assert m["mode"] == "focused"
+
+
+async def test_user_scanner_check_timeout_is_unknown(monkeypatch, run):
+    pytest.importorskip("user_scanner")
+    import asyncio
+
+    import sherlock_core.modules.user_scanner as mod
+
+    fake = _fake_check({})
+
+    async def slow(module, target, configs=None):
+        if module.__name__ == "instagram":
+            await asyncio.sleep(5)
+        return await fake(module, target)
+
+    monkeypatch.setattr(mod, "check", slow)
+    monkeypatch.setattr(mod, "CHECK_TIMEOUT_S", 0.05)
+    rows = await run("user_scanner", "username", "someone")
+    (ig,) = [r for r in rows if r["status"] == "error"]
+    assert ig["platform"] == "Instagram" and ig["extra_metadata"]["reason"] == "blocked"
+
+
+async def test_user_scanner_full_sweep_maps_library_results(monkeypatch, run, meta):
     pytest.importorskip("user_scanner")
     import sherlock_core.modules.user_scanner as mod
     from user_scanner.core.result import Result, Status
@@ -36,20 +109,22 @@ async def test_user_scanner_maps_library_results(monkeypatch, run, meta):
         ]
 
     monkeypatch.setattr(mod, "check_all", fake_check_all)
-    # the username sweep is opt-in (USER_SCANNER_USERNAMES=1); switch it on for this test
-    monkeypatch.setattr(mod.UserScanner, "inputs", ("username", "email"))
+    monkeypatch.setattr(mod, "_USERNAME_SWEEP", True)   # USER_SCANNER_USERNAMES=1
     rows = await run("user_scanner", "username", "exampleuser", include_all=True)
     assert [(r["platform"], r["status"]) for r in rows] == [
         ("GitHub", "found"), ("GitLab", "not_found"), ("Reddit", "error"),
     ]
     compact = await run("user_scanner", "username", "exampleuser")
-    assert [(r["platform"], r["status"]) for r in compact] == [("GitHub", "found"), ("user-scanner", "found")]
-    assert meta(compact[1]) == {"summary": True, "checked": 3, "found": 1, "not_found": 1, "errors": 1}
+    assert [(r["platform"], r["status"]) for r in compact] == [
+        ("GitHub", "found"), ("Reddit", "error"), ("user-scanner", "found")]
+    assert meta(compact[2]) == {"summary": True, "checked": 3, "found": 1, "not_found": 1, "unknown": 1,
+                                "errors": 1, "mode": "full"}
     gh = rows[0]
     assert gh["source_tool"] == "user-scanner" and gh["module"] == "user_scanner"
     assert gh["extra_metadata"]["url"] == "https://github.com/exampleuser"
     assert gh["extra_metadata"]["extra"] == {"followers": 3, "avatar_url": "https://example.com/a.png"}
-    assert meta(rows[2])["reason"] == "timeout"
+    assert meta(rows[2])["detail"] == "timeout" and meta(rows[2])["reason"] == "blocked"
+    assert get_module("user_scanner").covers() == frozenset()   # the full sweep does not dedupe
 
 
 async def test_user_scanner_nothing_returned(monkeypatch, run):

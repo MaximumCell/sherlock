@@ -35,9 +35,25 @@ Object storage (uploaded photos, service key): `download_object(bucket, path, ma
 - The browser uploads with the Supabase client to `uploads/<uid>/<random uuid>.<ext>` (never the original file name) and searches `{"type": "image", "value": "storage://media/uploads/<uid>/<uuid>.<ext>"}`.
 - `normalize_target("image", ...)` accepts exactly that shape (anything else, traversal and other buckets included, is 400). The gateway accepts it only when `<uid>` is the caller's user id: otherwise 403 `This uploaded photo belongs to another account.` (outcome `forbidden`). http(s) URLs are unchanged.
 - The path stays on the case (`identifiers`, job `target_value`, entities). The default case title is "Uploaded photo". `search_log.target_value` is `"uploaded photo"`, never the path; operator target counts and the shared-target flag leave it out.
-- `image_meta` reads the object through the store (same 8 MB cap); with GPS it adds `extra.note = "This photo contains location data"` (coordinates stay rounded and are never shown). `reverse_image_links` and `reverse_image` sign a one-hour URL; it only lives inside the links finding (`extra.note` says the links stop working after an hour, `expires_s: 3600`) and the SerpApi request, never in logs, job rows or error reasons.
+- `image_meta` reads the object through the store (same 8 MB cap); with GPS it adds `extra.note = "This photo contains location data"` (coordinates stay rounded to 2 decimals; the web shows them only that coarse, on the "Where and when" map). `reverse_image_links` and `reverse_image` sign a one-hour URL; it only lives inside the links finding (`extra.note` says the links stop working after an hour, `expires_s: 3600`) and the SerpApi request, never in logs, job rows or error reasons.
 - Deleting a case (`DELETE /cases/{id}` or `DELETE /admin/cases/{id}`) deletes its owner's uploaded objects first (`delete_case_uploads`); a storage failure is logged and the case is still deleted.
 - Web: `DataSource.uploadPhoto(file, ext)` and `photoUrl(value)` (signed URL for the owner; fixtures use an object URL). A Storage permission error before 0004 has run reads "Photo upload is not set up on this server yet".
+
+## Photo location check ("Where and when")
+
+Could a photo have been taken where and when it is said to be? Places and conditions only: no face detection or recognition, nothing about who is in the picture, no street addresses.
+
+Claim (`gateway.schemas.PhotoClaim`, normalised by `sherlock_core.geo.claims.normalize_claim`): `{place?: string <= 120, lat?: number, lon?: number, taken_at?: ISO 8601 date-time WITH offset}`. All optional; `lat`/`lon` together or not at all, rounded to 2 decimals (about 1 km) before storage; `taken_at` not before 1900 and not more than a day in the future; unknown fields are 422. It travels as job params `{"claim": {...}}` on image jobs.
+
+Modules (queue `media`, input `image`, file `modules/geo_context.py`). Each reads the EXIF itself (same capped download / store read as `image_meta`), because the jobs of one search run at the same time and `image_meta`'s row may not exist yet. Location = camera GPS, else the claimed point, else the claimed place looked up once (Nominatim search, coarse fields only). Every facet always writes its row (`found`, `not_found` with `extra.note` + `reason`, or `error`), so a re-run replaces every row (same `finding_key`).
+
+| module | requires_env | platform: what |
+|---|---|---|
+| `geo_context` | none | `geo-sun`: `moments[]` (`label` camera/claim, `lat`, `lon`, `local_time`, `utc_offset`, `utc_time`, `timezone`, `azimuth`, `elevation`, `shadow_azimuth`, `shadow_ratio`, `daylight` day/twilight/night, `compass`, `shadow_compass`), NOAA equations in `geo.solar` · `geo-weather`: `moments[]` (`summary` in words, `kind`, `temperature_c`, `cloud_cover`, `precipitation_mm`, ...) from Open-Meteo archive/forecast · `geo-place`: `place {district, city, state, country, country_code}`, `label`, `lat`, `lon`, `source`, `timezone`, `claim_point`, `claim_place`, `claim_distance_km` (Nominatim reverse zoom 14, at most 1 request/s per worker, never road / house number / postcode) · `geo-street`: `links {openstreetmap, google_maps, google_street_view, mapillary}` · `geo-checks`: `checks[]`, `claim`, `basis {lat, lon, location_source, camera_gps, camera_time, camera_utc, claimed_time, timezone}`, `lens` (ready / pending / none) |
+| `geo_webcams` | `WINDY_WEBCAMS_KEY` | `geo-webcams`: `webcams[] {id, title, url, thumbnail, distance_km}` within 15 km, active public webcams only (Windy Webcams API v3) |
+| `geo_street_images` | `MAPILLARY_TOKEN` | `geo-street-images`: `images[] {id, url, thumbnail, captured_on, distance_km}` within about 1 km (Mapillary Graph API; the token never appears in a row or an error) |
+
+Checks (`geo.claims.assess_claim(exif, claim, sun, weather, lens_matches, *, place, camera_utc, claim_place_offset, timezone_name) -> list[Check]`, pure): `Check {key, verdict: consistent | inconsistent | cant_tell, title, reason, look_for}`. Keys: `camera_metadata` (no EXIF), `edited` (editing software), `location_distance` (camera GPS vs claim: within 3 km for a point or landmark, 25 km for a town; beyond 4x that inconsistent), `time_difference` (15 minutes consistent, up to 3 hours can't tell), `time_zone` (claimed offset vs local offset there), `sun_<label>`, `weather_<label>`, `temperature_<label>` (what to look for; always can't tell), `lens_place` (Google Lens titles mention the claimed place). Google Lens titles come from the case's `reverse_image` rows; `geo_context` waits up to 40 s while that job is running. There is no overall score, on purpose. Geo rows are never correlation evidence or accounts; the report lists the checks under "Where and when".
 
 ## Finding row (`sherlock_core.models.make_finding`)
 
@@ -169,6 +185,7 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 | `POST /cases/{id}/jobs/{job_id}/cancel` | | `Job` |
 | `POST /cases/{id}/batches/{batch_id}/cancel` | | `{batch_id, cancelled, jobs: Job[]}`; stops one search (404 when the case has no such batch) |
 | `GET /queue/status?case_id=` | | `{case_id, queued, running, waiting, ahead, jobs_ahead, estimated_wait_s}`: counts only, never other people's data. `ahead` = other unfinished searches in the same queue that started earlier; `waiting` = queued, nothing of its own running, and `ahead > 0`; `estimated_wait_s` is rough (null when not waiting). Readable for the case's owner (and demo cases) |
+| `POST /cases/{id}/geo-check` | `{claim: PhotoClaim \| null, value?: image target of the case}` | `{batch_id, jobs}` (202): sets or clears the claim and re-runs the available geo modules only (see "Photo location check") |
 | `POST /cases/{id}/wake` | | 202; re-pokes workers that have queued jobs for this case |
 | `POST /cases/{id}/correlate` | | `{correlations: number}` |
 | `GET /cases/{id}/exposure` | | `{score, band, factors[], computed_from, method}` (see `sherlock_core.scoring`) |
@@ -181,6 +198,8 @@ Auth: `Authorization: Bearer <Supabase access token>`; the gateway resolves it t
 
 Rules:
 - `POST /cases` and `POST /cases/{id}/scan` accept optional `hints: {city?, employer?, school?, keywords?: string[]}` for `type = "name"` only.
+- `POST /cases` and `POST /cases/{id}/scan` accept an optional `claim` (`PhotoClaim`) with an `image` target only (400 otherwise; 422 when invalid).
+- `POST /cases/{id}/geo-check` is checked for blocked, paused, sign-in, the photo's owner and the backlog like a search, and logged in `search_log` (modules = the geo modules), but not counted against the search limits (the photo's own search may still be running): its own limits are `GEO_CHECKS_PER_CASE_PER_10M` (10, 429 `burst_limited`) and `GEO_CHECKS_PER_SESSION_PER_DAY` (40, 429 `rate_limited`). An unfinished earlier check of the same photo is cancelled. Audit action `photo_claim_set`.
 - `type = "name"` requires a non-anonymous session (403 otherwise) and is limited by `NAME_SEARCHES_PER_USER_PER_DAY`.
 - Search checks, in this order, on `POST /cases` (with `scan`) and `POST /cases/{id}/scan` (and the agent's scan tools); the first that fails answers:
   1. blocked session (403 `blocked`), 2. paused (503 `paused`),
@@ -248,8 +267,8 @@ The drain loop is a small pool: up to `WORKER_CONCURRENCY` (3) jobs at once, at 
 
 ## Environment
 
-See `packages/core/sherlock_core/config.py` (`ADMIN_EMAILS` turns on the operator panel; search limits, `REQUIRE_SIGN_IN`, `WORKER_CONCURRENCY`). Web app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_REQUIRE_SIGN_IN` (default true; only decides whether the app asks for sign-in before calling the gateway, which decides), `NEXT_PUBLIC_FIXTURE_REQUIRE_SIGN_IN` (fixture mode; also `?signin=required`).
+See `packages/core/sherlock_core/config.py` (`ADMIN_EMAILS` turns on the operator panel; search limits, `REQUIRE_SIGN_IN`, `WORKER_CONCURRENCY`; `WINDY_WEBCAMS_KEY` and `MAPILLARY_TOKEN` for the optional photo-location modules, set on the gateway and the media worker; `GEO_CHECKS_PER_CASE_PER_10M`, `GEO_CHECKS_PER_SESSION_PER_DAY`). Web app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_REQUIRE_SIGN_IN` (default true; only decides whether the app asks for sign-in before calling the gateway, which decides), `NEXT_PUBLIC_FIXTURE_REQUIRE_SIGN_IN` (fixture mode; also `?signin=required`).
 
 ## Boundaries (not negotiable)
 
-Public data only. Breach data is exposure metadata only (name, date, data classes), never records. No phone-number or national-ID to identity lookup. No face recognition. No home addresses, no family or relatives mapping.
+Public data only. Breach data is exposure metadata only (name, date, data classes), never records. No phone-number or national-ID to identity lookup. No face recognition. No home addresses, no family or relatives mapping. The photo location check is about places and conditions: coordinates rounded to about 1 km, place names at district / city level, public operator-published webcams and public street-level imagery only.

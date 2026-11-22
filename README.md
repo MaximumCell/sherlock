@@ -75,7 +75,7 @@ Render's free plan gives one shared pool of 750 instance-hours a month, 512 MB a
 | Username | WhatsMyName dataset (690 sites, own async engine; only rules that pass the rule health check run), user-scanner checks for ~70 well-known platforms (Instagram, Facebook, TikTok, Threads, LinkedIn, Snapchat, X, YouTube...; the full 2,500-site sweep with `USER_SCANNER_USERNAMES=1`), GitHub, profile data from Bluesky, Mastodon, GitLab, Keybase, Hacker News, DEV, Docker Hub, npm, Codeberg, Lichess, Chess.com, Codeforces, Hugging Face, public activity-time fingerprint |
 | Email | Gravatar, GitHub commits, breach exposure (XposedOrNot, LeakCheck), infostealer exposure (Hudson Rock), account sweep |
 | Domain / IP | Certificate transparency (crt.sh), RDAP, DNS records with SPF and DMARC checks, Shodan InternetDB, Wayback Machine, RIPEstat |
-| Image (link or uploaded photo) | Metadata and perceptual hash, Google Lens via SerpApi (needs `SERPAPI_KEY`), ready-made search links |
+| Image (link or uploaded photo) | Metadata and perceptual hash, Google Lens via SerpApi (needs `SERPAPI_KEY`), ready-made search links, photo location check: sun position, weather (Open-Meteo), coarse place name (OpenStreetMap Nominatim), public webcams nearby (needs `WINDY_WEBCAMS_KEY`), street-level images (needs `MAPILLARY_TOKEN`) |
 | Phone | Region, carrier and line type only |
 | Wallet | Bitcoin and EVM balance and transaction summary |
 | Name | OpenAlex, ORCID, Wikidata, GitHub user search, web search, UK Companies House (needs `COMPANIES_HOUSE_API_KEY`) |
@@ -131,6 +131,16 @@ The start screen takes a photo for an image search (drop, paste or "Upload a pho
 
 Run [`supabase/migrations/0004_uploads.sql`](supabase/migrations/0004_uploads.sql) once (it makes the bucket private, sets the limits and adds the per-user policies). Until it has run, uploads fail with "Photo upload is not set up on this server yet"; image search by link keeps working.
 
+## Where and when (photo location check)
+
+An image investigation gets a "Where and when" section that helps check where and when a photo could have been taken, the way verification researchers do, with free public sources only:
+
+- **Inputs:** the camera's own EXIF data (GPS rounded to about 1 km, capture time, camera), the claim you enter (a place you search for, type or pick on the map, and a date and time with its UTC offset; all optional, because the point is to check claims), and the Google Lens matches when reverse image search is set up.
+- **Context:** where the sun stood and which way and how long shadows of upright things should fall (computed locally with the NOAA solar equations, shown on a sun dial), the weather that hour (Open-Meteo, no key), a district / city level place name (OpenStreetMap Nominatim, no key, at most one request a second), links to open the spot on OpenStreetMap, Google Maps, Street View and Mapillary, and optionally public webcams nearby (Windy Webcams API, free key `WINDY_WEBCAMS_KEY`) and the nearest public street-level images (Mapillary, free client token `MAPILLARY_TOKEN`). Without a key those two report themselves unavailable; everything else still works. Set the keys on the gateway and the media worker.
+- **Checks:** plain-language checks, each with its own verdict (consistent, inconsistent, can't tell), the reason and what to look at in the photo, for example "Camera time is 12.2 hours from the claim" or "It was raining at the claimed time; check whether the photo shows wet ground". Change the claim at any time: only the location checks run again (`POST /cases/{id}/geo-check`).
+
+Limits, on purpose: there is no overall "authenticity score". EXIF data is easy to strip or fake and camera clocks are often wrong; weather records are hourly and for a grid cell, not a street; Google Lens titles are vague. These checks support a person's judgement, they do not prove anything. It is about places and conditions: no face recognition, nothing about who is in the picture, no street addresses (coordinates stay rounded to about 1 km).
+
 ## Operator panel
 
 `/admin` shows the person running a deployment what visitors search and where from: searches per day by outcome, a live feed (including refused searches), visitors with plain-English warning signs (bursts, many different targets, repeated limits, shared origins), and the controls to act: block or unblock a session, pause all searches, remove a case. Targets can be blurred with "Hide targets". Origins are stored as a keyed hash, never as an IP address; search records are deleted after 90 days. Refusals show with plain labels (too many at once, search still running, server busy, needed sign-in), and "Hit the burst limit" is a warning sign. "View case" opens any visitor's case read-only for abuse review (`/admin/cases/<id>`); every opening is recorded in that case's own history, which its owner sees.
@@ -162,6 +172,7 @@ To use it for real:
 - The WhatsMyName dataset is no longer maintained (archived 2026-11-09) and its rules rot as sites change. `uv run python -m sherlock_core.data.rule_health` re-checks every rule against the site's own known accounts and a made-up name and writes `packages/core/sherlock_core/data/rule_health.json`; only rules marked `ok` run (369 of 690 on 2026-11-22, from a home connection; a datacentre run would disable more). Re-run it now and then and commit the file.
 - From datacentre IPs many sites answer with walls or landing pages that look like "this account exists". When the profile preview already fetched such a page for a WhatsMyName or user-scanner hit, the hit is shown as "couldn't check" instead of found. Only the first 40 hits get a preview, so some false positives can remain.
 - Existence checks say an account exists, not who owns it. Links come from profile data, so sparse profiles produce few correlations.
+- The photo location check reads the photo again for each of its modules, and its Google Lens comparison waits at most 40 s for the Lens results of the same search; when they arrive later, check the claim again to compare them.
 - Keyless web search for name lookups is best-effort. A SerpApi key (250 free searches a month) makes it reliable.
 
 ## Project layout

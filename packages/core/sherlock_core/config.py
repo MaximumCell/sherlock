@@ -38,6 +38,9 @@ SCRAPING_API_URL = env("SCRAPING_API_URL", "https://api.firecrawl.dev")
 SCRAPING_API_KEY = env("SCRAPING_API_KEY")
 SERPAPI_KEY = env("SERPAPI_KEY")
 GITHUB_TOKEN = env("GITHUB_TOKEN")
+# Photo location check (geo_context), both optional and free: nearby public webcams, street-level images.
+WINDY_WEBCAMS_KEY = env("WINDY_WEBCAMS_KEY")
+MAPILLARY_TOKEN = env("MAPILLARY_TOKEN")
 
 # --- limits
 # Every search needs a signed-in (non-anonymous) account. Set to false to let anonymous
@@ -57,6 +60,10 @@ ACTIVE_SEARCHES_PER_SESSION = int(env("ACTIVE_SEARCHES_PER_SESSION", "1"))
 # Backlog guard: refuse new searches for a queue that already holds more queued jobs than this
 # (0 turns it off). Applies to everyone, the operator included.
 QUEUE_BACKLOG_MAX = int(env("QUEUE_BACKLOG_MAX", "80"))
+# Re-running the photo location checks with a new claim (`POST /cases/{id}/geo-check`): a light,
+# one-module job, limited on its own instead of by the search limits above.
+GEO_CHECKS_PER_CASE_PER_10M = int(env("GEO_CHECKS_PER_CASE_PER_10M", "10"))
+GEO_CHECKS_PER_SESSION_PER_DAY = int(env("GEO_CHECKS_PER_SESSION_PER_DAY", "40"))
 # Rough seconds per job, used only for the "estimated wait" shown to a waiting visitor.
 QUEUE_AVG_JOB_SECONDS = int(env("QUEUE_AVG_JOB_SECONDS", "15"))
 JOB_STALE_SECONDS = int(env("JOB_STALE_SECONDS", "120"))

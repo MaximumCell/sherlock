@@ -354,15 +354,27 @@ def name_params(target_type: str, hints: Any) -> Row | None:
     return hints.params()
 
 
+def claim_params(target_type: str, claim: Any) -> Row | None:
+    """Job params for a photo claim (`schemas.PhotoClaim`): `{"claim": {...}}`. Image searches only."""
+    if claim is None:
+        return None
+    if target_type != "image":
+        raise HTTPException(400, "a claim is only accepted for photo searches (type \"image\")")
+    normalized = claim.params()
+    return {"claim": normalized} if normalized else None
+
+
 def start_scan(store: Store, principal: Principal, case_id: str, target_type: str, value: str,
                modules: list[str] | None = None, *, actor: str = "user", params: Row | None = None,
-               hints: Any = None, origin: Origin | None = None) -> list[Row]:
+               hints: Any = None, claim: Any = None, origin: Origin | None = None) -> list[Row]:
     """Enforce, validate, authorise, rate-limit and enqueue one scan batch, and log the attempt
     (one search_log row, whatever the outcome). Raises HTTPException."""
     with search_attempt(store, principal, origin, [{"type": target_type, "value": value}], case_id) as attempt:
         check_scans_allowed(store, principal)
         if hints is not None:
             params = name_params(target_type, hints)
+        if claim is not None:
+            params = {**(params or {}), **(claim_params(target_type, claim) or {})}
         check_target_allowed(principal, target_type)
         planned = plan_or_400(case_id, target_type, value, modules, params=params)
         check_upload_owner(principal, target_type, planned[0]["target_value"])
@@ -370,3 +382,64 @@ def start_scan(store: Store, principal: Principal, case_id: str, target_type: st
                             "modules": [j["module"] for j in planned]}]
         enforce_search_limits(store, principal, origin, [target_type], {j["queue"] for j in planned})
         return enqueue_planned(store, principal, case_id, planned, actor=actor)
+
+
+GEO_MODULE = "geo_context"
+NO_PHOTO_MESSAGE = "This investigation has no photo to check."
+
+
+def case_photos(store: Store, case: Row) -> list[str]:
+    """Image targets of a case: its identifiers first, then photos searched later in it."""
+    values = [i["value"] for i in case.get("identifiers") or [] if i.get("type") == "image"]
+    for j in reversed(store.list_jobs(case["id"])):                 # oldest first
+        if j.get("target_type") == "image" and j["target_value"] not in values:
+            values.append(j["target_value"])
+    return values
+
+
+def start_geo_check(store: Store, principal: Principal, case: Row, value: str | None, claim: Any,
+                    *, origin: Origin | None = None) -> list[Row]:
+    """Set (or clear) the claim of a photo in an existing case and re-run `geo_context` only.
+
+    Checked like a search for who may run it (blocked, paused, sign-in, the photo's owner, backlog)
+    and logged in search_log, but limited on its own (GEO_CHECKS_PER_CASE_PER_10M,
+    GEO_CHECKS_PER_SESSION_PER_DAY) instead of by the search limits: it is one light job and the
+    photo's search may still be running. A previous unfinished check of the same photo is cancelled.
+    """
+    case_id = case["id"]
+    photos = case_photos(store, case)
+    if not photos:
+        raise HTTPException(400, NO_PHOTO_MESSAGE)
+    target = normalize_or_400("image", value) if value else photos[0]
+    if target not in photos:
+        raise HTTPException(400, "That photo is not part of this investigation.")
+    with search_attempt(store, principal, origin, [{"type": "image", "value": target, "modules": [GEO_MODULE]}],
+                        case_id):
+        check_scans_allowed(store, principal)
+        check_upload_owner(principal, "image", target)
+        planned = plan_or_400(case_id, "image", target, [GEO_MODULE], params=claim_params("image", claim))
+        limits = [
+            (f"geo:case:{case_id}:10m", TEN_MIN_S, config.GEO_CHECKS_PER_CASE_PER_10M, "burst_limited",
+             f"Too many re-checks of this photo: up to {config.GEO_CHECKS_PER_CASE_PER_10M} every 10 minutes. "
+             "Try again in {wait}."),
+            (f"geo:session:{principal.user_id}:day", DAY_S, config.GEO_CHECKS_PER_SESSION_PER_DAY, "rate_limited",
+             f"Daily limit reached: {config.GEO_CHECKS_PER_SESSION_PER_DAY} photo re-checks per session. "
+             "Try again in {wait}."),
+        ]
+        limits = [lim for lim in limits if lim[2] > 0]
+        for key, window, limit, outcome, message in limits:
+            if store.rate_limit_count(key, window) >= limit:
+                raise _refuse(_Limit(key, window, limit, 1, outcome, message))
+        check_backlog(store, {planned[0]["queue"]})
+        for key, window, limit, outcome, message in limits:
+            if not store.hit_rate_limit(key, window, limit):
+                raise _refuse(_Limit(key, window, limit, 1, outcome, message))
+        for job in store.list_jobs(case_id, active_only=True):
+            if job.get("module") == GEO_MODULE and job.get("target_value") == target:
+                store.cancel_job(job["id"])
+        jobs = enqueue_planned(store, principal, case_id, planned, actor="user")
+        store.log(case_id, "photo_claim_set", "user", {
+            "user": principal.user_id, "claim": (planned[0].get("params") or {}).get("claim"),
+            "target": uploads.display_target("image", target), "batch_id": planned[0]["batch_id"],
+        })
+        return jobs

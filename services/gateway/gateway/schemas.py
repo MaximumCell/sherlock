@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from sherlock_core.geo.claims import normalize_claim
 from sherlock_core.models import Case, Correlation, Entity, Finding, Identifier, Job, TargetType
 
 # ----------------------------------------------------------------------------- requests
@@ -31,12 +32,37 @@ class NameHints(BaseModel):
         return {k: v for k, v in self.model_dump().items() if v}
 
 
+class PhotoClaim(BaseModel):
+    """Where and when a photo is said to be from, for the `geo_context` checks. Every field is optional:
+    the point is to CHECK a claim. Places and times only; nothing here identifies a person.
+
+    `lat`/`lon` (a point picked on the map) are rounded to 2 decimals (about 1 km) before they are stored;
+    `taken_at` is an ISO 8601 date-time WITH its UTC offset.
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    place: str | None = Field(default=None, max_length=120)
+    lat: float | None = Field(default=None, ge=-90, le=90, allow_inf_nan=False)
+    lon: float | None = Field(default=None, ge=-180, le=180, allow_inf_nan=False)
+    taken_at: str | None = Field(default=None, max_length=40)
+
+    @model_validator(mode="after")
+    def _valid(self) -> PhotoClaim:
+        normalize_claim(self.model_dump(exclude_none=True))   # raises ValueError with a readable message
+        return self
+
+    def params(self) -> dict[str, Any]:
+        """The normalised claim as stored in job params (`{"claim": ...}`); empty when nothing was given."""
+        return normalize_claim(self.model_dump(exclude_none=True)) or {}
+
+
 class CaseCreate(BaseModel):
     title: str | None = Field(default=None, max_length=200)
     tags: list[str] = Field(default_factory=list, max_length=20)
     identifiers: list[Identifier] = Field(min_length=1, max_length=10)
     scan: bool = True
     hints: NameHints | None = None        # applies to the `name` identifiers only
+    claim: PhotoClaim | None = None       # applies to the `image` identifiers only
 
 
 class CasePatch(BaseModel):
@@ -51,6 +77,15 @@ class ScanRequest(BaseModel):
     value: str = Field(min_length=1, max_length=2048)
     modules: list[str] | None = Field(default=None, max_length=50)
     hints: NameHints | None = None        # only with type = "name"
+    claim: PhotoClaim | None = None       # only with type = "image"
+
+
+class GeoCheckRequest(BaseModel):
+    """`POST /cases/{id}/geo-check`: set (or clear, with null) the claim and re-run `geo_context` only."""
+    model_config = ConfigDict(extra="forbid")
+
+    claim: PhotoClaim | None = None
+    value: str | None = Field(default=None, max_length=2048)   # which photo of the case (default: the first)
 
 
 class CurateRequest(BaseModel):

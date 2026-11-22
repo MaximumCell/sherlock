@@ -21,6 +21,9 @@ INTERNAL_SECRET = env("INTERNAL_SECRET")
 WORKER_URLS = {q: env(f"WORKER_URL_{q.upper()}") for q in ("identity", "infra", "media")}
 # Which queue this worker process serves.
 WORKER_QUEUE = env("WORKER_QUEUE", "identity")
+# Prefix for queue names, so a second deployment sharing the same database (e.g. a local copy
+# next to the live site) only runs its own jobs: QUEUE_PREFIX=local- gives local-identity, ...
+QUEUE_PREFIX = env("QUEUE_PREFIX")
 FRONTEND_ORIGINS = [o.strip() for o in env("FRONTEND_ORIGINS").split(",") if o.strip()]
 # Operator panel (/admin): comma-separated emails of signed-in, verified accounts that may use it.
 # Case-insensitive. Empty means nobody is an operator.

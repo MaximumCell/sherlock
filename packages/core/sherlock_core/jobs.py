@@ -157,7 +157,7 @@ def plan_scan(case_id: str, target_type: str, value: str, modules: list[str] | N
     batch_id = str(uuid.uuid4())
     return [
         {
-            "case_id": case_id, "batch_id": batch_id, "queue": m.queue, "module": m.name,
+            "case_id": case_id, "batch_id": batch_id, "queue": config.QUEUE_PREFIX + m.queue, "module": m.name,
             "target_type": target_type, "target_value": value, "params": dict(params or {}),
         }
         for m in applicable

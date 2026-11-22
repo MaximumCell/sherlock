@@ -595,3 +595,12 @@ async def test_enrichment_downloads_share_one_limit_across_jobs(monkeypatch):
     monkeypatch.setattr("sherlock_core.modules.avatar_hash.hash_avatars", hashes)
     await asyncio.gather(*(jobs._enrich([_row("github")], None, "infra") for _ in range(3)))
     assert peak[0] == 1
+
+
+def test_queue_prefix_keeps_a_second_deployment_on_its_own_queues(monkeypatch):
+    """A local copy sharing the live database must not pick up live visitors' jobs."""
+    from sherlock_core import config as cfg
+    from sherlock_core.jobs import plan_scan
+    monkeypatch.setattr(cfg, "QUEUE_PREFIX", "local-")
+    rows = plan_scan("00000000-0000-0000-0000-000000000001", "domain", "example.com")
+    assert rows and all(r["queue"].startswith("local-") for r in rows)

@@ -25,7 +25,7 @@ Waker = Callable[[Iterable[str]], Awaitable[None]]
 
 async def poke_workers(queues: Iterable[str], *, client: httpx.AsyncClient | None = None) -> None:
     """POST {WORKER_URL_<QUEUE>}/wake for each queue. Never raises."""
-    targets = {q: config.WORKER_URLS.get(q, "") for q in sorted(set(queues))}
+    targets = {q: config.WORKER_URLS.get(q.removeprefix(config.QUEUE_PREFIX), "") for q in sorted(set(queues))}
     targets = {q: url for q, url in targets.items() if url}
     if not targets:
         return

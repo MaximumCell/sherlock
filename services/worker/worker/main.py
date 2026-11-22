@@ -97,7 +97,7 @@ class Drainer:
 
 
 def create_app(queue: str | None = None, *, drain_on_startup: bool = True) -> FastAPI:
-    drainer = Drainer(queue or config.WORKER_QUEUE)
+    drainer = Drainer(queue or config.QUEUE_PREFIX + config.WORKER_QUEUE)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):

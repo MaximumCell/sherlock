@@ -222,6 +222,23 @@ export interface CreateCaseBody {
   scan?: boolean;
   /** Only sent when an identifier has type `name`. */
   hints?: NameHints;
+  /** Only sent with an `image` identifier: where and when the photo is said to be from. */
+  claim?: PhotoClaim;
+}
+/**
+ * Where and when a photo is said to be from (gateway `PhotoClaim`). Every field is optional;
+ * coordinates are rounded to 2 decimals by the gateway; `taken_at` is ISO 8601 with an offset.
+ */
+export interface PhotoClaim {
+  place?: string;
+  lat?: number;
+  lon?: number;
+  taken_at?: string;
+}
+/** `POST /cases/{id}/geo-check`: set or clear (null) the claim and re-run the location checks. */
+export interface GeoCheckBody {
+  claim: PhotoClaim | null;
+  value?: string;
 }
 export interface CreateCaseResult {
   case: Case;
@@ -239,6 +256,8 @@ export interface ScanBody {
   modules?: string[];
   /** Only for `type: "name"`. */
   hints?: NameHints;
+  /** Only for `type: "image"`. */
+  claim?: PhotoClaim;
 }
 export interface ScanResult {
   batch_id: string;

@@ -302,7 +302,8 @@ def _classify(f: dict, meta: dict, platform: str) -> str:
     return "account"
 
 
-_NON_EVIDENCE_MODULES = frozenset({"reverse_image_links", "reverse_image"})
+_NON_EVIDENCE_MODULES = frozenset({"reverse_image_links", "reverse_image", "geo_context", "geo_webcams",
+                                   "geo_street_images"})
 
 
 def facts_for(finding: dict) -> FindingFacts | None:

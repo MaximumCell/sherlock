@@ -2,6 +2,7 @@
 
 export const CASE_SECTIONS = [
   "summary",
+  "where",
   "found",
   "links",
   "people",
@@ -14,6 +15,7 @@ export type CaseSection = (typeof CASE_SECTIONS)[number];
 
 export const SECTION_LABEL: Record<CaseSection, string> = {
   summary: "Summary",
+  where: "Where and when",
   found: "What we found",
   links: "Possible links",
   people: "People",
@@ -40,8 +42,9 @@ export function isCaseSection(value: string | null | undefined): value is CaseSe
   return (CASE_SECTIONS as readonly string[]).includes(value ?? "");
 }
 
-export function visibleSections(hasPeople: boolean): CaseSection[] {
-  return CASE_SECTIONS.filter((s) => s !== "people" || hasPeople);
+/** People shows for name searches, "Where and when" for photo investigations. */
+export function visibleSections(hasPeople: boolean, hasPhoto = false): CaseSection[] {
+  return CASE_SECTIONS.filter((s) => (s !== "people" || hasPeople) && (s !== "where" || hasPhoto));
 }
 
 /**
@@ -52,12 +55,18 @@ export function sectionFromUrl(
   params: { get(name: string): string | null },
   hash: string,
   hasPeople: boolean,
+  hasPhoto = false,
 ): CaseSection | null {
   const fromHash = hash.replace(/^#/, "");
   const candidates = [fromHash, params.get("section"), LEGACY_TABS[params.get("tab") ?? ""]];
   for (const value of candidates) {
     if (value === SCAN_ANCHOR) return "summary";
-    if (isCaseSection(value) && (value !== "people" || hasPeople)) return value;
+    if (
+      isCaseSection(value) &&
+      (value !== "people" || hasPeople) &&
+      (value !== "where" || hasPhoto)
+    )
+      return value;
   }
   return null;
 }

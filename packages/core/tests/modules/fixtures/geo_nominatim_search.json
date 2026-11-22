@@ -1,0 +1,39 @@
+[
+ {
+  "place_id": 97665530,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "way",
+  "osm_id": 5013364,
+  "lat": "48.8582599",
+  "lon": "2.2945006",
+  "category": "man_made",
+  "type": "tower",
+  "place_rank": 30,
+  "importance": 0.6205937724353116,
+  "addresstype": "man_made",
+  "name": "Eiffel Tower",
+  "display_name": "Eiffel Tower, 5, Avenue Anatole France, Quartier du Gros-Caillou, 7th Arrondissement, Paris, Ile-de-France, Metropolitan France, 75007, France",
+  "address": {
+   "man_made": "Eiffel Tower",
+   "house_number": "5",
+   "road": "Avenue Anatole France",
+   "quarter": "Quartier du Gros-Caillou",
+   "suburb": "7th Arrondissement",
+   "city_district": "Paris",
+   "city": "Paris",
+   "ISO3166-2-lvl6": "FR-75C",
+   "state": "Ile-de-France",
+   "ISO3166-2-lvl4": "FR-IDF",
+   "region": "Metropolitan France",
+   "postcode": "75007",
+   "country": "France",
+   "country_code": "fr"
+  },
+  "boundingbox": [
+   "48.8574753",
+   "48.8590453",
+   "2.2933119",
+   "2.2956897"
+  ]
+ }
+]

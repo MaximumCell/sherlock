@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 112" role="img" aria-label="Illustration: a webcam view of a river and city skyline">
+  <title>Illustrative webcam still (demo only)</title>
+  <rect width="160" height="112" fill="#7fa7c9"/>
+  <rect y="62" width="160" height="50" fill="#4c6b5a"/>
+  <path d="M0 80 Q40 74 80 82 T160 80 V112 H0Z" fill="#5d86a8"/>
+  <g fill="#3b3f55"><rect x="8" y="44" width="18" height="20"/><rect x="30" y="38" width="14" height="26"/>
+  <rect x="100" y="40" width="22" height="24"/><rect x="128" y="48" width="24" height="16"/></g>
+  <path d="M72 64 L78 14 L84 64Z" fill="#2b2b3a"/>
+  <rect x="2" y="2" width="56" height="12" rx="2" fill="#000" opacity="0.45"/>
+  <text x="6" y="11" font-family="monospace" font-size="8" fill="#fff">LIVE · demo</text>
+</svg>

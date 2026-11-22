@@ -25,6 +25,7 @@ import {
   fid,
 } from "./demo-case";
 import { NAME_CASE_ID, PERSON_NAME, nameCandidates, nameCase, nameFindings } from "./people";
+import { GEO_PHOTO_URL, PHOTO_CASE_ID, photoCaseFindings, photoCaseJobs } from "./geo";
 
 export const INFRA_CASE_ID = "c0ffee00-0000-4000-8000-000000000002";
 export const REVIEW_CASE_ID = "c0ffee00-0000-4000-8000-000000000003";
@@ -585,14 +586,41 @@ export function createFixtureState(now: number = Date.now()): FixtureState {
     },
   ];
   cases.splice(1, 0, nameCase(now, FIXTURE_USER_ID));
+  cases.splice(2, 0, {
+    ...baseCase,
+    id: PHOTO_CASE_ID,
+    title: "Landmark photo: where and when",
+    notes:
+      "Fictional demo. A picture said to show the Eiffel Tower on a June morning: check the claim against the camera data, the sun and the weather.",
+    tags: ["photo", "verification", "demo"],
+    identifiers: [{ type: "image", value: GEO_PHOTO_URL }],
+    created_at: iso(now, 33),
+    updated_at: iso(now, 29),
+  });
   const others = otherCases(now);
   return {
     cases,
-    findings: [...demoFindings(DEMO_CASE_ID, now), ...nameFindings(now), ...others.findings],
+    findings: [
+      ...demoFindings(DEMO_CASE_ID, now),
+      ...nameFindings(now),
+      ...photoCaseFindings(now),
+      ...others.findings,
+    ],
     correlations: [...demoCorrelations(now), ...others.correlations],
-    jobs: [...demoJobs(now), ...others.jobs],
+    jobs: [...demoJobs(now), ...photoCaseJobs(now), ...others.jobs],
     entities: [
       ...demoEntities(now),
+      {
+        id: uid("e6", 1),
+        case_id: PHOTO_CASE_ID,
+        kind: "image",
+        value: GEO_PHOTO_URL,
+        platform: null,
+        source_finding_id: null,
+        is_seed: true,
+        scanned: true,
+        first_seen: iso(now, 33),
+      },
       {
         id: uid("e5", 1),
         case_id: NAME_CASE_ID,

@@ -1,0 +1,33 @@
+{
+ "place_id": 98032372,
+ "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+ "osm_type": "relation",
+ "osm_id": 2191088,
+ "lat": "48.8633157",
+ "lon": "2.2526038",
+ "category": "boundary",
+ "type": "administrative",
+ "place_rank": 20,
+ "importance": 0.13342650568398565,
+ "addresstype": "city_block",
+ "name": "Quartier de la Muette",
+ "display_name": "Quartier de la Muette, 16th Arrondissement, Paris, Ile-de-France, Metropolitan France, France",
+ "address": {
+  "city_block": "Quartier de la Muette",
+  "suburb": "16th Arrondissement",
+  "city_district": "Paris",
+  "city": "Paris",
+  "ISO3166-2-lvl6": "FR-75C",
+  "state": "Ile-de-France",
+  "ISO3166-2-lvl4": "FR-IDF",
+  "region": "Metropolitan France",
+  "country": "France",
+  "country_code": "fr"
+ },
+ "boundingbox": [
+  "48.8503578",
+  "48.8763642",
+  "2.2295817",
+  "2.2919299"
+ ]
+}

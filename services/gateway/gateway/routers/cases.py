@@ -25,6 +25,7 @@ from gateway.schemas import (
     CorrelateResult,
     CurateRequest,
     ExposureOut,
+    GeoCheckRequest,
     ManualLinkRequest,
     ScanAccepted,
     ScanRequest,
@@ -37,6 +38,7 @@ from gateway.service import (
     check_scans_allowed,
     check_target_allowed,
     check_upload_owner,
+    claim_params,
     consume_llm_quota,
     enforce_search_limits,
     enqueue_planned,
@@ -47,6 +49,7 @@ from gateway.service import (
     plan_or_400,
     remove_case,
     search_attempt,
+    start_geo_check,
     start_scan,
 )
 from gateway.visitors import Origin, get_origin
@@ -89,9 +92,18 @@ def create_case(body: CaseCreate, principal: CurrentPrincipal, store: StoreDep,
 
         if body.hints is not None and not any(i["type"] == "name" for i in identifiers):
             raise HTTPException(400, "hints are only accepted together with a name identifier")
+        if body.claim is not None and not any(i["type"] == "image" for i in identifiers):
+            raise HTTPException(400, "a claim is only accepted together with a photo (image identifier)")
+
+        def params_for(i: dict) -> dict | None:
+            if i["type"] == "name":
+                return name_params("name", body.hints)
+            if i["type"] == "image":
+                return claim_params("image", body.claim)
+            return None
+
         # Plan before anything is written, so an unusable request leaves nothing behind.
-        batches = [plan_or_400("", i["type"], i["value"], params=name_params(i["type"], body.hints)
-                               if i["type"] == "name" else None)
+        batches = [plan_or_400("", i["type"], i["value"], params=params_for(i))
                    for i in identifiers] if body.scan else []
         if body.scan:
             attempt.targets = [{"type": i["type"], "value": i["value"], "modules": [j["module"] for j in b]}
@@ -148,7 +160,18 @@ def scan(case_id: str, body: ScanRequest, principal: CurrentPrincipal, store: St
          background: BackgroundTasks, waker: WakerDep, origin: OriginDep):
     load_case(store, case_id, principal, write=True)
     jobs = start_scan(store, principal, case_id, body.type, body.value, body.modules,
-                      hints=body.hints, origin=origin)
+                      hints=body.hints, claim=body.claim, origin=origin)
+    background.add_task(waker, {j["queue"] for j in jobs})
+    return {"batch_id": jobs[0]["batch_id"], "jobs": jobs}
+
+
+@router.post("/{case_id}/geo-check", response_model=ScanAccepted, status_code=202)
+def geo_check(case_id: str, body: GeoCheckRequest, principal: CurrentPrincipal, store: StoreDep,
+              background: BackgroundTasks, waker: WakerDep, origin: OriginDep):
+    """Add, change or clear (claim: null) where and when a photo is said to be from, and re-run the
+    photo location checks (`geo_context`) only."""
+    case = load_case(store, case_id, principal, write=True)
+    jobs = start_geo_check(store, principal, case, body.value, body.claim, origin=origin)
     background.add_task(waker, {j["queue"] for j in jobs})
     return {"batch_id": jobs[0]["batch_id"], "jobs": jobs}
 

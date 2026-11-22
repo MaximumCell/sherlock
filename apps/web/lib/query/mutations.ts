@@ -15,6 +15,7 @@ import type {
   CreateCaseBody,
   Entity,
   Finding,
+  GeoCheckBody,
   Job,
   ReviewDecision,
   ScanBody,
@@ -138,6 +139,27 @@ export function useScan(caseId: string) {
       });
     },
     onError: (err) => reportError("Could not start the search", err),
+  });
+}
+
+/** Set or clear a photo's claim and re-run only the location check ("Where and when"). */
+export function useGeoCheck(caseId: string) {
+  const { ds, mode } = useData();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: GeoCheckBody) => ds.geoCheck(caseId, body),
+    onSuccess: ({ jobs }, body) => {
+      client.setQueryData<Job[]>(keys.jobs(mode, caseId), (old) =>
+        jobs.reduce<Job[] | undefined>(
+          (list, job) => applyChange(list, "INSERT", job.id, job),
+          old,
+        ),
+      );
+      toast.success(body.claim ? "Checking the claim" : "Claim cleared", {
+        description: "The location checks run again; results update here in a few seconds.",
+      });
+    },
+    onError: (err) => reportError("Could not check the claim", err),
   });
 }
 

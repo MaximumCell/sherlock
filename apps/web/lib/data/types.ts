@@ -1,4 +1,5 @@
 import type { AdminSource } from "../admin/types";
+import type { PlaceHit } from "../geo";
 import type { DataMode } from "../env";
 import type { PlatformEntry } from "../platforms";
 import type {
@@ -12,6 +13,7 @@ import type {
   Entity,
   Exposure,
   Finding,
+  GeoCheckBody,
   Job,
   ModuleInfo,
   QueueStatus,
@@ -118,4 +120,10 @@ export interface DataSource {
   uploadPhoto(file: Blob, ext: string): Promise<string>;
   /** A short-lived URL to show an uploaded photo to its owner; null when it cannot be shown. */
   photoUrl(value: string): Promise<string | null>;
+
+  // photo location check ("Where and when")
+  /** `POST /cases/{id}/geo-check`: set or clear the claim and re-run `geo_context` only. */
+  geoCheck(caseId: string, body: GeoCheckBody): Promise<ScanResult>;
+  /** Town and area names for the claim form (free public geocoder, called from the browser). */
+  searchPlaces(query: string, signal?: AbortSignal): Promise<PlaceHit[]>;
 }

@@ -152,3 +152,17 @@ def test_sync_correlations_initial_status_memory():
 
 def test_sync_correlations_initial_status_supabase():
     _check_initial_status(_supabase_store(), "case-1")
+
+
+def test_supabase_store_retries_once_when_the_connection_drops():
+    import httpx
+    from sherlock_core.store import _retry_transport
+    calls = []
+
+    def flaky(job_id):
+        calls.append(job_id)
+        if len(calls) == 1:
+            raise httpx.RemoteProtocolError("Server disconnected")
+        return {"id": job_id}
+
+    assert _retry_transport(flaky)("j1") == {"id": "j1"} and calls == ["j1", "j1"]

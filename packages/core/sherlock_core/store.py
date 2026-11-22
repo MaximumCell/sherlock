@@ -8,7 +8,9 @@ Use `get_store()` in application code; tests call `set_store(MemoryStore())`.
 from __future__ import annotations
 
 import copy
+import functools
 import logging
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -1097,6 +1099,27 @@ class MemoryStore(Store):
             if self.objects.pop((bucket, p), None) is not None:
                 n += 1
         return n
+
+
+
+def _retry_transport(fn):
+    """Retry once when the HTTP connection broke ("Server disconnected"): pooled connections
+    the database side has already closed fail on first use, most often under concurrent jobs."""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        import httpx
+        try:
+            return fn(*args, **kwargs)
+        except httpx.TransportError as e:
+            log.warning("database connection dropped (%s); retrying once", type(e).__name__)
+            time.sleep(0.3)
+            return fn(*args, **kwargs)
+    return wrapper
+
+
+for _name, _fn in list(vars(SupabaseStore).items()):
+    if callable(_fn) and not _name.startswith("_"):
+        setattr(SupabaseStore, _name, _retry_transport(_fn))
 
 
 _store: Store | None = None

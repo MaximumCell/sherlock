@@ -18,7 +18,11 @@ from sherlock_core.jobs import sign_wake
 
 log = logging.getLogger("sherlock.gateway.wake")
 
-WAKE_TIMEOUT_S = 4.0
+# A sleeping Render free instance takes ~30-60 s to start, and the platform only finishes
+# starting it while the waking request is still open. A 4 s timeout dropped the request too
+# early and left jobs queued until someone else woke the worker. Wakes run in a background
+# task, so nobody waits on this.
+WAKE_TIMEOUT_S = 90.0
 
 Waker = Callable[[Iterable[str]], Awaitable[None]]
 

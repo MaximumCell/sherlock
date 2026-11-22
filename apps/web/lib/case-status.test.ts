@@ -71,8 +71,8 @@ describe("selectCases", () => {
   const query = (qs: string) => parseCaseListQuery(new URLSearchParams(qs));
 
   it("hides archived cases by default and shows them on request", () => {
-    expect(selectCases(summaries, query(""))).toHaveLength(4);
-    expect(selectCases(summaries, query("archived=1"))).toHaveLength(5);
+    expect(selectCases(summaries, query(""))).toHaveLength(5);
+    expect(selectCases(summaries, query("archived=1"))).toHaveLength(6);
   });
 
   it("derives one of each status from the fixture cases", () => {

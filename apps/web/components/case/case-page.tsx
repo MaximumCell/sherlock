@@ -35,6 +35,7 @@ import { CaseSkeleton } from "./case-skeleton";
 
 export { CaseSkeleton };
 import { FindingSheet } from "./found/finding-sheet";
+import { WhereWhenSection } from "./geo/where-when-section";
 import { FoundSection } from "./found/found-section";
 import { HistorySection } from "./history/history-section";
 import { LinksSection } from "./links/links-section";
@@ -108,9 +109,14 @@ export function CasePage({ caseId, replayScan = false }: { caseId: string; repla
   const hasPeople =
     (c?.identifiers.some((i) => i.type === "name") ?? false) ||
     jobList.some((j) => j.target_type === "name");
+  const photo =
+    c?.identifiers.find((i) => i.type === "image")?.value ??
+    jobList.find((j) => j.target_type === "image")?.target_value ??
+    null;
+  const hasPhoto = photo !== null;
   const readOnly = useReadOnly();
   // Next steps only offers actions (new searches), so the read-only view leaves it out.
-  const sections = visibleSections(hasPeople).filter((s) => !readOnly || s !== "next");
+  const sections = visibleSections(hasPeople, hasPhoto).filter((s) => !readOnly || s !== "next");
   const active = useScrollSpy(sections);
   const foundCount = useMemo(
     () => groupFindings(findingList, correlationList).reduce((n, g) => n + g.items.length, 0),
@@ -138,7 +144,7 @@ export function CasePage({ caseId, replayScan = false }: { caseId: string; repla
     if (landed.current || !ready || !c) return;
     landed.current = true;
     const hash = window.location.hash.replace(/^#/, "");
-    const target = hash === SCAN_ANCHOR ? SCAN_ANCHOR : sectionFromUrl(params, hash, hasPeople);
+    const target = hash === SCAN_ANCHOR ? SCAN_ANCHOR : sectionFromUrl(params, hash, hasPeople, hasPhoto);
     if (!target || (target === "summary" && hash !== "summary")) return;
     const id = target;
     const land = () => document.getElementById(id)?.scrollIntoView({ block: "start" });
@@ -149,7 +155,7 @@ export function CasePage({ caseId, replayScan = false }: { caseId: string; repla
       if (Math.abs(top - 144) > 24) land();
     }, 700);
     return () => window.clearTimeout(settle);
-  }, [ready, c, params, hasPeople]);
+  }, [ready, c, params, hasPeople, hasPhoto]);
 
   if (caseQuery.isPending) return <CaseSkeleton />;
   if (caseQuery.isError) {
@@ -239,6 +245,9 @@ export function CasePage({ caseId, replayScan = false }: { caseId: string; repla
             jobs={jobList}
             loading={!ready}
           />
+          {photo ? (
+            <WhereWhenSection caseId={caseId} value={photo} findings={findingList} jobs={jobList} />
+          ) : null}
           <FoundSection
             caseId={caseId}
             findings={findingList}

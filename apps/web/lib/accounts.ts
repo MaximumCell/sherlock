@@ -145,7 +145,10 @@ export function buildAccounts(
   findings: readonly Finding[],
   correlations: readonly Correlation[],
 ): AccountIndex {
-  const found = new Map(findings.filter((f) => f.status === "found").map((f) => [f.id, f]));
+  // location-check rows (geo_context) describe a photo's place and time, never an account
+  const found = new Map(
+    findings.filter((f) => f.status === "found" && f.module !== "geo_context").map((f) => [f.id, f]),
+  );
   const byFinding = new Map<string, CaseAccount>();
   const accounts: CaseAccount[] = [];
   const merges = correlations

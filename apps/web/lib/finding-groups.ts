@@ -126,7 +126,8 @@ export function groupFindings(
     return b;
   };
   for (const acc of accounts) bucket(groupOf(acc.primary)).items.push(acc);
-  for (const f of findings) if (f.status !== "found") bucket(groupOf(f)).misses += 1;
+  for (const f of findings)
+    if (f.status !== "found" && f.module !== "geo_context") bucket(groupOf(f)).misses += 1;
   return FINDING_GROUP_IDS.flatMap((id) => {
     const b = buckets.get(id);
     if (!b || b.items.length === 0) return [];

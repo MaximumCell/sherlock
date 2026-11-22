@@ -6,7 +6,8 @@
 import { createDemoAdminSource } from "../../admin/demo-source";
 import type { AdminCaseView, CaseMeta } from "../../admin/types";
 import { DEMO_CASE_ID } from "./demo-case";
-import type { Case, Correlation, Finding, Job, JsonObject, NameHints } from "../../types";
+import type { Case, Correlation, Finding, Job, JsonObject, NameHints, PhotoClaim } from "../../types";
+import { DEMO_PLACES, GEO_PHOTO_ASSET, GEO_PHOTO_URL, geoFindings, hasDemoCamera } from "./geo";
 import { GatewayError } from "../gateway";
 import { decisionStatus } from "../../review";
 import type {
@@ -47,6 +48,23 @@ export interface FixtureDataSource extends DataSource {
 }
 
 const clone = <T>(value: T): T => structuredClone(value);
+
+/** Like the gateway: coordinates rounded to 2 decimals, empty fields dropped. */
+function normalizeFixtureClaim(claim: PhotoClaim): PhotoClaim | null {
+  const out: PhotoClaim = {};
+  if (claim.place?.trim()) out.place = claim.place.trim();
+  if (typeof claim.lat === "number" && typeof claim.lon === "number") {
+    out.lat = Math.round(claim.lat * 100) / 100;
+    out.lon = Math.round(claim.lon * 100) / 100;
+  }
+  if (claim.taken_at) out.taken_at = claim.taken_at;
+  return Object.keys(out).length ? out : null;
+}
+
+function claimOf(job: Job): PhotoClaim | null {
+  const c = job.params.claim;
+  return c && typeof c === "object" && !Array.isArray(c) ? (c as PhotoClaim) : null;
+}
 
 function toHints(hints: NameHints | undefined): JsonObject | undefined {
   if (!hints) return undefined;
@@ -156,10 +174,12 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
     value: string,
     only?: string[],
     hints?: JsonObject,
+    claim?: PhotoClaim | null,
   ): Job[] {
     const batch = newId("ba");
     const baseParams: JsonObject = { synthetic: true };
     if (hints) baseParams.hints = hints;
+    if (claim) baseParams.claim = claim as JsonObject;
     const modules = modulesFor(type).filter((m) => !only || only.includes(m.name));
     const jobs = modules.map<Job>((m) => ({
       id: newId("b2"),
@@ -191,7 +211,24 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
     job.status = "succeeded";
     job.progress = 100;
     job.finished_at = nowIso();
-    const produced = job.params.synthetic === true ? syntheticFindings(job, now(), photos.get(job.target_value)) : [];
+    const produced =
+      job.module === "geo_context"
+        ? geoFindings(job.case_id, job.target_value, claimOf(job), now(), {
+            camera: hasDemoCamera(job.target_value),
+            lens: hasDemoCamera(job.target_value),
+            jobId: job.id,
+          })
+        : job.params.synthetic === true
+          ? syntheticFindings(job, now(), photos.get(job.target_value))
+          : [];
+    // a re-check replaces the photo's location rows (same ids), like the worker's upsert
+    for (const f of produced) {
+      const i = state.findings.findIndex((x) => x.id === f.id);
+      if (i >= 0 && job.module === "geo_context") {
+        state.findings[i] = f;
+        emit("raw_findings", "UPDATE", job.case_id, f.id, f);
+      }
+    }
     const fresh = produced.filter((f) => !state.findings.some((x) => x.id === f.id));
     state.findings.push(...fresh);
     fresh.forEach((f) => emit("raw_findings", "INSERT", job.case_id, f.id, f));
@@ -401,6 +438,7 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
                 i.value,
                 undefined,
                 i.type === "name" ? toHints(body.hints) : undefined,
+                i.type === "image" ? body.claim : undefined,
               ),
             );
       listListeners.forEach((l) => l());
@@ -441,7 +479,14 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       if (body.type === "name" && session.anonymous) {
         throw new GatewayError(403, "Name search requires a signed-in account.");
       }
-      const jobs = enqueue(caseId, body.type, body.value, body.modules, toHints(body.hints));
+      const jobs = enqueue(
+        caseId,
+        body.type,
+        body.value,
+        body.modules,
+        toHints(body.hints),
+        body.type === "image" ? body.claim : undefined,
+      );
       if (jobs.length === 0) {
         throw new GatewayError(422, `No available module accepts a ${body.type} target.`);
       }
@@ -570,7 +615,44 @@ export function createFixtureDataSource(options: FixtureOptions = {}): FixtureDa
       return value;
     },
     async photoUrl(value) {
+      if (value === GEO_PHOTO_URL) return GEO_PHOTO_ASSET; // the bundled illustrative stand-in
       return photoPath(value) ? (photos.get(value)?.url ?? null) : null;
+    },
+
+    async geoCheck(caseId, body) {
+      const c = requireCase(caseId);
+      checkSearch([]);
+      const images = [
+        ...c.identifiers.filter((i) => i.type === "image").map((i) => i.value),
+        ...state.jobs.filter((j) => j.case_id === caseId && j.target_type === "image").map((j) => j.target_value),
+      ];
+      const value = body.value ?? images[0];
+      if (!value) throw new GatewayError(400, "This investigation has no photo to check.");
+      if (!images.includes(value)) throw new GatewayError(400, "That photo is not part of this investigation.");
+      for (const job of state.jobs) {
+        if (job.case_id === caseId && job.module === "geo_context" && job.target_value === value &&
+            (job.status === "queued" || job.status === "running")) {
+          job.status = "cancelled";
+          job.finished_at = nowIso();
+          emit("jobs", "UPDATE", caseId, job.id, job);
+        }
+      }
+      const claim = body.claim ? normalizeFixtureClaim(body.claim) : null;
+      const jobs = enqueue(caseId, "image", value, ["geo_context"], undefined, claim);
+      jobs.forEach((j) => delete j.params.synthetic);
+      audit(caseId, "photo_claim_set", "investigator", { claim: (claim ?? null) as JsonObject | null });
+      touch(c);
+      return respond({ batch_id: jobs[0]?.batch_id ?? "", jobs });
+    },
+
+    async searchPlaces(query) {
+      const q = query.trim().toLowerCase();
+      if (q.length < 2) return [];
+      return respond(
+        DEMO_PLACES.filter((p) => p.label.toLowerCase().includes(q) || p.detail.toLowerCase().includes(q))
+          .slice(0, 6)
+          .map(({ landmark: _landmark, ...p }) => p),
+      );
     },
   };
 }

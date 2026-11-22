@@ -264,6 +264,14 @@ export const FIXTURE_MODULES: ModuleInfo[] = [
     "https://archive.org/developers/wayback-cdx-server.html",
   ),
   mod(
+    "geo_context",
+    "Where and when (photo location check)",
+    "media",
+    ["image"],
+    "Sun position, weather, coarse place name, public webcams and street-level links for where and when a photo was taken or is claimed to be from, with plain-language consistency checks. Webcams need WINDY_WEBCAMS_KEY and street-level images MAPILLARY_TOKEN (both optional).",
+    "https://open-meteo.com/",
+  ),
+  mod(
     "image_meta",
     "Image metadata and perceptual hash",
     "media",

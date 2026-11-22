@@ -17,6 +17,7 @@ import type {
   ScanResult,
 } from "../types";
 import { createGatewayAdminSource } from "../admin/gateway-source";
+import { searchPlacesOnline } from "../geo-search";
 import { PHOTO_BUCKET, SIGNED_URL_TTL_S, photoObjectPath, photoPath, photoTarget } from "../uploads";
 import { upgradeOrSignIn } from "./auth-upgrade";
 import { createGateway, GatewayError, type GatewayClient, type GatewayRequest } from "./gateway";
@@ -413,6 +414,15 @@ export function createSupabaseDataSource(env: AppEnv): DataSource {
       if (error) throw error; // StorageError: classified by the search box
       return photoTarget(path).value;
     },
+    async geoCheck(caseId, body): Promise<ScanResult> {
+      const res = await command<unknown>(`/cases/${caseId}/geo-check`, { method: "POST", body });
+      const r = isRecord(res) ? res : {};
+      return {
+        batch_id: typeof r.batch_id === "string" ? r.batch_id : "",
+        jobs: toList(r.jobs, toJob),
+      };
+    },
+    searchPlaces: (query, signal) => searchPlacesOnline(query, signal),
     async photoUrl(value) {
       const parsed = photoPath(value);
       if (!parsed) return null;

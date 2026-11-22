@@ -9,7 +9,7 @@
  */
 import type { Finding, Job, JsonObject, PhotoClaim } from "../../types";
 
-export const PHOTO_CASE_ID = "c0ffee00-0000-4000-8000-000000000005";
+export const PHOTO_CASE_ID = "c0ffee00-0000-4000-8000-000000000006";
 export const GEO_PHOTO_URL = "https://photos.sherlock-demo.example/landmark-evening.jpg";
 /** Illustrative stand-in for the demo photo (abstract drawing, bundled in /public). */
 export const GEO_PHOTO_ASSET = "/demo/where-when-landmark.svg";

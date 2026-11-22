@@ -45,15 +45,17 @@ function WeatherChip({ w }: { w: WeatherMoment }) {
           ? Sun
           : CloudSun;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1 text-sm">
-      <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
-      <span className="text-muted-foreground">
-        {w.label === "camera" ? "Camera time" : "Claimed time"}:
-      </span>
-      <span>
-        {w.summary}
-        {w.temperatureC !== null ? `, ${Math.round(w.temperatureC)} °C` : ""}
-        {w.precipitationMm ? `, ${w.precipitationMm} mm` : ""}
+    <span className="flex items-start gap-2 rounded-lg border border-border bg-muted/60 px-2.5 py-1.5 text-sm">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+      <span className="min-w-0">
+        <span className="block text-2xs text-muted-foreground">
+          Weather at the {w.label === "camera" ? "camera time" : "claimed time"}
+        </span>
+        <span className="block">
+          {w.summary}
+          {w.temperatureC !== null ? `, ${Math.round(w.temperatureC)} °C` : ""}
+          {w.precipitationMm ? `, ${w.precipitationMm} mm rain` : ""}
+        </span>
       </span>
     </span>
   );
@@ -109,9 +111,19 @@ export function WhereWhenSection({
   });
 
   const markers: MapMarker[] = [];
+  const samePoint =
+    view.cameraPoint !== null &&
+    view.claimPoint !== null &&
+    view.cameraPoint.lat === view.claimPoint.lat &&
+    view.cameraPoint.lon === view.claimPoint.lon;
   if (view.cameraPoint)
-    markers.push({ key: "camera", point: view.cameraPoint, label: "Camera GPS", tone: "camera" });
-  if (view.claimPoint)
+    markers.push({
+      key: "camera",
+      point: view.cameraPoint,
+      label: samePoint ? "Camera GPS and claimed place" : "Camera GPS",
+      tone: "camera",
+    });
+  if (view.claimPoint && !samePoint)
     markers.push({ key: "claim", point: view.claimPoint, label: "Claimed place", tone: "claim" });
   if (!view.cameraPoint && !view.claimPoint && view.location)
     markers.push({ key: "loc", point: view.location, label: "Location", tone: "camera" });
@@ -195,7 +207,7 @@ export function WhereWhenSection({
             <Fact label="Claimed time" value={formatClaimTime(view.claim?.taken_at)} />
           </dl>
           {view.weather.length ? (
-            <div className="flex flex-wrap gap-2" aria-label="Weather that hour">
+            <div className="grid gap-2" aria-label="Weather that hour">
               {view.weather.map((w) => (
                 <WeatherChip key={w.label} w={w} />
               ))}
@@ -212,7 +224,9 @@ export function WhereWhenSection({
           />
           <p className="text-xs text-muted-foreground">
             {view.claimDistanceKm !== null
-              ? `The camera location is ${view.claimDistanceKm} km from the claimed place. `
+              ? view.claimDistanceKm < 1
+                ? "The camera location and the claimed place are less than 1 km apart. "
+                : `The camera location is ${view.claimDistanceKm} km from the claimed place. `
               : ""}
             Both points are rounded to about 1 km.
             {readOnly ? "" : " Click the map to pick a claimed place."}

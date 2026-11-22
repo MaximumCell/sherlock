@@ -44,6 +44,31 @@ def _url(f: dict[str, Any]) -> str:
     return url if isinstance(url, str) and url.startswith(("http://", "https://")) else ""
 
 
+_VERDICT_WORDS = {"consistent": "Consistent", "inconsistent": "Inconsistent", "cant_tell": "Can't tell"}
+
+
+def _where_and_when(findings: list[dict[str, Any]]) -> list[str]:
+    """The photo location checks (`geo_context`), one line per check. Empty without them."""
+    out: list[str] = []
+    for f in findings:
+        if f.get("module") != "geo_context" or f.get("platform") != "geo-checks" or f.get("status") != "found":
+            continue
+        raw = f.get("extra_metadata")
+        meta: dict[str, Any] = raw if isinstance(raw, dict) else {}
+        checks = [c for c in meta.get("checks") or [] if isinstance(c, dict)]
+        out.append(f"## Where and when ({len(checks)} checks)\n")
+        out.append("_Each check stands on its own and supports a person's judgement; none proves anything. "
+                   "EXIF data is easy to strip or fake._\n")
+        for c in checks:
+            verdict = _VERDICT_WORDS.get(str(c.get("verdict")), _VERDICT_WORDS["cant_tell"])
+            line = f"- **{verdict}**: {_md(c.get('title'))}. {_md(c.get('reason'))}"
+            if c.get("look_for"):
+                line += f" Look for: {_md(c['look_for'])}"
+            out.append(line)
+        out.append("")
+    return out
+
+
 def generate_markdown(case_id: str, store: Store | None = None) -> str:
     """Markdown report for `case_id`. Raises ValueError when the case does not exist."""
     store = store or get_store()
@@ -117,6 +142,7 @@ def generate_markdown(case_id: str, store: Store | None = None) -> str:
     listed = {a["account_key"] for a in accounts}
     in_accounts = {i for a in group_accounts(findings, split) if a.account_key in listed for i in a.finding_ids}
     found = [f for f in findings if f.get("status") == "found" and str(f.get("id")) not in in_accounts
+             and f.get("module") != "geo_context"
              and not (isinstance(f.get("extra_metadata"), dict) and f["extra_metadata"].get("summary") is True)]
     out.append(f"## Other found findings by platform ({len(found)})\n")
     by_platform: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -139,6 +165,8 @@ def generate_markdown(case_id: str, store: Store | None = None) -> str:
         if len(rows) > MAX_PER_PLATFORM:
             out.append(f"- ... and {len(rows) - MAX_PER_PLATFORM} more")
         out.append("")
+
+    out.extend(_where_and_when(findings))
 
     out.append("## Method and limitations\n")
     out.append("- Sources are public data only. Breach entries are exposure metadata "

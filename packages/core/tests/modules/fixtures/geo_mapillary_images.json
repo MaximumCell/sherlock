@@ -1,0 +1,28 @@
+{
+ "data": [
+  {
+   "id": "1111111111111111",
+   "thumb_256_url": "https://scontent.example/mapillary/1111_256.jpg",
+   "captured_at": 1718380800000,
+   "computed_geometry": {
+    "type": "Point",
+    "coordinates": [
+     2.2935,
+     48.8586
+    ]
+   }
+  },
+  {
+   "id": "2222222222222222",
+   "thumb_256_url": "https://scontent.example/mapillary/2222_256.jpg",
+   "captured_at": 1690000000000,
+   "computed_geometry": {
+    "type": "Point",
+    "coordinates": [
+     2.2901,
+     48.8601
+    ]
+   }
+  }
+ ]
+}
